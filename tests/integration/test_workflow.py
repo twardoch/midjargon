@@ -19,6 +19,11 @@ WEIRD_VALUE = 1000
 SEED_VALUE = 12345
 STOP_VALUE = 80
 IMAGE_WEIGHT_VALUE = 2.0
+QUALITY_VALUE = 1.0
+CHARACTER_WEIGHT_VALUE = 100
+STYLE_WEIGHT_VALUE = 200
+STYLE_VERSION_VALUE = 2
+REPEAT_VALUE = 3
 PERMUTATION_COUNT_2X2 = 4  # 2 options x 2 options
 PERMUTATION_COUNT_2X2X2 = 8  # 2 options x 2 options x 2 options
 
@@ -89,7 +94,8 @@ def test_parameter_workflow():
     prompt = (
         "cyberpunk city --v 5.2 --style raw --niji 6 "
         f"--chaos {CHAOS_VALUE} --weird {WEIRD_VALUE} "
-        f"--seed {SEED_VALUE} --stop {STOP_VALUE} --no --tile"
+        f"--seed {SEED_VALUE} --stop {STOP_VALUE} "
+        "--turbo --tile"
     )
     results = process_prompt(prompt)
 
@@ -103,7 +109,37 @@ def test_parameter_workflow():
     assert result.weird == WEIRD_VALUE
     assert result.seed == SEED_VALUE
     assert result.stop == STOP_VALUE
-    assert result.extra_params == {"no": None, "tile": None}
+    assert result.turbo is True
+    assert result.tile is True
+
+
+def test_new_parameters_workflow():
+    """Test workflow with new parameter types."""
+    prompt = (
+        "portrait photo "
+        f"--quality {QUALITY_VALUE} "
+        f"--cw {CHARACTER_WEIGHT_VALUE} "
+        f"--sw {STYLE_WEIGHT_VALUE} "
+        f"--sv {STYLE_VERSION_VALUE} "
+        f"--repeat {REPEAT_VALUE} "
+        "--cref ref1.jpg "
+        "--sref style1.jpg,style2.jpg "
+        "--p custom_profile"
+    )
+    results = process_prompt(prompt)
+
+    assert len(results) == 1
+    result = results[0]
+
+    assert result.text == "portrait photo"
+    assert result.quality == QUALITY_VALUE
+    assert result.character_weight == CHARACTER_WEIGHT_VALUE
+    assert result.style_weight == STYLE_WEIGHT_VALUE
+    assert result.style_version == STYLE_VERSION_VALUE
+    assert result.repeat == REPEAT_VALUE
+    assert result.character_reference == ["ref1.jpg"]
+    assert result.style_reference == ["style1.jpg", "style2.jpg"]
+    assert result.personalization == "custom_profile"
 
 
 def test_weighted_prompts_workflow():
@@ -134,9 +170,17 @@ def test_error_workflow():
     with pytest.raises(ValueError):
         process_prompt("photo --ar")  # Missing value
 
-    # Test unmatched braces
+    # Test invalid style
     with pytest.raises(ValueError):
-        process_prompt("a {red, blue bird")
+        process_prompt("photo --style invalid")  # Invalid style value
+
+    # Test invalid version
+    with pytest.raises(ValueError):
+        process_prompt("photo --v 999")  # Invalid version
+
+    # Test invalid mode combination
+    with pytest.raises(ValueError):
+        process_prompt("photo --turbo --relax")  # Cannot use both
 
 
 def test_complex_workflow():
@@ -146,7 +190,9 @@ def test_complex_workflow():
         "a {vintage, modern} {portrait, landscape} "
         "with {warm, cool} tones "
         f"--ar {ASPECT_WIDTH}:{ASPECT_HEIGHT} --stylize {STYLIZE_VALUE} "
-        f"--chaos {CHAOS_VALUE} --v 5.2 --style raw"
+        f"--chaos {CHAOS_VALUE} --v 5.2 --style raw "
+        f"--quality {QUALITY_VALUE} --cw {CHARACTER_WEIGHT_VALUE} "
+        "--turbo"
     )
     results = process_prompt(prompt)
 
@@ -162,6 +208,9 @@ def test_complex_workflow():
         assert result.chaos == CHAOS_VALUE
         assert result.version == "v5.2"
         assert result.style == "raw"
+        assert result.quality == QUALITY_VALUE
+        assert result.character_weight == CHARACTER_WEIGHT_VALUE
+        assert result.turbo is True
 
     # Check text variations
     texts = {r.text for r in results}
