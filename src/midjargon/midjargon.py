@@ -91,15 +91,11 @@ def _split_text_and_params(text: str) -> tuple[str, str]:
 
 
 def _format_permutation_part(before: str, opt: str, after: str) -> str:
-    """Format a single permutation part with proper spacing."""
     if opt.startswith("--"):
-        # Parameter permutation - keep the space before
-        return f"{before}{opt}{after}"
-    elif not opt:
-        # For empty option, just combine before and after
-        return f"{before}{after}".strip()
-    # For non-empty option, add the option
-    return f"{before}{opt}{after}".strip()
+        # For parameter permutations, preserve exact spacing
+        return f"{before}{opt}{after}".strip()
+    # Combine before, opt, and after and collapse multiple spaces
+    return " ".join((before + opt + after).split())
 
 
 def _add_word_spacing(before: str, after: str) -> tuple[str, str]:
