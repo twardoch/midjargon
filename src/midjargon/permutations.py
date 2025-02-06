@@ -8,4 +8,4 @@ def generate_phrases(options: list[str]) -> list[str]:
         # Updated code: strip whitespace from each word and filter out empty strings.
         phrase = " ".join(word.strip() for word in ["a", option, "bird"] if word.strip())
         results.append(phrase)
-    return results 
+    return results

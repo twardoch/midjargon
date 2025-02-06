@@ -18,28 +18,15 @@ from rich.panel import Panel
 from rich.syntax import Syntax
 
 from midjargon import parse_prompt
-from prompt_midjourney import MidjourneyPrompt, parse_midjourney
+from midjargon.midjourney import MidjourneyPrompt, parse_midjourney
+
+# Constants
+NIJI_PREFIX_LENGTH = 4  # Length of "niji" in version string
 
 
-def format_prompt(prompt: MidjourneyPrompt) -> str:
-    """Format a MidjourneyPrompt for display."""
-    parts = []
-
-    # Add image URLs
-    for img in prompt.image_prompts:
-        parts.append(img.url)
-
-    # Add text
-    parts.append(prompt.text)
-
-    # Add parameters
+def _format_numeric_params(prompt: MidjourneyPrompt) -> list[str]:
+    """Format numeric parameters into command strings."""
     params = []
-
-    # Handle aspect ratio
-    if prompt.aspect_width and prompt.aspect_height:
-        params.append(f"--ar {prompt.aspect_width}:{prompt.aspect_height}")
-
-    # Handle numeric parameters
     if prompt.stylize is not None:
         params.append(f"--stylize {prompt.stylize}")
     if prompt.chaos is not None:
@@ -52,24 +39,56 @@ def format_prompt(prompt: MidjourneyPrompt) -> str:
         params.append(f"--seed {prompt.seed}")
     if prompt.stop is not None:
         params.append(f"--stop {prompt.stop}")
+    return params
 
-    # Handle style parameters
+
+def _format_style_params(prompt: MidjourneyPrompt) -> list[str]:
+    """Format style-related parameters into command strings."""
+    params = []
     if prompt.style:
         params.append(f"--style {prompt.style}")
     if prompt.version:
         if prompt.version.startswith("niji"):
             params.append(
-                f"--niji{' ' + prompt.version[5:] if len(prompt.version) > 4 else ''}"
+                f"--niji{' ' + prompt.version[5:] if len(prompt.version) > NIJI_PREFIX_LENGTH else ''}"
             )
         else:
             params.append(f"--v {prompt.version[1:]}")
+    return params
 
-    # Add extra parameters
-    for name, value in prompt.extra_params.items():
+
+def _format_extra_params(extra_params: dict[str, str | None]) -> list[str]:
+    """Format extra parameters into command strings."""
+    params = []
+    for name, value in extra_params.items():
         if value is not None:
             params.append(f"--{name} {value}")
         else:
             params.append(f"--{name}")
+    return params
+
+
+def format_prompt(prompt: MidjourneyPrompt) -> str:
+    """Format a MidjourneyPrompt for display."""
+    parts = []
+
+    # Add image URLs
+    parts.extend(prompt.image_prompts)
+
+    # Add text
+    parts.append(prompt.text)
+
+    # Build parameters list
+    params = []
+
+    # Handle aspect ratio
+    if prompt.aspect_width and prompt.aspect_height:
+        params.append(f"--ar {prompt.aspect_width}:{prompt.aspect_height}")
+
+    # Add all parameter types
+    params.extend(_format_numeric_params(prompt))
+    params.extend(_format_style_params(prompt))
+    params.extend(_format_extra_params(prompt.extra_params))
 
     if params:
         parts.append(" ".join(params))
@@ -79,6 +98,7 @@ def format_prompt(prompt: MidjourneyPrompt) -> str:
 
 def main(
     prompt: str,
+    *,  # Make all following arguments keyword-only
     raw: bool = False,
     json_output: bool = False,
     no_color: bool = False,
@@ -155,7 +175,7 @@ def main(
 
     except Exception as e:
         console.print(f"[red]Error:[/red] {e!s}")
-        raise SystemExit(1)
+        raise SystemExit(1) from e
 
 
 if __name__ == "__main__":

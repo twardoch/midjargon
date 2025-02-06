@@ -102,9 +102,52 @@ class MidjourneyPrompt(BaseModel):
                 w, h = value.split(":")
                 self.aspect_width = int(w)
                 self.aspect_height = int(h)
-            except ValueError:
+            except ValueError as e:
                 msg = "Invalid aspect ratio format. Expected w:h"
-                raise ValueError(msg)
+                raise ValueError(msg) from e
+
+
+def _handle_numeric_param(name: str, value: str | None) -> tuple[str, Any]:
+    """Handle numeric parameter conversion."""
+    # Define parameter mappings with their default values and conversion functions
+    param_map = {
+        ("stylize", "s"): ("stylize", lambda v: int(v) if v else 100),
+        ("chaos", "c"): ("chaos", lambda v: int(v) if v else 0),
+        ("weird",): ("weird", lambda v: int(v) if v else 0),
+        ("iw",): ("image_weight", lambda v: float(v) if v else 1.0),
+        ("seed",): ("seed", lambda v: int(v) if v else None),
+        ("stop",): ("stop", lambda v: int(v) if v else 100),
+    }
+
+    # Find matching parameter and convert value
+    for aliases, (param_name, converter) in param_map.items():
+        if name in aliases:
+            return param_name, converter(value)
+
+    return "", None
+
+
+def _handle_aspect_ratio(value: str | None) -> tuple[int | None, int | None]:
+    """Handle aspect ratio parameter conversion."""
+    if not value:
+        return None, None
+    try:
+        w, h = value.split(":")
+        return int(w), int(h)
+    except ValueError as e:
+        msg = "Invalid aspect ratio format. Expected w:h"
+        raise ValueError(msg) from e
+
+
+def _handle_style_param(name: str, value: str | None) -> tuple[str, str | None]:
+    """Handle style parameter conversion."""
+    if name == "style":
+        return "style", value
+    elif name == "v":
+        return "version", f"v{value}"
+    elif name == "niji":
+        return "version", f"niji {value}" if value else "niji"
+    return "", None
 
 
 def convert_prompt(midjargon_prompt: MidjargonPrompt) -> MidjourneyPrompt:
@@ -126,42 +169,28 @@ def convert_prompt(midjargon_prompt: MidjargonPrompt) -> MidjourneyPrompt:
 
     # Process each parameter
     for name, value in midjargon_prompt.parameters.items():
-        # Handle known numeric parameters
-        if name in ("stylize", "s"):
-            prompt_data["stylize"] = int(value) if value else 100
-        elif name in ("chaos", "c"):
-            prompt_data["chaos"] = int(value) if value else 0
-        elif name == "weird":
-            prompt_data["weird"] = int(value) if value else 0
-        elif name == "iw":
-            prompt_data["image_weight"] = float(value) if value else 1.0
-        elif name == "seed":
-            prompt_data["seed"] = int(value) if value else None
-        elif name == "stop":
-            prompt_data["stop"] = int(value) if value else 100
+        # Try numeric parameters first
+        param_name, param_value = _handle_numeric_param(name, value)
+        if param_name:
+            prompt_data[param_name] = param_value
+            continue
 
         # Handle aspect ratio
-        elif name in ("ar", "aspect"):
-            if value:
-                try:
-                    w, h = value.split(":")
-                    prompt_data["aspect_width"] = int(w)
-                    prompt_data["aspect_height"] = int(h)
-                except ValueError:
-                    msg = "Invalid aspect ratio format. Expected w:h"
-                    raise ValueError(msg)
+        if name in ("ar", "aspect"):
+            w, h = _handle_aspect_ratio(value)
+            if w is not None and h is not None:
+                prompt_data["aspect_width"] = w
+                prompt_data["aspect_height"] = h
+            continue
 
-        # Handle style and version
-        elif name == "style":
-            prompt_data["style"] = value
-        elif name == "v":
-            prompt_data["version"] = f"v{value}"
-        elif name == "niji":
-            prompt_data["version"] = f"niji {value}" if value else "niji"
+        # Handle style parameters
+        param_name, param_value = _handle_style_param(name, value)
+        if param_name:
+            prompt_data[param_name] = param_value
+            continue
 
         # Store unknown parameters
-        else:
-            prompt_data["extra_params"][name] = value
+        prompt_data["extra_params"][name] = value
 
     return MidjourneyPrompt(**prompt_data)
 

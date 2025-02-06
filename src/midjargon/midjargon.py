@@ -12,6 +12,7 @@ This module focuses on syntax parsing without Midjourney-specific validation.
 
 import re
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -72,6 +73,126 @@ def split_permutation_options(text: str) -> list[str]:
     return options
 
 
+def _split_text_and_params(text: str) -> tuple[str, str]:
+    """Split text into main text and parameters at first non-nested --."""
+    i = 0
+    depth = 0
+    while i < len(text):
+        if text[i] == "{":
+            depth += 1
+        elif text[i] == "}":
+            depth -= 1
+        elif (
+            text[i : i + 2] == "--" and depth == 0 and (i == 0 or text[i - 1].isspace())
+        ):
+            return text[:i].strip(), text[i:]
+        i += 1
+    return text.strip(), ""
+
+
+def _format_permutation_part(before: str, opt: str, after: str) -> str:
+    """Format a single permutation part with proper spacing."""
+    if opt.startswith("--"):
+        # Parameter permutation - keep the space before
+        return f"{before}{opt}{after}"
+    elif not opt:
+        # For empty option, just combine before and after
+        return f"{before}{after}".strip()
+    # For non-empty option, add the option
+    return f"{before}{opt}{after}".strip()
+
+
+def _add_word_spacing(before: str, after: str) -> tuple[str, str]:
+    """Add spacing between words if needed."""
+    if before and before[-1].isalnum():
+        before = before + " "
+    if after and after[0].isalnum():
+        after = " " + after
+    return before, after
+
+
+def _expand_text_permutations(text: str) -> list[str]:
+    """Expand permutations in the text part."""
+    text_expanded = [text] if text else [""]
+    while any("{" in t for t in text_expanded):
+        next_level = []
+        for t in text_expanded:
+            next_level.extend(_expand_single_permutation(t))
+        text_expanded = next_level
+    return text_expanded
+
+
+def _find_matching_brace(s: str, start: int) -> int:
+    """Find the matching closing brace for an opening brace at start."""
+    count = 1
+    i = start + 1
+    while i < len(s):
+        if s[i] == "{":
+            count += 1
+        elif s[i] == "}":
+            count -= 1
+            if count == 0:
+                return i
+        i += 1
+    return -1
+
+
+def _expand_nested_options(options: list[str]) -> list[str]:
+    """Recursively expand any nested permutations in options."""
+    expanded_options = []
+    for opt in options:
+        if "{" in opt:
+            expanded_options.extend(_expand_single_permutation(opt))
+        else:
+            expanded_options.append(opt)
+    return expanded_options
+
+
+def _expand_single_permutation(text: str) -> list[str]:
+    """Expands a single level of permutation."""
+    results = []
+    i = 0
+
+    while i < len(text):
+        if text[i] == "{":
+            end = _find_matching_brace(text, i)
+            if end == -1:
+                return [text]  # Unmatched brace - treat as literal
+
+            before = text[:i].rstrip()
+            options = split_permutation_options(text[i + 1 : end])
+            after = text[end + 1 :].lstrip()
+
+            before, after = _add_word_spacing(before, after)
+
+            # Recursively expand any nested permutations in each option
+            expanded_options = _expand_nested_options(options)
+
+            # Combine with before/after text
+            results = [
+                _format_permutation_part(before, opt, after) for opt in expanded_options
+            ]
+            break
+        i += 1
+
+    # No permutations found
+    if not results:
+        results = [text]
+
+    return [r.strip() for r in results]
+
+
+def _combine_text_and_params(
+    text_expanded: list[str], param_expanded: list[str]
+) -> list[str]:
+    """Combine expanded text and parameter permutations."""
+    result = []
+    for t in text_expanded:
+        for p in param_expanded:
+            result.append(f"{t} {p}".strip())
+    return result
+
+
 def expand_permutations(text: str) -> list[str]:
     """
     Expands all permutations in curly braces into separate complete prompts.
@@ -83,206 +204,68 @@ def expand_permutations(text: str) -> list[str]:
     Returns:
         List of expanded prompts with all permutations resolved.
     """
-
-    def find_matching_brace(s: str, start: int) -> int:
-        """Find the matching closing brace for an opening brace at start."""
-        count = 1
-        i = start + 1
-        while i < len(s):
-            if s[i] == "{":
-                count += 1
-            elif s[i] == "}":
-                count -= 1
-                if count == 0:
-                    return i
-            i += 1
-        return -1
-
-    def expand_single_permutation(text: str) -> list[str]:
-        """Expands a single level of permutation."""
-        results = []
-        i = 0
-
-        while i < len(text):
-            if text[i] == "{":
-                end = find_matching_brace(text, i)
-                if end == -1:
-                    # Unmatched brace - treat as literal
-                    results = [text]
-                    break
-
-                before = text[:i].rstrip()  # Remove trailing spaces
-                options = split_permutation_options(text[i + 1 : end])
-                after = text[end + 1 :].lstrip()  # Remove leading spaces
-
-                # Add space after 'before' if it ends with a word character and isn't empty
-                if before and before[-1].isalnum():
-                    before = before + " "
-                # Add space before 'after' if it starts with a word character and isn't empty
-                if after and after[0].isalnum():
-                    after = " " + after
-
-                # Recursively expand any nested permutations in each option
-                expanded_options = []
-                for opt in options:
-                    if "{" in opt:
-                        expanded = expand_single_permutation(opt)
-                        expanded_options.extend(expanded)
-                    else:
-                        expanded_options.append(opt)
-
-                # Combine with before/after text
-                results = []
-                for opt in expanded_options:
-                    # Handle parameters in permutations
-                    if opt.startswith("--"):
-                        # Parameter permutation - keep the space before
-                        results.append(f"{before}{opt}{after}")
-                    # Regular permutation
-                    elif not opt:
-                        # For empty option, just combine before and after
-                        results.append(f"{before}{after}".strip())
-                    else:
-                        # For non-empty option, add the option
-                        results.append(f"{before}{opt}{after}".strip())
-                break
-            i += 1
-
-        # No permutations found
-        if not results:
-            results = [text]
-
-        return [
-            r.strip() for r in results
-        ]  # Strip any extra whitespace from final results
-
-    # First split into text and parameters at the first non-nested --
-    text_parts = []
-    param_parts = []
-
-    i = 0
-    depth = 0
-    text_start = 0
-    while i < len(text):
-        if text[i] == "{":
-            depth += 1
-        elif text[i] == "}":
-            depth -= 1
-        elif (
-            text[i : i + 2] == "--" and depth == 0 and (i == 0 or text[i - 1].isspace())
-        ):
-            if i > text_start:
-                text_parts.append(text[text_start:i].strip())
-            param_parts.append(text[i:])
-            break
-        i += 1
-    else:
-        if text_start < len(text):
-            text_parts.append(text[text_start:].strip())
+    # Split into text and parameters
+    main_text, params = _split_text_and_params(text)
 
     # Expand text permutations
-    text_expanded = []
-    if text_parts:
-        current = [text_parts[0]]
-        while any("{" in t for t in current):
-            next_level = []
-            for t in current:
-                next_level.extend(expand_single_permutation(t))
-            current = next_level
-        text_expanded = current
-    else:
-        text_expanded = [""]
+    text_expanded = _expand_text_permutations(main_text)
+
+    # If no parameters, return expanded text
+    if not params:
+        return text_expanded
 
     # Expand parameter permutations
-    param_expanded = []
-    if param_parts:
-        param_text = param_parts[0]
+    param_expanded = _expand_single_permutation(params)
 
-        # Split into individual parameter groups
-        param_groups = []
-        i = 0
-        depth = 0
-        param_start = 0
+    # Combine text and parameter permutations
+    return _combine_text_and_params(text_expanded, param_expanded)
 
-        while i < len(param_text):
-            if param_text[i] == "{":
-                depth += 1
-            elif param_text[i] == "}":
-                depth -= 1
-            elif (
-                param_text[i : i + 2] == "--"
-                and depth == 0
-                and (i == 0 or param_text[i - 1].isspace())
-            ):
-                if i > param_start:
-                    param_groups.append(param_text[param_start:i].strip())
-                param_start = i
-            i += 1
 
-        if param_start < len(param_text):
-            param_groups.append(param_text[param_start:].strip())
+def _validate_param_name(param_name: str) -> None:
+    """Validate a parameter name."""
+    if not param_name:
+        msg = "Empty parameter name"
+        raise ValueError(msg)
+    if not param_name.replace("-", "").isalnum():
+        msg = f"Invalid parameter name: {param_name}"
+        raise ValueError(msg)
 
-        # Expand each parameter group
-        expanded_groups = []
-        for group in param_groups:
-            current = [group]
-            while any("{" in p for p in current):
-                next_level = []
-                for p in current:
-                    expanded = expand_single_permutation(p)
-                    next_level.extend(expanded)
-                current = next_level
-            expanded_groups.append(current)
 
-        # Generate all combinations of parameter groups
-        from itertools import product
+def _process_param_value(values: list[str]) -> str | None:
+    """Process parameter values into a single value."""
+    if not values:
+        return None
+    value = " ".join(values)
+    if value.startswith('"') and value.endswith('"'):
+        value = value[1:-1]  # Remove surrounding quotes
+    return value
 
-        if expanded_groups:
-            combinations = list(product(*expanded_groups))
-            param_expanded = [" ".join(p for p in combo if p) for combo in combinations]
-        else:
-            param_expanded = [""]
 
-    else:
-        param_expanded = [""]
-
-    # Combine all text and parameter combinations
-    results = []
-    for text_part in text_expanded:
-        for param_part in param_expanded:
-            if param_part:
-                results.append(f"{text_part} {param_part}")
-            else:
-                results.append(text_part)
-
-    return results
+def _validate_param_value(param: str, value: str | None) -> None:
+    """Validate that a parameter has a value if required."""
+    flag_params = {"tile", "raw"}  # Known flag parameters that don't require values
+    if not value and param not in flag_params:
+        msg = f"Missing required value for parameter: {param}"
+        raise ValueError(msg)
 
 
 def parse_parameters(param_str: str) -> dict[str, str | None]:
     """
-    Parses parameter strings into a dictionary.
+    Parse parameter string into a dictionary of parameter names and values.
+    Handles quoted values and flag parameters.
 
     Args:
-        param_str: String containing parameters (each beginning with '--').
-        A parameter followed immediately by another parameter has no value (boolean flag).
-        A parameter followed by non-parameter tokens uses those tokens as its value.
+        param_str: String containing parameters (--param value --flag).
 
     Returns:
-        Dictionary mapping parameter names to their values (or None if no value).
+        Dictionary of parameter names to values.
 
     Raises:
-        ValueError: If the parameter string is invalid or malformed.
+        ValueError: If parameter syntax is invalid.
     """
-    if not param_str:
-        return {}
-
-    # Check for invalid parameter format
-    if param_str == "--":
-        msg = "Empty parameter name"
-        raise ValueError(msg)
-
-    params = {}
     tokens = param_str.split()
+    params: dict[str, str | None] = {}
+
     i = 0
     current_param = None
     current_values = []
@@ -291,50 +274,90 @@ def parse_parameters(param_str: str) -> dict[str, str | None]:
         token = tokens[i]
 
         if token.startswith("--"):
-            # Validate parameter name
-            param_name = token[2:].lower()
-            if not param_name:
-                msg = "Empty parameter name"
-                raise ValueError(msg)
-            if not param_name.replace("-", "").isalnum():
-                msg = f"Invalid parameter name: {param_name}"
-                raise ValueError(msg)
-
             # Save previous parameter if any
             if current_param is not None:
-                value = " ".join(current_values) if current_values else None
-                if value and value.startswith('"') and value.endswith('"'):
-                    value = value[1:-1]  # Remove surrounding quotes
+                value = _process_param_value(current_values)
+                _validate_param_value(current_param, value)
                 params[current_param] = value
 
             # Start new parameter
+            param_name = token[2:].lower()
+            _validate_param_name(param_name)
             current_param = param_name
             current_values = []
-            i += 1
+        # Add value to current parameter
+        elif current_param is not None:
+            current_values.append(token)
         else:
-            # Add value to current parameter
-            if current_param is not None:
-                current_values.append(token)
-            else:
-                msg = "Value without parameter"
-                raise ValueError(msg)
-            i += 1
+            msg = "Value without parameter"
+            raise ValueError(msg)
+        i += 1
 
     # Save last parameter
     if current_param is not None:
-        value = " ".join(current_values) if current_values else None
-        if value and value.startswith('"') and value.endswith('"'):
-            value = value[1:-1]  # Remove surrounding quotes
-        # Check if the last parameter has a required value
-        if not value and current_param not in [
-            "tile",
-            "raw",
-        ]:  # Add known flag parameters here
-            msg = f"Missing required value for parameter: {current_param}"
-            raise ValueError(msg)
+        value = _process_param_value(current_values)
+        _validate_param_value(current_param, value)
         params[current_param] = value
 
     return params
+
+
+def _handle_numeric_param(name: str, value: str | None) -> tuple[str, Any]:
+    """Handle numeric parameter conversion."""
+    # Define parameter mappings with their default values and conversion functions
+    param_map = {
+        ("stylize", "s"): ("stylize", lambda v: int(v) if v else 100),
+        ("chaos", "c"): ("chaos", lambda v: int(v) if v else 0),
+        ("weird",): ("weird", lambda v: int(v) if v else 0),
+        ("iw",): ("image_weight", lambda v: float(v) if v else 1.0),
+        ("seed",): ("seed", lambda v: int(v) if v else None),
+        ("stop",): ("stop", lambda v: int(v) if v else 100),
+    }
+
+    # Find matching parameter and convert value
+    for aliases, (param_name, converter) in param_map.items():
+        if name in aliases:
+            return param_name, converter(value)
+
+    return "", None
+
+
+def _handle_style_param(name: str, value: str | None) -> tuple[str, str | None]:
+    """Handle style parameter conversion."""
+    if name == "style":
+        return "style", value
+    elif name == "v":
+        return "version", f"v{value}"
+    elif name == "niji":
+        return "version", f"niji {value}" if value else "niji"
+    return "", None
+
+
+def _find_parameter_split(text: str) -> int:
+    """Find the index where parameters start (first non-nested --)."""
+    depth = 0  # Track brace depth
+    i = 0
+    while i < len(text):
+        if text[i] == "{":
+            depth += 1
+        elif text[i] == "}":
+            depth -= 1
+        elif (
+            text[i : i + 2] == "--" and depth == 0 and (i == 0 or text[i - 1].isspace())
+        ):
+            return i
+        i += 1
+    return -1
+
+
+def _validate_parts(parts: list[str]) -> None:
+    """Validate the split parts of the prompt."""
+    if not parts:
+        msg = "Empty prompt"
+        raise ValueError(msg)
+    if len(parts) == 1 and parts[0].startswith("--"):
+        msg = "Prompt contains only parameters"
+        raise ValueError(msg)
 
 
 def split_text_and_parameters(text: str) -> tuple[str, str]:
@@ -354,43 +377,20 @@ def split_text_and_parameters(text: str) -> tuple[str, str]:
         msg = "Empty prompt"
         raise ValueError(msg)
 
-    # Pattern to split on first whitespace followed by '--'
-    # that is not inside a permutation block
-    parts = []
-    current = []
-    i = 0
-    depth = 0  # Track brace depth
+    # Find where parameters start
+    split_index = _find_parameter_split(text)
 
-    while i < len(text):
-        if text[i] == "{":
-            depth += 1
-            current.append(text[i])
-        elif text[i] == "}":
-            depth -= 1
-            current.append(text[i])
-        elif (
-            text[i : i + 2] == "--" and depth == 0 and (i == 0 or text[i - 1].isspace())
-        ):
-            if current:
-                parts.append("".join(current).strip())
-                current = []
-            current.append(text[i:])
-            break
-        else:
-            current.append(text[i])
-        i += 1
-
-    if current:
-        parts.append("".join(current).strip())
-
-    if len(parts) == 1:
-        # Check if the only part starts with '--'
-        if parts[0].startswith("--"):
-            msg = "Prompt contains only parameters"
-            raise ValueError(msg)
-        return parts[0], ""
+    # Split text into parts
+    if split_index == -1:
+        parts = [text.strip()]
     else:
-        return parts[0], parts[1]
+        parts = [text[:split_index].strip(), text[split_index:].strip()]
+
+    # Validate parts
+    _validate_parts(parts)
+
+    # Return appropriate parts
+    return (parts[0], parts[1]) if len(parts) > 1 else (parts[0], "")
 
 
 def parse_image_urls(tokens: list[str]) -> tuple[list[str], list[str]]:
