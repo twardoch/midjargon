@@ -75,43 +75,60 @@ def parse_image_urls(tokens: list[str]) -> tuple[list[str], list[str]]:
 
 def parse_midjargon_prompt_to_dict(expanded_prompt: MidjargonPrompt) -> MidjargonDict:
     """
-    Parses an expanded prompt string (with no permutation syntax) into a dictionary.
-
-    The resulting dictionary will contain:
-    - 'images': List of image URLs found at the start of the prompt
-    - 'text': The main text content of the prompt
-    - Additional keys for any parameters found (without the '--' prefix)
+    Parse an expanded prompt into a dictionary format.
+    Handles URL extraction and parameter parsing.
 
     Args:
-        expanded_prompt: A prompt string that has been expanded (i.e., no outstanding permutations).
+        expanded_prompt: Expanded prompt string.
 
     Returns:
-        MidjargonDict: Dict with keys 'images', 'text', and additional parameter keys.
-
-    Raises:
-        ValueError: If the prompt is empty or invalid.
+        Dictionary containing parsed prompt components.
     """
-    if not expanded_prompt.strip():
-        msg = "Empty prompt"
-        raise ValueError(msg)
+    # Extract URLs and text
+    urls = []
+    text_parts = []
 
-    # Split into tokens
-    tokens = expanded_prompt.split()
+    parts = expanded_prompt.split()
+    for part in parts:
+        if part.startswith(("http://", "https://")):
+            urls.append(part)
+        else:
+            text_parts.append(part)
 
-    # Extract image URLs
-    urls, remaining = parse_image_urls(tokens)
+    # Join remaining parts as text, preserving original spacing
+    text_part = " ".join(text_parts)
 
-    # Split remaining text into main text and parameters
-    main_text = " ".join(remaining)
-    text_part, param_part = split_text_and_parameters(main_text)
-
-    # Validate that there is actual text content
-    if not text_part and not urls:
-        msg = "Prompt must contain text or image URLs"
-        raise ValueError(msg)
+    # Find where parameters start (if any)
+    param_part = ""
+    if "--" in text_part:
+        text_split = text_part.split("--", 1)
+        text_part = text_split[0].strip()
+        param_part = "--" + text_split[1]
 
     # Parse parameters using the consolidated parameter parsing logic
     params = parse_parameters(param_part) if param_part.startswith("--") else {}
+
+    # Convert numeric values
+    numeric_params = {
+        "stylize": int,
+        "chaos": int,
+        "weird": int,
+        "image_weight": float,
+        "seed": int,
+        "stop": int,
+        "quality": float,
+        "repeat": int,
+        "character_weight": int,
+        "style_weight": int,
+        "style_version": int,
+    }
+
+    for param, converter in numeric_params.items():
+        if param in params and params[param] is not None:
+            try:
+                params[param] = str(converter(params[param]))
+            except (ValueError, TypeError):
+                pass
 
     # Build the dictionary according to the specification
     result = {
