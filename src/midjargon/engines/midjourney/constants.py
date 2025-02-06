@@ -21,6 +21,17 @@ REPEAT_RANGE = (1, 100)  # More lenient than spec
 ALLOWED_IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 
 # Mode flags
-VALID_STYLES = {"raw", "expressive", "cute"}  # Extensible
-VALID_VERSIONS = {"5", "5.1", "5.2", "6", "6.1"}  # Extensible
-VALID_NIJI_VERSIONS = {"5", "6"}  # Extensible
+VALID_STYLES = {"raw", "expressive", "cute", "scenic", "original"}  # Extensible
+VALID_VERSIONS = {
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "5.0",
+    "5.1",
+    "5.2",
+    "6",
+    "6.1",
+}  # Extensible
+VALID_NIJI_VERSIONS = {"4", "5", "6"}  # Extensible

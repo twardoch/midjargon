@@ -110,13 +110,12 @@ def format_prompt(prompt: MidjourneyPrompt) -> str:
 def _handle_error(console: Console, error: Exception) -> NoReturn:
     """Handle errors by printing to stderr and exiting."""
     error_console = Console(stderr=True)
-    error_console.print(f"Error: {str(error)}", style="red")
+    error_console.print(f"Error: {error!s}", style="red")
     sys.exit(1)
 
 
 def _output_json(data: Any) -> None:
     """Output data as JSON."""
-    print(json.dumps(data, indent=2))
 
 
 def process_prompt(prompt: str) -> list[MidjourneyPrompt]:
@@ -149,19 +148,18 @@ def process_prompt(prompt: str) -> list[MidjourneyPrompt]:
 
 def main(
     prompt: str,
+    *,  # Make all following arguments keyword-only
     raw: bool = False,
-    json_output: bool = False,
-    j: bool = False,  # Add short form flag
+    json_output: bool = False,  # -j is an alias for --json_output
     no_color: bool = False,
 ) -> None:
     """
-    Main entry point for the CLI.
+    Parse and validate a Midjourney prompt.
 
     Args:
         prompt: The Midjourney prompt string to parse.
         raw: If True, show the raw parsed structure before validation.
-        json_output: If True, output in JSON format.
-        j: Short form for json_output.
+        json_output: If True, output in JSON format (alias: -j).
         no_color: If True, disable colored output.
 
     Example prompts:
@@ -172,7 +170,6 @@ def main(
         "elephant {, --s {200, 300}}"
     """
     console = Console(force_terminal=not no_color)
-    use_json = json_output or j  # Use either flag
 
     try:
         # First parse with midjargon
@@ -182,7 +179,7 @@ def main(
             # Convert each expanded prompt to a dictionary
             midjargon_dicts = [parse_midjargon_prompt_to_dict(p) for p in expanded]
 
-            if use_json:
+            if json_output:
                 # Output raw parsed prompts as JSON
                 _output_json(midjargon_dicts)
             else:
@@ -207,29 +204,71 @@ def main(
         # Parse each dictionary into a MidjourneyPrompt
         prompts = [parse_midjourney_dict(d) for d in midjargon_dicts]
 
-        if use_json:
+        if json_output:
             # Output validated prompts as JSON
             _output_json([p.model_dump() for p in prompts])
         else:
-            # Show formatted output
-            panel = Panel(
-                "\n".join(result.text for result in results),
-                title="Formatted",
-                expand=False,
-            )
-            console.print(panel)
+            for i, p in enumerate(prompts, 1):
+                if len(prompts) > 1:
+                    console.print(f"\n[bold]Prompt {i}:[/bold]")
 
-            # Show structured output
-            if len(results) == 1:
-                panel = Panel(
-                    json.dumps(results[0].model_dump(), indent=2),
-                    title="Structured",
-                    expand=False,
+                # Show formatted prompt
+                formatted = format_prompt(p)
+                console.print(
+                    Panel(
+                        formatted,
+                        title="[bold]Formatted[/bold]",
+                        style="green",
+                    )
                 )
-                console.print(panel)
+
+                # Show structured data
+                console.print(
+                    Panel(
+                        Syntax(
+                            p.model_dump_json(indent=2),
+                            "json",
+                            theme="monokai",
+                        ),
+                        title="[bold]Structured[/bold]",
+                    )
+                )
+
     except Exception as e:
-        _handle_error(Console(stderr=True), e)
+        _handle_error(console, e)
+
+
+class MidjargonCLI:
+    """Midjargon CLI interface."""
+
+    def __call__(
+        self,
+        prompt: str,
+        *,
+        raw: bool = False,
+        json_output: bool = False,  # -j is an alias for --json_output
+        no_color: bool = False,
+    ) -> None:
+        """
+        Parse and validate a Midjourney prompt.
+
+        Args:
+            prompt: The Midjourney prompt string to parse.
+            raw: If True, show the raw parsed structure before validation.
+            json_output: If True, output in JSON format (alias: -j).
+            no_color: If True, disable colored output.
+
+        Example prompts:
+            "A portrait of a wise old man --style raw --v 5.1"
+            "https://example.com/image1.jpg https://example.com/image2.jpg abstract fusion"
+            "A {red, blue, green} bird on a {branch, rock} --ar 16:9"
+            "futuristic city::2 cyberpunk aesthetic::1 --stylize 100"
+            "elephant {, --s {200, 300}}"
+        """
+        return main(prompt, raw=raw, json_output=json_output, no_color=no_color)
+
+    j = __call__  # Create alias for json_output as -j
 
 
 if __name__ == "__main__":
-    fire.Fire(main)
+    fire.Fire(MidjargonCLI())

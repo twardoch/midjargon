@@ -126,7 +126,7 @@ def parse_midjargon_prompt_to_dict(expanded_prompt: MidjargonPrompt) -> Midjargo
     for param, converter in numeric_params.items():
         if param in params and params[param] is not None:
             try:
-                params[param] = str(converter(params[param]))
+                params[param] = converter(params[param])
             except (ValueError, TypeError):
                 pass
 

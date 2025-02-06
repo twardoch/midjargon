@@ -170,21 +170,17 @@ def _format_part(before: str, option: str, after: str) -> str:
     """
     # Handle empty option
     if not option:
-        return before.rstrip() + "  " + after.lstrip()  # Double space for empty option
+        return before.rstrip() + after.lstrip()
 
-    # Handle parameters
-    if "--" in after:
-        return f"{before.rstrip()} {option} {after.lstrip()}"
-
-    # Handle spacing around the option
+    # Handle word boundaries
     result = before.rstrip()
     if result and not result.endswith(" "):
         result += " "
-    result += option
+    result += option.strip()
     if after and not after.startswith(" "):
         result += " "
     result += after.lstrip()
-    return result.strip()
+    return result.rstrip()
 
 
 def _add_spacing(before: str, after: str) -> tuple[str, str]:
@@ -252,7 +248,7 @@ def expand_single(text: str) -> list[str]:
     # Extract and process options
     options = _extract_options(text, i, j)
     if not options:  # Empty permutation
-        return [text[:i] + text[j + 1 :]]
+        return [_format_part(text[:i], "", text[j + 1 :])]
 
     # Generate permutations
     prefix = text[:i]
@@ -272,15 +268,7 @@ def expand_single(text: str) -> list[str]:
     # Format each option with proper spacing
     results = []
     for opt in expanded_options:
-        # Handle spacing around the option
-        result = prefix.rstrip()
-        if result and not result.endswith(" "):
-            result += " "
-        result += opt
-        if suffix and not suffix.startswith(" "):
-            result += " "
-        result += suffix.lstrip()
-        results.append(result.strip())
+        results.append(_format_part(prefix, opt, suffix))
 
     return results
 

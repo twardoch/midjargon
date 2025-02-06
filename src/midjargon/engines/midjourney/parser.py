@@ -2,153 +2,203 @@
 Parser for Midjourney engine.
 """
 
-from typing import Any, cast
+from typing import Any
 
+from midjargon.core.type_defs import MidjargonDict
 from midjargon.engines.base import EngineParser
 
-from ...core.type_defs import MidjargonDict
+from .constants import (
+    CHAOS_RANGE,
+    CHARACTER_WEIGHT_RANGE,
+    IMAGE_WEIGHT_RANGE,
+    QUALITY_RANGE,
+    REPEAT_RANGE,
+    SEED_RANGE,
+    STOP_RANGE,
+    STYLE_VERSION_RANGE,
+    STYLE_WEIGHT_RANGE,
+    STYLIZE_RANGE,
+    WEIRD_RANGE,
+)
 from .models import ImagePrompt, MidjourneyPrompt
 
 
 class MidjourneyParser(EngineParser[MidjourneyPrompt]):
     """Parser for Midjourney prompts."""
 
-    def _handle_numeric_param(
-        self, name: str, raw_value: str | list[str] | None
-    ) -> tuple[str, Any]:
-        """Handle numeric parameter conversion."""
-        # Handle p parameter separately since it can be a string or None
-        if name == "p":
-            return "personalization", raw_value if isinstance(raw_value, str) else None
+    def _normalize_value(self, value: str | list[str] | None) -> str | None:
+        """Convert a parameter value to a normalized string."""
+        if value is None:
+            return None
+        if isinstance(value, list):
+            return value[0] if value else None
+        return value
 
-        # Convert list to string if needed
-        if raw_value is None:
-            value = None
-        elif isinstance(raw_value, list):
-            value = raw_value[0]
-        else:
-            value = raw_value
-
-        # Define parameter mappings with their default values and conversion functions
-        param_map = {
-            ("stylize", "s"): ("stylize", lambda v: int(v) if v else None),
-            ("chaos", "c"): ("chaos", lambda v: int(v) if v else None),
-            ("weird",): ("weird", lambda v: int(v) if v else None),
-            ("iw",): ("image_weight", lambda v: float(v) if v else None),
-            ("seed",): ("seed", lambda v: int(v) if v else None),
-            ("stop",): ("stop", lambda v: int(v) if v else None),
-            ("quality", "q"): ("quality", lambda v: float(v) if v else None),
-            ("repeat", "r"): ("repeat", lambda v: int(v) if v else None),
-            ("character_weight", "cw"): (
-                "character_weight",
-                lambda v: int(v) if v else None,
-            ),
-            ("style_weight", "sw"): ("style_weight", lambda v: int(v) if v else None),
-            ("style_version", "sv"): ("style_version", lambda v: int(v) if v else None),
+    def _validate_numeric_range(self, name: str, value: int | float) -> None:
+        """Validate numeric value is within allowed range."""
+        ranges = {
+            "stylize": STYLIZE_RANGE,
+            "chaos": CHAOS_RANGE,
+            "weird": WEIRD_RANGE,
+            "image_weight": IMAGE_WEIGHT_RANGE,
+            "seed": SEED_RANGE,
+            "stop": STOP_RANGE,
+            "quality": QUALITY_RANGE,
+            "character_weight": CHARACTER_WEIGHT_RANGE,
+            "style_weight": STYLE_WEIGHT_RANGE,
+            "style_version": STYLE_VERSION_RANGE,
+            "repeat": REPEAT_RANGE,
         }
 
-        # Find matching parameter and convert value
-        for aliases, (param_name, converter) in param_map.items():
-            if name in aliases:
-                try:
-                    return param_name, converter(value)
-                except (ValueError, TypeError):
-                    return param_name, None
+        if name in ranges:
+            min_val, max_val = ranges[name]
+            if not min_val <= value <= max_val:
+                msg = (
+                    f"Value {value} for {name} must be between {min_val} and {max_val}"
+                )
+                raise ValueError(msg)
 
-        return "", None
+    def _handle_numeric_param(
+        self, name: str, raw_value: str | list[str] | None
+    ) -> tuple[str | None, Any]:
+        """Handle numeric parameter conversion."""
+        value = self._normalize_value(raw_value)
+        if value is None:
+            return None, None
+
+        # Handle shorthand names
+        name_map = {
+            "s": "stylize",
+            "c": "chaos",
+            "w": "weird",
+            "iw": "image_weight",
+            "q": "quality",
+            "cw": "character_weight",
+            "sw": "style_weight",
+            "sv": "style_version",
+            "r": "repeat",
+        }
+        name = name_map.get(name, name)
+
+        # Convert value to appropriate type
+        try:
+            if name == "stylize":
+                val = int(value)
+                self._validate_numeric_range(name, val)
+                return "stylize", val
+            if name == "chaos":
+                val = int(value)
+                self._validate_numeric_range(name, val)
+                return "chaos", val
+            if name == "weird":
+                val = int(value)
+                self._validate_numeric_range(name, val)
+                return "weird", val
+            if name == "image_weight":
+                val = float(value)
+                self._validate_numeric_range(name, val)
+                return "image_weight", val
+            if name == "seed":
+                val = int(value)
+                self._validate_numeric_range(name, val)
+                return "seed", val
+            if name == "stop":
+                val = int(value)
+                self._validate_numeric_range(name, val)
+                return "stop", val
+            if name == "quality":
+                val = float(value)
+                self._validate_numeric_range(name, val)
+                return "quality", val
+            if name == "character_weight":
+                val = int(value)
+                self._validate_numeric_range(name, val)
+                return "character_weight", val
+            if name == "style_weight":
+                val = int(value)
+                self._validate_numeric_range(name, val)
+                return "style_weight", val
+            if name == "style_version":
+                val = int(value)
+                self._validate_numeric_range(name, val)
+                return "style_version", val
+            if name == "repeat":
+                val = int(value)
+                self._validate_numeric_range(name, val)
+                return "repeat", val
+        except (ValueError, TypeError) as e:
+            msg = f"Invalid numeric value for {name}: {value}"
+            raise ValueError(msg) from e
+
+        return None, None
 
     def _handle_aspect_ratio(
         self, raw_value: str | list[str] | None
     ) -> tuple[int | None, int | None]:
-        """Handle aspect ratio parameter conversion."""
-        # Convert list to string if needed
-        if raw_value is None:
-            value = None
-        elif isinstance(raw_value, list):
-            value = raw_value[0]
-        else:
-            value = raw_value
-
-        if not value:
+        """Handle aspect ratio parameter."""
+        value = self._normalize_value(raw_value)
+        if value is None:
             return None, None
+
         try:
-            w, h = value.split(":")
-            return int(w), int(h)
-        except ValueError as e:
-            msg = "Invalid aspect ratio format. Expected w:h"
-            raise ValueError(msg) from e
+            if ":" in value:
+                w, h = value.split(":")
+                return int(w), int(h)
+            if "x" in value:
+                w, h = value.split("x")
+                return int(w), int(h)
+        except (ValueError, TypeError):
+            msg = "Invalid aspect ratio format. Expected w:h or wxh"
+            raise ValueError(msg)
+
+        msg = "Invalid aspect ratio format. Expected w:h or wxh"
+        raise ValueError(msg)
 
     def _handle_style_param(
         self, name: str, raw_value: str | list[str] | None
-    ) -> tuple[str, str | None]:
-        """Handle style parameter conversion."""
-        # Convert list to string if needed
-        if raw_value is None:
-            value = None
-        elif isinstance(raw_value, list):
-            value = raw_value[0]
-        else:
-            value = raw_value
+    ) -> tuple[str | None, Any]:
+        """Handle style parameter."""
+        value = self._normalize_value(raw_value)
+        if value is None:
+            return None, None
 
         if name == "style":
             return "style", value
-        elif name == "v" or name == "version":
-            if not value:
-                return "version", None
-            return "version", value if value.startswith("v") else f"v{value}"
-        elif name == "niji":
-            if not value:
-                return "version", "niji"
-            return "version", f"niji {value}"
-        elif name == "p" or name == "personalization":
-            return "personalization", value if value else ""
-        return "", None
+        return None, None
 
-    def _handle_reference_param(
+    def _handle_version_param(
         self, name: str, raw_value: str | list[str] | None
-    ) -> tuple[str, list[str]]:
-        """Handle reference parameter conversion."""
-        if raw_value is None:
-            return "", []
+    ) -> tuple[str | None, Any]:
+        """Handle version parameter."""
+        value = self._normalize_value(raw_value)
+        if value is None and name == "niji":
+            return "version", "niji"
+        if value is None:
+            return None, None
 
-        # Convert string to list if needed
-        if isinstance(raw_value, str):
-            values = raw_value.split(",")
-        else:
-            values = raw_value
+        if name in ("v", "version"):
+            return "version", f"v{value.lstrip('v')}"
+        if name == "niji":
+            return "version", f"niji {value}"
+        return None, None
 
-        # Filter out empty strings and strip whitespace
-        values = [v.strip() for v in values if v.strip()]
-
-        if name == "cref":
-            return "character_reference", values
-        elif name == "sref":
-            return "style_reference", values
-        return "", []
-
-    def _handle_flag_param(self, name: str) -> tuple[str, bool]:
-        """Handle flag parameter conversion."""
-        flag_map = {
-            "turbo": "turbo",
-            "relax": "relax",
-            "tile": "tile",
-        }
-        return flag_map.get(name, ""), True
+    def _handle_personalization_param(
+        self, name: str, raw_value: str | list[str] | None
+    ) -> tuple[str | None, Any]:
+        """Handle personalization parameter."""
+        value = self._normalize_value(raw_value)
+        if name == "p":
+            return "personalization", value if value else ""
+        return None, None
 
     def _handle_negative_prompt(
-        self, raw_value: str | list[str] | None
-    ) -> tuple[str, str | None]:
+        self, name: str, raw_value: str | list[str] | None
+    ) -> tuple[str | None, Any]:
         """Handle negative prompt parameter."""
-        if raw_value is None:
-            return "negative_prompt", None
-
-        # Convert list to string if needed
-        if isinstance(raw_value, list):
-            value = ", ".join(raw_value)
-        else:
-            value = raw_value
-
-        return "negative_prompt", value
+        value = self._normalize_value(raw_value)
+        if name == "no" and value is not None:
+            return "negative_prompt", value
+        return None, None
 
     def parse_dict(self, midjargon_dict: MidjargonDict) -> MidjourneyPrompt:
         """
@@ -192,38 +242,45 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
                     prompt_data["aspect_height"] = h
                 continue
 
-            # Handle style parameters
+            # Handle style parameter
             param_name, param_value = self._handle_style_param(name, value)
             if param_name:
                 prompt_data[param_name] = param_value
                 continue
 
-            # Handle reference parameters
-            param_name, param_value = self._handle_reference_param(name, value)
+            # Handle version parameter
+            param_name, param_value = self._handle_version_param(name, value)
             if param_name:
                 prompt_data[param_name] = param_value
                 continue
 
-            # Handle flag parameters
-            if value is None:  # Flag parameter
-                param_name, param_value = self._handle_flag_param(name)
-                if param_name:
-                    prompt_data[param_name] = param_value
-                    continue
+            # Handle personalization parameter
+            param_name, param_value = self._handle_personalization_param(name, value)
+            if param_name:
+                prompt_data[param_name] = param_value
+                continue
 
             # Handle negative prompt
-            if name == "no":
-                param_name, param_value = self._handle_negative_prompt(value)
-                if param_name:
-                    prompt_data[param_name] = param_value
-                    continue
+            param_name, param_value = self._handle_negative_prompt(name, value)
+            if param_name:
+                prompt_data[param_name] = param_value
+                continue
+
+            # Handle boolean flags
+            if name in ("turbo", "relax", "tile"):
+                if value is None:
+                    prompt_data[name] = True
+                else:
+                    norm_value = self._normalize_value(value)
+                    prompt_data[name] = (
+                        norm_value.lower() == "true" if norm_value else False
+                    )
+                continue
 
             # Store unknown parameters
-            if isinstance(value, list):
-                prompt_data["extra_params"][name] = value[0]
-            else:
-                prompt_data["extra_params"][name] = value
+            prompt_data["extra_params"][name] = value
 
+        # Create and validate prompt
         return MidjourneyPrompt(**prompt_data)
 
     def _format_numeric_params(self, prompt: MidjourneyPrompt) -> dict[str, str]:
@@ -377,7 +434,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             "style_version": None,
             "repeat": None,
         }
-        for name, default in int_params.items():
+        for name, _default in int_params.items():
             value = data.get(name)
             if value is not None:
                 try:
@@ -391,7 +448,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             "image_weight": None,
             "quality": None,
         }
-        for name, default in float_params.items():
+        for name, _default in float_params.items():
             value = data.get(name)
             if value is not None:
                 try:

@@ -145,12 +145,15 @@ def _expand_param_name(name: str) -> str:
     return shorthand_map.get(name, name)
 
 
-def _process_param_chunk(chunk: str) -> tuple[str, str | None]:
+def _process_param_chunk(
+    chunk: str, params: dict[str, str | None]
+) -> tuple[str, str | None]:
     """
     Process a parameter chunk into name and value.
 
     Args:
         chunk: Parameter chunk to process.
+        params: Dictionary to store parameters in.
 
     Returns:
         Tuple of (parameter name, parameter value).
@@ -183,6 +186,19 @@ def _process_param_chunk(chunk: str) -> tuple[str, str | None]:
     if value.startswith('"') and value.endswith('"'):
         value = value[1:-1]  # Remove quotes
 
+    # Handle special cases where parameters might be combined
+    if "--" in value:
+        # Split on -- and process each part
+        value_parts = value.split("--")
+        # Only take the first part as the value for this parameter
+        value = value_parts[0].strip()
+        # Process remaining parts as new parameters
+        for part in value_parts[1:]:
+            # Add the -- prefix back and process recursively
+            name_part, value_part = _process_param_chunk(f"--{part.strip()}", params)
+            if name_part:
+                params[name_part] = value_part
+
     expanded_name = _expand_param_name(name)
 
     # Special handling for niji parameter
@@ -190,15 +206,19 @@ def _process_param_chunk(chunk: str) -> tuple[str, str | None]:
         return "version", f"niji {value}"
 
     # Special handling for personalization parameter
-    if expanded_name == "personalization" or expanded_name == "p":
+    if expanded_name in ("personalization", "p"):
+        # Remove any trailing parameters if present
+        if "--" in value:
+            value = value.split("--")[0].strip()
         return "personalization", value
 
     # Special handling for version parameter
-    if expanded_name == "version" or expanded_name == "v":
-        # Remove 'v' prefix if present
-        if value.startswith("v"):
-            value = value[1:]
-        return "version", value
+    if expanded_name in ("version", "v"):
+        if not value:
+            return "version", None
+        if value.startswith("niji"):
+            return "version", value
+        return "version", value if value.startswith("v") else f"v{value}"
 
     return expanded_name, value
 
@@ -251,15 +271,17 @@ def parse_parameters(param_str: str) -> dict[str, str | None]:
     for chunk in chunks:
         if chunk.startswith("--"):
             if current_chunk:
-                name, value = _process_param_chunk(" ".join(current_chunk))
-                params[name] = value
+                name, value = _process_param_chunk(" ".join(current_chunk), params)
+                if name:  # Only add if name is not empty
+                    params[name] = value
                 current_chunk = []
             current_chunk.append(chunk)
         else:
             current_chunk.append(chunk)
 
     if current_chunk:
-        name, value = _process_param_chunk(" ".join(current_chunk))
-        params[name] = value
+        name, value = _process_param_chunk(" ".join(current_chunk), params)
+        if name:  # Only add if name is not empty
+            params[name] = value
 
     return params

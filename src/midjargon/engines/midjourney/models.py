@@ -3,6 +3,7 @@ Models for Midjourney engine.
 """
 
 import re
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -132,26 +133,29 @@ class MidjourneyPrompt(BaseModel):
         """Validate version value."""
         if v is None:
             return v
-        if v.startswith("v"):
-            version = v[1:]
-            if version not in VALID_VERSIONS:
-                msg = f"Invalid version value. Must be one of: {VALID_VERSIONS}"
-                raise ValueError(msg)
-        elif v.startswith("niji"):
-            version = v.split()[-1]
+
+        # Handle Niji version
+        if v.startswith("niji"):
+            parts = v.split()
+            if len(parts) == 1:  # Just "niji"
+                return v
+            version = parts[-1]
             if version not in VALID_NIJI_VERSIONS:
                 msg = f"Invalid niji version. Must be one of: {VALID_NIJI_VERSIONS}"
                 raise ValueError(msg)
-        else:
-            msg = "Version must start with 'v' or 'niji'"
+            return v
+
+        # Handle Midjourney version
+        version = v.lstrip("v")
+        if version not in VALID_VERSIONS:
+            msg = f"Invalid version value. Must be one of: {VALID_VERSIONS}"
             raise ValueError(msg)
-        return v
+        return v  # Return original value to preserve 'v' prefix
 
     @model_validator(mode="after")
-    @classmethod
-    def validate_mode_flags(cls, data: "MidjourneyPrompt") -> "MidjourneyPrompt":
+    def validate_mode_flags(self) -> Any:
         """Validate mode flag combinations."""
-        if data.turbo and data.relax:
+        if self.turbo and self.relax:
             msg = "Cannot use both turbo and relax modes"
             raise ValueError(msg)
-        return data
+        return self
