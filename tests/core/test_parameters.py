@@ -7,7 +7,8 @@
 
 import pytest
 
-from midjargon.midjargon import parse_parameters, split_text_and_parameters
+from midjargon.core.parameters import parse_parameters
+from midjargon.core.parser import split_text_and_parameters
 
 
 def test_basic_parameter_parsing():

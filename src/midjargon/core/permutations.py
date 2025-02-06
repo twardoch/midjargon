@@ -12,6 +12,8 @@ Supports nested permutations and proper spacing handling.
 
 from collections.abc import Sequence
 
+from .type_defs import MidjargonList
+
 # Constants
 ESCAPE_SEQUENCE_LENGTH = 2  # Length of escape sequence: backslash + character
 
@@ -126,7 +128,7 @@ def _add_spacing(before: str, after: str) -> tuple[str, str]:
     return before, after
 
 
-def _expand_nested(options: Sequence[str]) -> list[str]:
+def _expand_nested(options: Sequence[str]) -> MidjargonList:
     """
     Recursively expand any nested permutations in options.
 
@@ -145,7 +147,7 @@ def _expand_nested(options: Sequence[str]) -> list[str]:
     return expanded
 
 
-def expand_single(text: str) -> list[str]:
+def expand_single(text: str) -> MidjargonList:
     """
     Expand a single level of permutation in text.
 
@@ -185,7 +187,7 @@ def expand_single(text: str) -> list[str]:
     return [r.strip() for r in results]
 
 
-def expand_text(text: str) -> list[str]:
+def expand_text(text: str) -> MidjargonList:
     """
     Expand all permutations in text into separate complete prompts.
 

@@ -5,8 +5,7 @@
 
 """Tests for permutation handling functionality."""
 
-from midjargon.midjargon import expand_permutations
-from midjargon.permutations import split_options
+from midjargon.core.permutations import expand_permutations, split_options
 
 
 def test_simple_permutation():
