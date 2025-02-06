@@ -57,7 +57,7 @@ def _format_style_params(prompt: MidjourneyPrompt) -> list[str]:
     if prompt.version:
         if prompt.version.startswith("niji"):
             params.append(
-                f"--niji{' ' + prompt.version[5:] if len(prompt.version) > NIJI_PREFIX_LENGTH else ''}"
+                f"--niji{' ' + prompt.version[NIJI_PREFIX_LENGTH:] if len(prompt.version) > NIJI_PREFIX_LENGTH else ''}"
             )
         else:
             params.append(f"--v {prompt.version[1:]}")
@@ -116,10 +116,7 @@ def _handle_error(console: Console, error: Exception) -> NoReturn:
 
 def _output_json(data: Any) -> None:
     """Output data as formatted JSON."""
-    if isinstance(data, (list, dict)):
-        print(json.dumps(data, indent=2))
-    else:
-        print(json.dumps(data.model_dump(), indent=2))
+    print(json.dumps(data, indent=2))
 
 
 def process_prompt(prompt: str) -> list[MidjourneyPrompt]:

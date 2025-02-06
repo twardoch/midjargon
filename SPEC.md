@@ -593,6 +593,8 @@ Stops image generation at a specified percentage of completion for different art
 - Process all permutation groups `{...}`.
 - Handle nested permutations.
 - Expand into individual prompts.
+- `a{b, c}d` should expand to `abd` `acd`. The spaces right around the `{` and `}` should be treated as they are. Spaces around the separating commas can be collapsed fully, as if there is no space.
+- `\{` `\}` `\,` must produce the literal `{` `}` `,` in the expanded permutations
 
 2. **Image referece:**
 
@@ -613,6 +615,7 @@ Stops image generation at a specified percentage of completion for different art
 - Parse parameter values.
 - Handle boolean flags.
 - Validate parameter ranges.
+- Values should be typically strings, unless it’s obviously an int or float. Version "number" should be kept a string.
 
 ### Boolean Parameters
 

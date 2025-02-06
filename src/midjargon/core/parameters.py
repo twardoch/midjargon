@@ -89,7 +89,7 @@ def validate_param_value(name: str, value: ParamValue) -> None:
             raise ValueError(msg)
         for item in value:
             if not any(
-                item.lower().endswith(ext) for ext in {".jpg", ".jpeg", ".png", ".gif"}
+                item.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".gif")
             ):
                 msg = f"Invalid reference file extension for {name}: {item}"
                 raise ValueError(msg)
@@ -104,27 +104,50 @@ def validate_param_value(name: str, value: ParamValue) -> None:
         "quality",
         "character_weight",
         "style_weight",
+        "style_version",
         "repeat",
+        "seed",
+        "stop",
     }:
         try:
-            num = float(value)
-            if num < 0:
-                msg = f"Parameter {name} cannot be negative: {value}"
+            num_value = float(value)
+            if num_value < 0:
+                msg = f"Negative value not allowed for {name}: {value}"
+                raise ValueError(msg)
+            if name == "stylize" and num_value > 1000:
+                msg = f"Stylize value too high: {value}"
+                raise ValueError(msg)
+            if name == "chaos" and num_value > 100:
+                msg = f"Chaos value too high: {value}"
+                raise ValueError(msg)
+            if name == "weird" and num_value > 3000:
+                msg = f"Weird value too high: {value}"
+                raise ValueError(msg)
+            if name == "image_weight" and num_value > 2:
+                msg = f"Image weight value too high: {value}"
                 raise ValueError(msg)
         except ValueError as e:
             msg = f"Invalid numeric value for {name}: {value}"
             raise ValueError(msg) from e
 
-    # Validate version parameter
+    # Validate version string
     if name == "version":
-        if not value.replace(".", "").isdigit() and not value.startswith("niji"):
-            msg = f"Invalid version value: {value}"
-            raise ValueError(msg)
+        # Handle numeric version (add v prefix)
+        if value.replace(".", "").isdigit():
+            return
+        # Handle niji version
+        if value.startswith("niji"):
+            return
+        # Handle v prefix
+        if value.startswith("v") and value[1:].replace(".", "").isdigit():
+            return
+        msg = f"Invalid version format: {value}"
+        raise ValueError(msg)
 
     # Validate reference parameters
     if name in {"character_reference", "style_reference"}:
         if not any(
-            value.lower().endswith(ext) for ext in {".jpg", ".jpeg", ".png", ".gif"}
+            value.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".gif")
         ):
             msg = f"Invalid reference file extension for {name}: {value}"
             raise ValueError(msg)
@@ -187,7 +210,7 @@ def process_param_value(values: list[str]) -> str | None:
 
     # Handle reference files
     if "," in value and any(
-        ext in value.lower() for ext in {".jpg", ".jpeg", ".png", ".gif"}
+        ext in value.lower() for ext in (".jpg", ".jpeg", ".png", ".gif")
     ):
         # Split on commas and clean up each file path
         files = [f.strip() for f in value.split(",")]
@@ -317,8 +340,6 @@ def parse_parameters(param_str: str) -> ParamDict:
         ValueError: If parameter format is invalid.
     """
     params: ParamDict = {}
-    current_param = ""
-    current_values = []
 
     # Split into chunks and process each
     chunks = param_str.split("--")
@@ -339,27 +360,29 @@ def parse_parameters(param_str: str) -> ParamDict:
         # Process value
         if is_flag:
             if value is None:
-                params[expanded_name] = None
+                if expanded_name == "version":
+                    params[expanded_name] = "niji"  # Default for --niji
+                elif expanded_name == "personalization":
+                    params[expanded_name] = ""  # Default for --p
+                else:
+                    params[expanded_name] = None
             else:
                 params[expanded_name] = value
-        else:
-            if value is not None:
-                processed_value = process_param_value([value])
-                validate_param_value(expanded_name, processed_value)
+        elif value is not None:
+            processed_value = process_param_value([value])
+            validate_param_value(expanded_name, processed_value)
 
-                # Handle reference parameters specially
-                if (
-                    expanded_name in {"character_reference", "style_reference"}
-                    and processed_value
-                ):
-                    # Convert comma-separated list to actual list
-                    params[expanded_name] = [
-                        f.strip() for f in processed_value.split(",")
-                    ]
-                else:
-                    params[expanded_name] = processed_value
+            # Handle reference parameters specially
+            if (
+                expanded_name in {"character_reference", "style_reference"}
+                and processed_value
+            ):
+                # Convert comma-separated list to actual list
+                params[expanded_name] = processed_value
             else:
-                msg = f"Missing value for parameter: {name}"
-                raise ValueError(msg)
+                params[expanded_name] = processed_value
+        else:
+            msg = f"Missing value for parameter: {name}"
+            raise ValueError(msg)
 
     return params

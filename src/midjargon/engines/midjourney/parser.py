@@ -26,12 +26,12 @@ from .models import ImagePrompt, MidjourneyPrompt
 class MidjourneyParser(EngineParser[MidjourneyPrompt]):
     """Parser for Midjourney prompts."""
 
-    def _normalize_value(self, value: str | list[str] | None) -> str | None:
-        """Convert a parameter value to a normalized string."""
+    def _normalize_value(self, value: str | list[str] | None) -> str | list[str] | None:
+        """Convert a parameter value to a normalized string or list."""
         if value is None:
             return None
         if isinstance(value, list):
-            return value[0] if value else None
+            return value if value else None
         return value
 
     def _validate_numeric_range(self, name: str, value: int | float) -> None:
@@ -79,6 +79,12 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             "r": "repeat",
         }
         name = name_map.get(name, name)
+
+        # Convert value to string if it's a list
+        if isinstance(value, list):
+            value = value[0] if value else None
+            if value is None:
+                return None, None
 
         # Convert value to appropriate type
         try:
@@ -135,70 +141,127 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
     def _handle_aspect_ratio(
         self, raw_value: str | list[str] | None
     ) -> tuple[int | None, int | None]:
-        """Handle aspect ratio parameter."""
+        """Handle aspect ratio parameter conversion."""
         value = self._normalize_value(raw_value)
         if value is None:
             return None, None
 
-        try:
-            if ":" in value:
-                w, h = value.split(":")
-                return int(w), int(h)
-            if "x" in value:
-                w, h = value.split("x")
-                return int(w), int(h)
-        except (ValueError, TypeError):
-            msg = "Invalid aspect ratio format. Expected w:h or wxh"
-            raise ValueError(msg)
+        # Convert value to string if it's a list
+        if isinstance(value, list):
+            value = value[0] if value else None
+            if value is None:
+                return None, None
 
-        msg = "Invalid aspect ratio format. Expected w:h or wxh"
-        raise ValueError(msg)
+        try:
+            width_str, height_str = value.split(":")
+            width = int(width_str)
+            height = int(height_str)
+            return width, height
+        except (ValueError, AttributeError) as e:
+            msg = f"Invalid aspect ratio format: {value}"
+            raise ValueError(msg) from e
 
     def _handle_style_param(
         self, name: str, raw_value: str | list[str] | None
     ) -> tuple[str | None, Any]:
-        """Handle style parameter."""
+        """Handle style parameter conversion."""
         value = self._normalize_value(raw_value)
         if value is None:
             return None, None
 
-        if name == "style":
-            return "style", value
-        return None, None
+        # Convert value to string if it's a list
+        if isinstance(value, list):
+            value = value[0] if value else None
+            if value is None:
+                return None, None
+
+        return "style", value
 
     def _handle_version_param(
         self, name: str, raw_value: str | list[str] | None
     ) -> tuple[str | None, Any]:
-        """Handle version parameter."""
+        """Handle version parameter conversion."""
         value = self._normalize_value(raw_value)
-        if value is None and name == "niji":
-            return "version", "niji"
         if value is None:
             return None, None
 
-        if name in ("v", "version"):
-            return "version", f"v{value.lstrip('v')}"
+        # Convert value to string if it's a list
+        if isinstance(value, list):
+            value = value[0] if value else None
+            if value is None:
+                return None, None
+
+        # Handle niji version
         if name == "niji":
-            return "version", f"niji {value}"
-        return None, None
+            if value:
+                return "version", f"niji {value}"
+            return "version", "niji"
+
+        # Handle regular version
+        if not value.startswith("v"):
+            value = f"v{value}"
+        return "version", value
 
     def _handle_personalization_param(
         self, name: str, raw_value: str | list[str] | None
     ) -> tuple[str | None, Any]:
-        """Handle personalization parameter."""
+        """Handle personalization parameter conversion."""
         value = self._normalize_value(raw_value)
-        if name == "p":
-            return "personalization", value if value else ""
-        return None, None
+        if value is None:
+            return None, None
+
+        # Convert value to string if it's a list
+        if isinstance(value, list):
+            value = value[0] if value else None
+            if value is None:
+                return None, None
+
+        return "personalization", value
 
     def _handle_negative_prompt(
         self, name: str, raw_value: str | list[str] | None
     ) -> tuple[str | None, Any]:
-        """Handle negative prompt parameter."""
+        """Handle negative prompt parameter conversion."""
         value = self._normalize_value(raw_value)
-        if name == "no" and value is not None:
-            return "negative_prompt", value
-        return None, None
+        if value is None:
+            return None, None
+
+        # Convert value to string if it's a list
+        if isinstance(value, list):
+            value = value[0] if value else None
+            if value is None:
+                return None, None
+
+        return "negative_prompt", value
+
+    def _handle_reference_param(
+        self, name: str, raw_value: str | list[str] | None
+    ) -> tuple[str | None, list[str] | None]:
+        """Handle reference parameter conversion."""
+        value = self._normalize_value(raw_value)
+        if value is None:
+            return None, None
+
+        # Handle shorthand names
+        name_map = {
+            "cref": "character_reference",
+            "sref": "style_reference",
+        }
+        name = name_map.get(name, name)
+
+        # Convert value to list if needed
+        if isinstance(value, str):
+            value = [value]
+
+        # Validate file extensions
+        for ref in value:
+            if not any(
+                ref.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".gif")
+            ):
+                msg = f"Invalid reference file extension for {name}: {ref}"
+                raise ValueError(msg)
+
+        return name, value
 
     def parse_dict(self, midjargon_dict: MidjargonDict) -> MidjourneyPrompt:
         """
@@ -266,6 +329,12 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
                 prompt_data[param_name] = param_value
                 continue
 
+            # Handle reference parameter
+            param_name, param_value = self._handle_reference_param(name, value)
+            if param_name:
+                prompt_data[param_name] = param_value
+                continue
+
             # Handle boolean flags
             if name in ("turbo", "relax", "tile"):
                 if value is None:
@@ -311,32 +380,42 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         return params
 
     def _format_style_params(self, prompt: MidjourneyPrompt) -> dict[str, str]:
-        """Format style parameters for dictionary output."""
+        """Format style parameters for output."""
         params = {}
-        if prompt.style is not None:
+        if prompt.style:
             params["style"] = prompt.style
-        if prompt.version is not None:
-            if prompt.version.startswith("niji"):
-                params["niji"] = prompt.version[5:].strip()
+        if prompt.version:
+            # Convert value to string if it's a list
+            version = (
+                prompt.version[0]
+                if isinstance(prompt.version, list)
+                else prompt.version
+            )
+            if version.lower().startswith("niji"):
+                params["niji"] = version[5:] if len(version) > 4 else ""
             else:
-                params["v"] = prompt.version[1:]
-        if prompt.personalization is not None:
-            params["p"] = prompt.personalization
+                params["v"] = version[1:]
         return params
 
     def _format_reference_params(
         self, prompt: MidjourneyPrompt
     ) -> dict[str, list[str]]:
-        """Format reference parameters for dictionary output."""
+        """Format reference parameters for output."""
         params = {}
         if prompt.character_reference:
-            params["cref"] = prompt.character_reference
+            params["cref"] = [
+                ref[0] if isinstance(ref, list) else ref
+                for ref in prompt.character_reference
+            ]
         if prompt.style_reference:
-            params["sref"] = prompt.style_reference
+            params["sref"] = [
+                ref[0] if isinstance(ref, list) else ref
+                for ref in prompt.style_reference
+            ]
         return params
 
     def _format_flag_params(self, prompt: MidjourneyPrompt) -> dict[str, None]:
-        """Format flag parameters for dictionary output."""
+        """Format flag parameters for output."""
         params = {}
         if prompt.turbo:
             params["turbo"] = None

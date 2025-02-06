@@ -48,16 +48,17 @@ class EngineParser(ABC, Generic[T]):
             midjargon_dict: Dictionary from basic parser containing:
                 - "text": The main prompt text
                 - "images": List of image URLs (if any)
-                - Additional parameter key/value pairs
+                - "parameters": Dictionary of parameter name/value pairs
 
         Returns:
-            Engine-specific prompt type.
+            An engine-specific prompt object.
 
         Raises:
-            ValueError: If any values are invalid according to engine rules.
-            TypeError: If any values cannot be converted to required types.
+            ValueError: If the input dictionary is invalid for this engine.
         """
-        pass
+        if not midjargon_dict.get("text") and not midjargon_dict.get("images"):
+            msg = "Empty prompt: must provide text or image URLs"
+            raise ValueError(msg)
 
     @abstractmethod
     def to_dict(self, prompt: T) -> dict[str, Any]:

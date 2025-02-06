@@ -102,63 +102,24 @@ def _find_matching_brace(text: str, start: int) -> int:
 
 def _extract_options(text: str, start: int, end: int) -> list[str]:
     """
-    Extract comma-separated options from text between braces.
+    Extract options from a permutation group.
 
     Args:
-        text: Text to extract from.
-        start: Start position (after opening brace).
-        end: End position (before closing brace).
+        text: Full text containing permutation.
+        start: Start index of opening brace.
+        end: End index of closing brace.
 
     Returns:
-        List of options.
+        List of extracted options.
     """
-    # Extract the text between braces
-    options_text = text[start + 1 : end]
-
-    # Split on commas and handle escaped braces
-    options = []
-    current = []
-    i = 0
-    depth = 0
-
-    while i < len(options_text):
-        if i > 0 and options_text[i - 1] == "\\" and options_text[i] in {"{", "}", ","}:
-            current.append(options_text[i])
-            i += 1
-            continue
-
-        if options_text[i] == "{":
-            depth += 1
-            current.append(options_text[i])
-        elif options_text[i] == "}":
-            depth -= 1
-            current.append(options_text[i])
-        elif options_text[i] == "," and depth == 0:
-            opt = "".join(current).strip()
-            if opt or not options:  # Include empty options if it's the first one
-                # Handle word boundaries
-                if " " in opt:
-                    opt = " ".join(part.strip() for part in opt.split())
-                options.append(opt)
-            current = []
-        else:
-            current.append(options_text[i])
-        i += 1
-
-    # Handle the last option
-    opt = "".join(current).strip()
-    if opt or not options:  # Include empty options if no other options exist
-        # Handle word boundaries
-        if " " in opt:
-            opt = " ".join(part.strip() for part in opt.split())
-        options.append(opt)
-
-    return options
+    # Extract text between braces
+    inner_text = text[start + 1 : end]
+    return split_options(inner_text)
 
 
 def _format_part(before: str, option: str, after: str) -> str:
     """
-    Format a permutation part with proper spacing.
+    Format a part of the expanded text with proper spacing.
 
     Args:
         before: Text before the permutation.
@@ -170,29 +131,14 @@ def _format_part(before: str, option: str, after: str) -> str:
     """
     # Handle empty option
     if not option:
-        return before.rstrip() + " " + after.lstrip()
+        # Ensure we keep one space between words
+        if before.rstrip() and after.lstrip():
+            return before.rstrip() + " " + after.lstrip()
+        return before.rstrip() + after.lstrip()
 
-    # Handle word boundaries
-    result = []
-
-    # Add before text
-    if before:
-        result.append(before.rstrip())
-        # Add space if before ends with alphanumeric and option starts with alphanumeric
-        if before.rstrip()[-1:].isalnum() and option.lstrip()[:1].isalnum():
-            result.append(" ")
-
-    # Add option
-    result.append(option.strip())
-
-    # Add after text
-    if after:
-        # Add space if option ends with alphanumeric and after starts with alphanumeric
-        if option.rstrip()[-1:].isalnum() and after.lstrip()[:1].isalnum():
-            result.append(" ")
-        result.append(after.lstrip())
-
-    return "".join(result)
+    # Add proper spacing
+    before_spaced, after_spaced = _add_spacing(before, after)
+    return before_spaced + option + after_spaced
 
 
 def _add_spacing(before: str, after: str) -> tuple[str, str]:
