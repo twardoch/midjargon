@@ -50,7 +50,10 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         # Find matching parameter and convert value
         for aliases, (param_name, converter) in param_map.items():
             if name in aliases:
-                return param_name, converter(value)
+                try:
+                    return param_name, converter(value)
+                except (ValueError, TypeError):
+                    return param_name, None
 
         return "", None
 
