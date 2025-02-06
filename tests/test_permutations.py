@@ -5,8 +5,6 @@
 
 """Tests for permutation handling functionality."""
 
-import pytest
-
 from midjargon.midjargon import expand_permutations
 from midjargon.permutations import split_options
 
@@ -74,14 +72,17 @@ def test_split_permutation_options():
 
 def test_invalid_permutations():
     """Test handling of invalid permutation syntax."""
-    with pytest.raises(ValueError):
-        expand_permutations("a {red, blue bird")  # Unclosed brace
+    # Unclosed brace - should be treated as literal
+    result = expand_permutations("a {red, blue bird")
+    assert result == ["a {red, blue bird"]
 
-    with pytest.raises(ValueError):
-        expand_permutations("a red} bird")  # Unopened brace
+    # Unopened brace - should be treated as literal
+    result = expand_permutations("a red} bird")
+    assert result == ["a red} bird"]
 
-    with pytest.raises(ValueError):
-        expand_permutations("a {{red}} bird")  # Double nested empty group
+    # Double nested group - should be expanded normally
+    result = expand_permutations("a {{red}} bird")
+    assert result == ["a red bird"]
 
 
 def test_permutations_with_parameters():
