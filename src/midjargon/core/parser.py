@@ -17,7 +17,7 @@ from .parameters import parse_parameters
 from .type_defs import MidjargonDict, MidjargonPrompt
 
 
-def _split_text_and_params(text: str) -> tuple[str, str]:
+def split_text_and_parameters(text: str) -> tuple[str, str]:
     """
     Split text into main text and parameters at first non-nested --.
 
@@ -103,7 +103,7 @@ def parse_midjargon_prompt_to_dict(expanded_prompt: MidjargonPrompt) -> Midjargo
 
     # Split remaining text into main text and parameters
     main_text = " ".join(remaining)
-    text_part, param_part = _split_text_and_params(main_text)
+    text_part, param_part = split_text_and_parameters(main_text)
 
     # Validate that there is actual text content
     if not text_part and not urls:

@@ -124,12 +124,17 @@ Contributions are welcome! Please feel free to submit a Pull Request. Some ways 
 1. Clone the repository
 2. Install development dependencies:
    ```bash
-   pip install -e ".[dev]"
+   uv pip install --system --upgrade ".[all]"
    ```
 3. Run tests:
    ```bash
-   pytest
+   python -m pytest
    ```
+   or 
+    ```bash
+   python -m pytest
+   ```
+
 4. Format code:
    ```bash
    ruff check --fix --unsafe-fixes . && ruff format --respect-gitignore --target-version py312 .

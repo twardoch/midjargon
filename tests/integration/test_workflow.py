@@ -5,7 +5,6 @@
 
 """Integration tests for complete midjargon workflow."""
 
-
 import pytest
 
 from midjargon import expand_midjargon_input, parse_midjargon_prompt_to_dict
