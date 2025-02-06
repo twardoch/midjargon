@@ -26,5 +26,8 @@ def expand_midjargon_input(prompt: MidjargonInput) -> MidjargonList:
         msg = "Empty prompt"
         raise ValueError(msg)
 
-    # Here we simply reuse the existing permutation expansion.
-    return expand_text(prompt)
+    # Handle escaped braces by temporarily replacing them
+    processed = prompt.replace(r"\{", "‹").replace(r"\}", "›")
+    expanded = expand_text(processed)
+    # Restore escaped braces
+    return [text.replace("‹", "{").replace("›", "}") for text in expanded]

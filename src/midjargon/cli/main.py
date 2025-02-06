@@ -163,7 +163,7 @@ def main(
         no_color: Whether to disable color output.
     """
     try:
-        if not prompt:
+        if not prompt.strip():
             msg = "Empty prompt"
             raise ValueError(msg)
 
@@ -173,7 +173,7 @@ def main(
         if json_output:
             # Convert results to JSON-serializable format and output
             output = [result.model_dump() for result in results]
-            _output_json(output)
+            print(json.dumps(output, indent=2))
             return
 
         # Format output

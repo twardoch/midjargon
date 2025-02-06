@@ -86,12 +86,12 @@ def _find_matching_brace(text: str, start: int) -> int:
     pos = start + 1
     while pos < len(text):
         # Check for escaped braces
-        if pos > 0 and text[pos - 1] == "\\" and text[pos] in {"{", "}"}:
+        if text[pos - 1] == "\\" and text[pos] in {"{", "}"}:
             pos += 1
             continue
-        if text[pos] == "{":
+        if text[pos] == "{" and (pos == 0 or text[pos - 1] != "\\"):
             depth += 1
-        elif text[pos] == "}":
+        elif text[pos] == "}" and (pos == 0 or text[pos - 1] != "\\"):
             depth -= 1
             if depth == 0:
                 return pos
@@ -118,29 +118,36 @@ def _extract_options(text: str, start: int, end: int) -> list[str]:
     # Split on commas and handle escaped braces
     options = []
     current = []
-    escaped = False
+    i = 0
+    depth = 0
 
-    for char in options_text:
-        if escaped:
-            if char in {"{", "}", ","}:
-                current.append(char)
-            else:
-                current.extend(["\\", char])
-            escaped = False
-        elif char == "\\":
-            escaped = True
-        elif char == ",":
-            options.append("".join(current).strip())
+    while i < len(options_text):
+        if i > 0 and options_text[i - 1] == "\\" and options_text[i] in {"{", "}", ","}:
+            current.append(options_text[i])
+            i += 1
+            continue
+
+        if options_text[i] == "{":
+            depth += 1
+            current.append(options_text[i])
+        elif options_text[i] == "}":
+            depth -= 1
+            current.append(options_text[i])
+        elif options_text[i] == "," and depth == 0:
+            opt = "".join(current).strip()
+            if opt or not options:  # Include empty options if it's the first one
+                options.append(opt)
             current = []
         else:
-            current.append(char)
+            current.append(options_text[i])
+        i += 1
 
     # Add the last option
-    if current:
-        options.append("".join(current).strip())
+    opt = "".join(current).strip()
+    if opt or not options:  # Include empty options if no other options exist
+        options.append(opt)
 
-    # Filter out empty options and normalize whitespace
-    return [opt for opt in options if opt.strip()]
+    return options
 
 
 def _format_part(before: str, option: str, after: str) -> str:
@@ -239,12 +246,37 @@ def expand_single(text: str) -> list[str]:
     options = _extract_options(text, i, j)
     if not options:  # Empty permutation
         # Return text without the empty braces
-        return [text[:i] + text[j + 1 :]]
+        return [text[:i].rstrip() + text[j + 1 :].lstrip()]
 
     # Generate permutations
     prefix = text[:i]
     suffix = text[j + 1 :]
-    return [f"{prefix}{opt}{suffix}" for opt in options]
+
+    # Handle nested permutations
+    expanded_options = []
+    for opt in options:
+        if opt == "":  # Handle empty option
+            expanded_options.append("")
+        elif "{" in opt:
+            expanded = expand_text(opt)
+            expanded_options.extend(expanded)
+        else:
+            expanded_options.append(opt)
+
+    # Format each option with proper spacing
+    results = []
+    for opt in expanded_options:
+        # Handle spacing around the option
+        result = prefix.rstrip()
+        if result and not result.endswith(" ") and opt:
+            result += " "
+        result += opt
+        if suffix and not suffix.startswith(" ") and opt:
+            result += " "
+        result += suffix.lstrip()
+        results.append(result.strip())
+
+    return results
 
 
 def expand_text(text: str) -> MidjargonList:

@@ -195,7 +195,10 @@ def _process_param_chunk(chunk: str) -> tuple[str, str | None]:
 
     # Special handling for version parameter
     if expanded_name == "version" or expanded_name == "v":
-        return "version", value if value.startswith("v") else f"v{value}"
+        # Remove 'v' prefix if present
+        if value.startswith("v"):
+            value = value[1:]
+        return "version", value
 
     return expanded_name, value
 

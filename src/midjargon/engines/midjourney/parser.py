@@ -416,7 +416,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         for name in reference_lists:
             value = data.get(name, [])
             if not isinstance(value, list):
-                value = [value]
+                value = [str(value)] if value else []
             reference_lists[name] = [str(v) for v in value if v]
 
         # Convert boolean flags
@@ -438,13 +438,16 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         if not isinstance(extra_params, dict):
             extra_params = {}
 
+        # Handle negative prompt
+        negative_prompt = data.get("negative_prompt")
+        if negative_prompt is not None:
+            negative_prompt = str(negative_prompt)
+
         # Create prompt object with explicit parameter groups
         return MidjourneyPrompt(
             text=text,
             image_prompts=image_prompts,
-            negative_prompt=str(data.get("negative_prompt"))
-            if data.get("negative_prompt")
-            else None,
+            negative_prompt=negative_prompt,
             extra_params=extra_params,
             stylize=int_params["stylize"],
             chaos=int_params["chaos"],
