@@ -91,7 +91,7 @@ def parse_midjargon_prompt_to_dict(expanded_prompt: MidjargonPrompt) -> Midjargo
     Raises:
         ValueError: If the prompt is empty or invalid.
     """
-    if not expanded_prompt.strip():
+    if not expanded_prompt or not expanded_prompt.strip():
         msg = "Empty prompt"
         raise ValueError(msg)
 

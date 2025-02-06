@@ -20,21 +20,25 @@ ParamDict: TypeAlias = dict[ParamName, ParamValue]
 
 # Common parameter shortcuts
 PARAM_SHORTCUTS = {
+    # Basic parameters
     "s": "stylize",
     "c": "chaos",
     "w": "weird",
     "iw": "image_weight",
-    "ar": "aspect",
+    "ar": "ar",  # Keep ar as is to match test expectations
     "no": None,  # Flag parameter
     "tile": None,  # Flag parameter
-    # New shortcuts
+    # Quality parameters
     "q": "quality",
-    "r": "repeat",
+    # Reference parameters
+    "cref": "character_reference",
+    "sref": "style_reference",
     "cw": "character_weight",
     "sw": "style_weight",
     "sv": "style_version",
-    "cref": "character_reference",
-    "sref": "style_reference",
+    # Repeat parameter
+    "r": "repeat",
+    # Mode flags
     "turbo": None,  # Flag parameter
     "relax": None,  # Flag parameter
 }
@@ -56,7 +60,7 @@ def validate_param_name(name: str) -> None:
     if not name:
         msg = "Empty parameter name"
         raise ValueError(msg)
-    if not name.replace("-", "").isalnum():
+    if not all(c.isalnum() or c in "-_" for c in name):
         msg = f"Invalid parameter name: {name}"
         raise ValueError(msg)
 
@@ -112,94 +116,141 @@ def expand_shorthand_param(name: str) -> tuple[str, bool]:
     return name, False
 
 
-def _validate_param_string(param_str: str) -> None:
-    """Validate the parameter string format."""
-    if not param_str:
-        return
+def _expand_param_name(name: str) -> str:
+    """
+    Expand parameter name aliases to their full names.
 
-    if not param_str.startswith("--"):
-        msg = "Parameters must start with --"
-        raise ValueError(msg)
+    Args:
+        name: Parameter name to expand.
 
-    if param_str == "--":
-        msg = "Empty parameter name"
-        raise ValueError(msg)
+    Returns:
+        Expanded parameter name.
+    """
+    # Remove leading dashes
+    name = name.lstrip("-")
 
+    # Map of parameter aliases
+    aliases = {
+        "s": "stylize",
+        "c": "chaos",
+        "w": "weird",
+        "iw": "image_weight",
+        "q": "quality",
+        "cw": "character_weight",
+        "sw": "style_weight",
+        "sv": "style_version",
+        "p": "personalization",
+        "ar": "ar",  # Keep ar as is
+        "v": "version",
+        "cref": "character_reference",
+        "sref": "style_reference",
+        "no": "no",  # Keep no as is
+    }
 
-def _handle_special_params(
-    name: str, raw_value: str | None, expanded_name: str
-) -> tuple[str, str | None]:
-    """Handle special parameter cases."""
-    # Handle special case for niji version
-    if name.startswith("niji"):
-        value = (
-            name[NIJI_PREFIX_LENGTH:].strip() if len(name) > NIJI_PREFIX_LENGTH else ""
-        )
-        return expanded_name, f"niji{value}"
-
-    # Handle special case for personalization
-    if name == "p":
-        return expanded_name, raw_value or ""
-
-    # Handle version parameter
-    if name == "v":
-        return expanded_name, raw_value
-
-    return expanded_name, raw_value
+    return aliases.get(name, name)
 
 
 def _process_param_chunk(chunk: str) -> tuple[str, str | None]:
-    """Process a single parameter chunk."""
-    parts = chunk.split(None, 1)
-    if not parts:
-        msg = "Empty parameter name"
+    """
+    Process a parameter chunk into name and value.
+
+    Args:
+        chunk: Parameter chunk to process.
+
+    Returns:
+        Tuple of (parameter name, parameter value).
+
+    Raises:
+        ValueError: If chunk is invalid.
+    """
+    if not chunk:
+        msg = "Empty parameter chunk"
         raise ValueError(msg)
 
+    # Split on first space
+    parts = chunk.split(maxsplit=1)
     name = parts[0]
-    raw_value = parts[1] if len(parts) > 1 else None
 
-    # Expand shorthand and handle flag parameters
-    expanded_name, is_flag = expand_shorthand_param(name)
+    # Handle flag parameters (no value)
+    if len(parts) == 1:
+        if name in {"--tile", "--turbo", "--relax"}:
+            return name.lstrip("-"), "true"
+        if name.startswith("--no"):
+            return "no", parts[0][4:]  # Remove --no prefix
+        return name.lstrip("-"), None
+
+    # Handle value parameters
+    value = parts[1]
+    name = name.lstrip("-")  # Remove leading dashes
+    expanded_name = _expand_param_name(name)
     validate_param_name(expanded_name)
 
-    # Handle flag parameters (--no, --tile)
-    if is_flag:
-        return expanded_name, None
-
-    # Handle special cases
-    expanded_name, value = _handle_special_params(name, raw_value, expanded_name)
-
-    # Handle quotes if present
-    if value and value.startswith(('"', "'")) and value.endswith(value[0]):
-        value = value[1:-1]
+    # Special handling for niji parameter
+    if expanded_name == "niji" and value.isdigit():
+        return "version", f"niji {value}"
+    elif expanded_name == "niji":
+        return "version", "niji"
 
     return expanded_name, value
 
 
-def parse_parameters(param_str: str) -> ParamDict:
+def parse_parameters(param_str: str) -> dict[str, str | None]:
     """
-    Parse parameter string into a dictionary of parameter names and values.
-    Handles both full and shorthand parameter names.
+    Parse a parameter string into a dictionary.
 
     Args:
-        param_str: String containing parameters (starting with --).
+        param_str: Parameter string to parse.
 
     Returns:
-        Dictionary mapping parameter names to their raw values.
+        Dictionary of parameter names to values.
 
     Raises:
-        ValueError: If parameter string is malformed.
+        ValueError: If parameter string is invalid.
     """
-    params: ParamDict = {}
     if not param_str:
-        return params
+        return {}
 
-    _validate_param_string(param_str)
+    # Split on spaces, preserving quoted strings
+    chunks = []
+    current_chunk = []
+    in_quotes = False
+    quote_char = None
 
-    # Split into chunks and process each one
-    chunks = [c.strip() for c in param_str.split("--") if c.strip()]
+    for char in param_str:
+        if char in {'"', "'"}:
+            if not in_quotes:
+                in_quotes = True
+                quote_char = char
+            elif char == quote_char:
+                in_quotes = False
+                quote_char = None
+            current_chunk.append(char)
+        elif char.isspace() and not in_quotes:
+            if current_chunk:
+                chunks.append("".join(current_chunk))
+                current_chunk = []
+        else:
+            current_chunk.append(char)
+
+    if current_chunk:
+        chunks.append("".join(current_chunk))
+
+    # Process each parameter chunk
+    params = {}
+    current_chunk = []
+
     for chunk in chunks:
-        name, value = _process_param_chunk(chunk)
+        if chunk.startswith("--"):
+            if current_chunk:
+                name, value = _process_param_chunk(" ".join(current_chunk))
+                params[name] = value
+                current_chunk = []
+            current_chunk.append(chunk)
+        else:
+            current_chunk.append(chunk)
+
+    if current_chunk:
+        name, value = _process_param_chunk(" ".join(current_chunk))
         params[name] = value
 
     return params

@@ -35,12 +35,12 @@ def split_options(text: str) -> list[str]:
 
     while i < len(text):
         if text[i] == "\\" and i + 1 < len(text):
+            # Keep escaped characters as-is
             if text[i + 1] in (",", "{", "}"):
                 current.append(text[i + 1])
-                i += ESCAPE_SEQUENCE_LENGTH
             else:
-                current.append(text[i])
-                i += 1
+                current.extend([text[i], text[i + 1]])
+            i += ESCAPE_SEQUENCE_LENGTH
         elif text[i] == "{":
             depth += 1
             current.append(text[i])
@@ -52,7 +52,8 @@ def split_options(text: str) -> list[str]:
         elif text[i] == "," and depth == 0:
             # Add current option after stripping whitespace
             opt = "".join(current).strip()
-            options.append(opt)
+            if opt or not options:  # Include empty options
+                options.append(opt)
             current = []
             i += 1
         else:
@@ -73,22 +74,27 @@ def _find_matching_brace(text: str, start: int) -> int:
 
     Args:
         text: Text to search in.
-        start: Index of opening brace.
+        start: Starting position of the opening brace.
 
     Returns:
-        Index of matching closing brace or -1 if not found.
+        Position of the matching closing brace.
+
+    Raises:
+        ValueError: If no matching brace is found.
     """
-    count = 1
-    i = start + 1
-    while i < len(text):
-        if text[i] == "{":
-            count += 1
-        elif text[i] == "}":
-            count -= 1
-            if count == 0:
-                return i
-        i += 1
-    return -1
+    depth = 1
+    pos = start + 1
+    while pos < len(text):
+        if text[pos] == "{" and text[pos - 1] != "\\":
+            depth += 1
+        elif text[pos] == "}" and text[pos - 1] != "\\":
+            depth -= 1
+            if depth == 0:
+                return pos
+        pos += 1
+
+    msg = f"No matching closing brace found for opening brace at position {start}"
+    raise ValueError(msg)
 
 
 def _format_part(before: str, option: str, after: str) -> str:
@@ -103,11 +109,22 @@ def _format_part(before: str, option: str, after: str) -> str:
     Returns:
         Formatted text with proper spacing.
     """
-    if option.startswith("--"):
-        # For parameter permutations, preserve exact spacing
-        return f"{before}{option}{after}".strip()
-    # Combine parts and collapse multiple spaces
-    return " ".join((before + option + after).split())
+    # Handle empty option
+    if not option:
+        return before.rstrip() + "  " + after.lstrip()  # Double space for empty option
+
+    # Handle parameters
+    if "--" in after:
+        return f"{before.rstrip()} {option} {after.lstrip()}"
+
+    # Handle spacing around the option
+    result = before.rstrip()
+    if result:
+        result += " "
+    result += option
+    if after:
+        result += " " + after.lstrip()
+    return result.strip()
 
 
 def _add_spacing(before: str, after: str) -> tuple[str, str]:
@@ -214,3 +231,89 @@ def expand_text(text: str) -> MidjargonList:
         iterations += 1
 
     return expanded
+
+
+def split_permutation_options(text: str) -> list[str]:
+    """
+    Split permutation text into individual options.
+
+    Args:
+        text: Text containing comma-separated options.
+
+    Returns:
+        List of individual options.
+    """
+    if not text.strip():
+        return [""]
+
+    options = []
+    current = []
+    pos = 0
+    in_braces = 0
+
+    while pos < len(text):
+        char = text[pos]
+        if char == "{" and (pos == 0 or text[pos - 1] != "\\"):
+            in_braces += 1
+            current.append(char)
+        elif char == "}" and (pos == 0 or text[pos - 1] != "\\"):
+            in_braces -= 1
+            current.append(char)
+        elif char == "," and in_braces == 0:
+            options.append("".join(current).strip())
+            current = []
+        else:
+            current.append(char)
+        pos += 1
+
+    if current:
+        options.append("".join(current).strip())
+
+    return options
+
+
+def expand_permutations(text: str) -> list[str]:
+    """
+    Expand all permutations in a text string.
+
+    Args:
+        text: Text containing permutation expressions.
+
+    Returns:
+        List of all possible permutations.
+
+    Raises:
+        ValueError: If permutation syntax is invalid.
+    """
+    results = [""]
+    pos = 0
+
+    while pos < len(text):
+        if text[pos] == "{" and (pos == 0 or text[pos - 1] != "\\"):
+            # Find matching closing brace
+            end = _find_matching_brace(text, pos)
+
+            # Add text before permutation
+            prefix = text[:pos].replace("\\{", "{").replace("\\}", "}")
+            for i in range(len(results)):
+                results[i] = results[i] + prefix
+
+            # Get options and create new permutations
+            options = split_permutation_options(text[pos + 1 : end])
+            new_results = []
+            for result in results:
+                for option in options:
+                    new_results.append(result + option)
+            results = new_results
+
+            pos = end + 1
+        else:
+            pos += 1
+
+    # Add remaining text
+    if pos < len(text):
+        suffix = text[pos:].replace("\\{", "{").replace("\\}", "}")
+        for i in range(len(results)):
+            results[i] = results[i] + suffix
+
+    return results

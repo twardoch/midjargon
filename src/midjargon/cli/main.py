@@ -108,18 +108,16 @@ def format_prompt(prompt: MidjourneyPrompt) -> str:
 
 
 def _handle_error(console: Console, error: Exception) -> NoReturn:
-    """Handle errors with rich formatting."""
-    if isinstance(error, ValueError | TypeError):
-        # Handle expected errors nicely
-        console.print(f"[red]Error:[/red] {error!s}")
-    else:
-        # For unexpected errors, show the full traceback
-        console.print_exception()
+    """Handle errors by printing to stderr and exiting."""
+    error_console = Console(file=sys.stderr)
+    error_console.print(f"Error: {str(error)}")
     sys.exit(1)
 
 
 def _output_json(data: Any) -> None:
-    """Output data as JSON to stdout."""
+    """Output data as formatted JSON."""
+    json_str = json.dumps(data, indent=2)
+    print(json_str)
 
 
 def main(
@@ -130,88 +128,78 @@ def main(
     no_color: bool = False,
 ) -> None:
     """
-    Parse and validate a Midjourney prompt.
+    Process and validate a Midjourney prompt.
 
     Args:
-        prompt: The Midjourney prompt string to parse.
-        raw: If True, show the raw parsed structure before validation.
+        prompt: The prompt text to process.
+        raw: If True, skip Midjourney-specific validation.
         json_output: If True, output in JSON format.
         no_color: If True, disable colored output.
-
-    Example prompts:
-        "A portrait of a wise old man --style raw --v 5.1"
-        "https://example.com/image1.jpg https://example.com/image2.jpg abstract fusion"
-        "A {red, blue, green} bird on a {branch, rock} --ar 16:9"
-        "futuristic city::2 cyberpunk aesthetic::1 --stylize 100"
-        "elephant {, --s {200, 300}}"
     """
+    # Create console for output
     console = Console(force_terminal=not no_color)
+    error_console = Console(file=sys.stderr)
 
     try:
-        # First parse with midjargon
-        if raw:
-            # Parse and expand the input
-            expanded = expand_midjargon_input(prompt)
-            # Convert each expanded prompt to a dictionary
-            midjargon_dicts = [parse_midjargon_prompt_to_dict(p) for p in expanded]
+        # Expand any permutations in the prompt
+        expanded_prompts = expand_midjargon_input(prompt)
 
-            if json_output:
-                # Output raw parsed prompts as JSON
-                _output_json(midjargon_dicts)
+        # Process each expanded prompt
+        results = []
+        for expanded in expanded_prompts:
+            # Parse into dictionary
+            prompt_dict = parse_midjargon_prompt_to_dict(expanded)
+
+            # Validate as Midjourney prompt if not raw
+            if not raw:
+                prompt_dict = parse_midjourney_dict(prompt_dict).model_dump()
+
+            results.append(prompt_dict)
+
+        # Output results
+        if json_output:
+            if len(results) == 1:
+                _output_json(results[0])
             else:
-                for i, p in enumerate(midjargon_dicts, 1):
-                    console.print(
-                        Panel(
-                            Syntax(
-                                json.dumps(p, indent=2),
-                                "json",
-                                theme="monokai",
-                            ),
-                            title=f"[bold]Raw Prompt {i}[/bold]",
-                        )
-                    )
+                _output_json(results)
             return
 
-        # Parse and validate with Midjourney rules
-        # First expand the input
-        expanded = expand_midjargon_input(prompt)
-        # Convert each expanded prompt to a dictionary
-        midjargon_dicts = [parse_midjargon_prompt_to_dict(p) for p in expanded]
-        # Parse each dictionary into a MidjourneyPrompt
-        prompts = [parse_midjourney_dict(d) for d in midjargon_dicts]
-
-        if json_output:
-            # Output validated prompts as JSON
-            _output_json([p.model_dump() for p in prompts])
-        else:
-            for i, p in enumerate(prompts, 1):
-                if len(prompts) > 1:
-                    console.print(f"\n[bold]Prompt {i}:[/bold]")
-
-                # Show formatted prompt
-                formatted = format_prompt(p)
-                console.print(
-                    Panel(
-                        formatted,
-                        title="[bold]Formatted[/bold]",
-                        style="green",
-                    )
-                )
-
-                # Show structured data
+        # Format each result
+        for result in results:
+            if raw:
+                # Display raw dictionary
                 console.print(
                     Panel(
                         Syntax(
-                            p.model_dump_json(indent=2),
+                            json.dumps(result, indent=2),
                             "json",
-                            theme="monokai",
+                            background_color="default",
                         ),
-                        title="[bold]Structured[/bold]",
+                        title="Raw",
                     )
+                )
+            else:
+                # Display formatted prompt
+                prompt_obj = MidjourneyPrompt(**result)
+                formatted = format_prompt(prompt_obj)
+                console.print(
+                    Panel(formatted, title="Formatted"),
+                    Panel(
+                        Syntax(
+                            json.dumps(result, indent=2),
+                            "json",
+                            background_color="default",
+                        ),
+                        title="Structured",
+                    ),
                 )
 
     except Exception as e:
-        _handle_error(console, e)
+        if isinstance(e, ValueError):
+            print(f"Error: {str(e)}", file=sys.stderr)
+        else:
+            error_console.print_exception(show_locals=True)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

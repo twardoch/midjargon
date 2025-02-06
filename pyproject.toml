@@ -171,8 +171,6 @@ exclude_lines = [
 test = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
-    "pytest-xdist>=3.5.0",  # For parallel test execution
-    "pytest-benchmark[histogram]>=4.0.0",  # For performance testing
 ]
 
 dev = [
@@ -187,8 +185,6 @@ all = [
     "mypy>=1.0.0",
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
-    "pytest-xdist>=3.5.0",
-    "pytest-benchmark[histogram]>=4.0.0",
 ]
 
 [tool.hatch.envs.test]
@@ -208,19 +204,3 @@ python_files = ["test_*.py"]
 filterwarnings = ["ignore::DeprecationWarning", "ignore::UserWarning"]
 asyncio_mode = "auto"
 
-[tool.pytest-benchmark]
-min_rounds = 100
-min_time = 0.1
-histogram = true
-storage = "file"
-save-data = true
-compare = [
-    "min",    # Minimum time
-    "max",    # Maximum time
-    "mean",   # Mean time
-    "stddev", # Standard deviation
-    "median", # Median time
-    "iqr",    # Inter-quartile range
-    "ops",    # Operations per second
-    "rounds", # Number of rounds
-] 

@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run
 # /// script
-# dependencies = ["pytest", "fire", "rich"]
+# dependencies = ["pytest", "rich"]
 # ///
 
 """Tests for CLI functionality."""
