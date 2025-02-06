@@ -40,14 +40,7 @@ def test_numeric_parameters():
 def test_style_parameters():
     """Test parsing of style parameters."""
     parser = MidjourneyParser()
-    prompt = parser.parse_dict(
-        {
-            "text": "a photo",
-            "style": "raw",
-            "v": VERSION_NUMBER,
-            "niji": "6",
-        }
-    )
+    prompt = parser.parse_dict({"text": "a photo", "style": "raw", "v": VERSION_NUMBER})
 
     assert prompt.text == "a photo"
     assert prompt.style == "raw"
@@ -163,3 +156,17 @@ def test_empty_values():
     prompt = parser.parse_dict({"text": "a photo", "stylize": None})
     assert prompt.text == "a photo"
     assert prompt.stylize is None
+
+
+def test_niji_parameter():
+    """Test parsing of niji parameter."""
+    parser = MidjourneyParser()
+    prompt = parser.parse_dict(
+        {
+            "text": "a photo",
+            "niji": "6",
+        }
+    )
+
+    assert prompt.text == "a photo"
+    assert prompt.version == "niji 6"
