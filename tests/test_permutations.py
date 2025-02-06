@@ -7,7 +7,8 @@
 
 import pytest
 
-from midjargon.midjargon import expand_permutations, split_permutation_options
+from midjargon.midjargon import expand_permutations
+from midjargon.permutations import split_options
 
 
 def test_simple_permutation():
@@ -62,12 +63,12 @@ def test_single_option():
 def test_split_permutation_options():
     """Test splitting of permutation options."""
     text = "red, blue, green"
-    options = split_permutation_options(text)
+    options = split_options(text)
     assert options == ["red", "blue", "green"]
 
     # Test with escaped comma
     text = "red\\, blue, green"
-    options = split_permutation_options(text)
+    options = split_options(text)
     assert options == ["red, blue", "green"]
 
 
