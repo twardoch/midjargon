@@ -121,6 +121,7 @@ def validate_param_value(param: str, value: str | None) -> None:
         "tile",
         "raw",
         "test",
+        "p",  # p can be used without a value to use default profile
     }  # Known flag parameters that don't require values
     numeric_params = {"stylize", "s", "chaos", "c", "weird", "iw", "seed", "stop"}
 

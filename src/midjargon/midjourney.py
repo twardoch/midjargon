@@ -85,6 +85,7 @@ class MidjourneyPrompt(BaseModel):
     # Style parameters
     style: str | None = Field(None)  # raw, cute, expressive, etc.
     version: str | None = Field(None)  # v5, v6, niji, etc.
+    personalization: str | None = Field(None)  # Profile ID or code for --p parameter
 
     # Store any unknown parameters
     extra_params: dict[str, str | None] = Field(default_factory=dict)
@@ -109,6 +110,10 @@ class MidjourneyPrompt(BaseModel):
 
 def _handle_numeric_param(name: str, value: str | None) -> tuple[str, Any]:
     """Handle numeric parameter conversion."""
+    # Handle p parameter separately since it can be a string or None
+    if name == "p":
+        return "personalization", value
+
     # Define parameter mappings with their default values and conversion functions
     param_map = {
         ("stylize", "s"): ("stylize", lambda v: int(v) if v else 100),

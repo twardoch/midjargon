@@ -54,6 +54,10 @@ def _format_style_params(prompt: MidjourneyPrompt) -> list[str]:
             )
         else:
             params.append(f"--v {prompt.version[1:]}")
+    if prompt.personalization is not None:
+        params.append(
+            f"--p{' ' + prompt.personalization if prompt.personalization else ''}"
+        )
     return params
 
 
