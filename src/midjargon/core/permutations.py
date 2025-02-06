@@ -136,15 +136,21 @@ def _extract_options(text: str, start: int, end: int) -> list[str]:
         elif options_text[i] == "," and depth == 0:
             opt = "".join(current).strip()
             if opt or not options:  # Include empty options if it's the first one
+                # Handle word boundaries
+                if " " in opt:
+                    opt = " ".join(part.strip() for part in opt.split())
                 options.append(opt)
             current = []
         else:
             current.append(options_text[i])
         i += 1
 
-    # Add the last option
+    # Handle the last option
     opt = "".join(current).strip()
     if opt or not options:  # Include empty options if no other options exist
+        # Handle word boundaries
+        if " " in opt:
+            opt = " ".join(part.strip() for part in opt.split())
         options.append(opt)
 
     return options
@@ -172,11 +178,12 @@ def _format_part(before: str, option: str, after: str) -> str:
 
     # Handle spacing around the option
     result = before.rstrip()
-    if result:
+    if result and not result.endswith(" "):
         result += " "
     result += option
-    if after:
-        result += " " + after.lstrip()
+    if after and not after.startswith(" "):
+        result += " "
+    result += after.lstrip()
     return result.strip()
 
 
@@ -245,8 +252,7 @@ def expand_single(text: str) -> list[str]:
     # Extract and process options
     options = _extract_options(text, i, j)
     if not options:  # Empty permutation
-        # Return text without the empty braces
-        return [text[:i].rstrip() + text[j + 1 :].lstrip()]
+        return [text[:i] + text[j + 1 :]]
 
     # Generate permutations
     prefix = text[:i]
@@ -268,10 +274,10 @@ def expand_single(text: str) -> list[str]:
     for opt in expanded_options:
         # Handle spacing around the option
         result = prefix.rstrip()
-        if result and not result.endswith(" ") and opt:
+        if result and not result.endswith(" "):
             result += " "
         result += opt
-        if suffix and not suffix.startswith(" ") and opt:
+        if suffix and not suffix.startswith(" "):
             result += " "
         result += suffix.lstrip()
         results.append(result.strip())
