@@ -82,10 +82,11 @@ def _find_matching_brace(text: str, start: int) -> int:
     Raises:
         ValueError: If no matching brace is found.
     """
-    depth = 0
-    pos = start
+    depth = 1  # Start at 1 since we're starting at an opening brace
+    pos = start + 1
     while pos < len(text):
-        if pos > 0 and text[pos - 1] == "\\":
+        # Check for escaped braces
+        if pos > 0 and text[pos - 1] == "\\" and text[pos] in {"{", "}"}:
             pos += 1
             continue
         if text[pos] == "{":
@@ -95,8 +96,51 @@ def _find_matching_brace(text: str, start: int) -> int:
             if depth == 0:
                 return pos
         pos += 1
-    msg = "No matching closing brace found"
-    raise ValueError(msg)
+    # If we reach here, treat unmatched braces as literal text
+    return start
+
+
+def _extract_options(text: str, start: int, end: int) -> list[str]:
+    """
+    Extract comma-separated options from text between braces.
+
+    Args:
+        text: Text to extract from.
+        start: Start position (after opening brace).
+        end: End position (before closing brace).
+
+    Returns:
+        List of options.
+    """
+    # Extract the text between braces
+    options_text = text[start + 1 : end]
+
+    # Split on commas and handle escaped braces
+    options = []
+    current = []
+    escaped = False
+
+    for char in options_text:
+        if escaped:
+            if char in {"{", "}", ","}:
+                current.append(char)
+            else:
+                current.extend(["\\", char])
+            escaped = False
+        elif char == "\\":
+            escaped = True
+        elif char == ",":
+            options.append("".join(current).strip())
+            current = []
+        else:
+            current.append(char)
+
+    # Add the last option
+    if current:
+        options.append("".join(current).strip())
+
+    # Filter out empty options and normalize whitespace
+    return [opt for opt in options if opt.strip()]
 
 
 def _format_part(before: str, option: str, after: str) -> str:
@@ -166,44 +210,41 @@ def _expand_nested(options: Sequence[str]) -> MidjargonList:
     return expanded
 
 
-def expand_single(text: str) -> MidjargonList:
+def expand_single(text: str) -> list[str]:
     """
-    Expand a single level of permutation in text.
+    Expand a single level of permutations in text.
 
     Args:
-        text: Text containing permutations in {} brackets.
+        text: Text to expand.
 
     Returns:
-        List of expanded variations.
+        List of expanded texts.
     """
-    results = []
+    # Find first unescaped opening brace
     i = 0
-
     while i < len(text):
-        if text[i] == "{":
-            end = _find_matching_brace(text, i)
-            if end == -1:
-                return [text]  # Unmatched brace - treat as literal
-
-            before = text[:i].rstrip()
-            options = split_options(text[i + 1 : end])
-            after = text[end + 1 :].lstrip()
-
-            before, after = _add_spacing(before, after)
-
-            # Recursively expand nested permutations
-            expanded = _expand_nested(options)
-
-            # Combine with surrounding text
-            results = [_format_part(before, opt, after) for opt in expanded]
+        if text[i] == "{" and (i == 0 or text[i - 1] != "\\"):
             break
         i += 1
+    else:
+        # No unescaped opening brace found
+        return [text]
 
-    # No permutations found
-    if not results:
-        results = [text]
+    # Find matching closing brace
+    j = _find_matching_brace(text, i)
+    if j == i:  # No matching brace found, treat as literal
+        return [text]
 
-    return [r.strip() for r in results]
+    # Extract and process options
+    options = _extract_options(text, i, j)
+    if not options:  # Empty permutation
+        # Return text without the empty braces
+        return [text[:i] + text[j + 1 :]]
+
+    # Generate permutations
+    prefix = text[:i]
+    suffix = text[j + 1 :]
+    return [f"{prefix}{opt}{suffix}" for opt in options]
 
 
 def expand_text(text: str) -> MidjargonList:
@@ -245,7 +286,7 @@ def split_permutation_options(text: str) -> list[str]:
     Returns:
         List of options.
     """
-    if not text:
+    if not text.strip():
         return [""]
 
     options = []
@@ -267,6 +308,11 @@ def split_permutation_options(text: str) -> list[str]:
 
     if current:
         options.append("".join(current).strip())
+
+    # Filter out empty options
+    options = [opt for opt in options if opt]
+    if not options:
+        return [""]
 
     return options
 
@@ -304,15 +350,17 @@ def expand_permutations(text: str) -> list[str]:
                 prefix = result[:]
                 result = []
                 options = split_permutation_options(text[pos + 1 : end])
-                
+
                 for p in prefix:
                     for opt in options:
                         result.append(p + opt)
-                
+
                 pos = end + 1
-            except ValueError as e:
-                msg = f"Invalid permutation syntax: {str(e)}"
-                raise ValueError(msg) from e
+            except ValueError:
+                # If no matching brace is found, treat as literal text
+                for i in range(len(result)):
+                    result[i] += text[pos]
+                pos += 1
         else:
             for i in range(len(result)):
                 result[i] += text[pos]

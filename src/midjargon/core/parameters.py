@@ -164,30 +164,38 @@ def _process_param_chunk(chunk: str) -> tuple[str, str | None]:
 
     # Split on first space
     parts = chunk.split(maxsplit=1)
-    name = parts[0]
+    name = parts[0].lstrip("-")
 
     # Handle flag parameters (no value)
     if len(parts) == 1:
-        if name in {"--tile", "--turbo", "--relax"}:
-            return name.lstrip("-"), "true"
-        if name.startswith("--no"):
-            return "no", parts[0][4:]  # Remove --no prefix
-        return name.lstrip("-"), None
+        if name in {"tile", "turbo", "relax"}:
+            return name, None
+        if name == "niji":
+            return "version", "niji"
+        if name == "p":
+            return "personalization", ""
+        if name.startswith("no"):
+            return "no", name[2:]  # Remove no prefix
+        return name, None
 
     # Handle value parameters
     value = parts[1]
-    name = name.lstrip("-")  # Remove leading dashes
+    if value.startswith('"') and value.endswith('"'):
+        value = value[1:-1]  # Remove quotes
+
     expanded_name = _expand_param_name(name)
 
     # Special handling for niji parameter
     if expanded_name == "niji" and value.isdigit():
         return "version", f"niji {value}"
-    elif expanded_name == "niji":
-        return "version", "niji"
 
     # Special handling for personalization parameter
     if expanded_name == "personalization" or expanded_name == "p":
-        return "personalization", value or ""
+        return "personalization", value
+
+    # Special handling for version parameter
+    if expanded_name == "version" or expanded_name == "v":
+        return "version", value if value.startswith("v") else f"v{value}"
 
     return expanded_name, value
 

@@ -109,15 +109,14 @@ def format_prompt(prompt: MidjourneyPrompt) -> str:
 
 def _handle_error(console: Console, error: Exception) -> NoReturn:
     """Handle errors by printing to stderr and exiting."""
-    error_console = Console(file=sys.stderr)
-    error_console.print(f"Error: {str(error)}")
+    error_console = Console(stderr=True)
+    error_console.print(f"Error: {str(error)}", style="red")
     sys.exit(1)
 
 
 def _output_json(data: Any) -> None:
     """Output data as JSON."""
-    json_str = json.dumps(data, indent=2)
-    print(json_str)
+    print(json.dumps(data, indent=2))
 
 
 def process_prompt(prompt: str) -> list[MidjourneyPrompt]:
@@ -172,7 +171,7 @@ def main(
         results = process_prompt(prompt)
 
         if json_output:
-            # Convert results to JSON-serializable format
+            # Convert results to JSON-serializable format and output
             output = [result.model_dump() for result in results]
             _output_json(output)
             return
@@ -199,13 +198,8 @@ def main(
                     expand=False,
                 )
                 console.print(panel)
-
-    except ValueError as e:
-        print(f"Error: {str(e)}", file=sys.stderr)
-        sys.exit(1)
     except Exception as e:
-        print(f"Error: {str(e)}", file=sys.stderr)
-        sys.exit(1)
+        _handle_error(Console(stderr=True), e)
 
 
 if __name__ == "__main__":

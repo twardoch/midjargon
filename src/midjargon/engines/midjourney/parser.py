@@ -31,19 +31,19 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
         # Define parameter mappings with their default values and conversion functions
         param_map = {
-            ("stylize", "s"): ("stylize", lambda v: int(v) if v else 100),
-            ("chaos", "c"): ("chaos", lambda v: int(v) if v else 0),
-            ("weird",): ("weird", lambda v: int(v) if v else 0),
-            ("iw",): ("image_weight", lambda v: float(v) if v else 1.0),
+            ("stylize", "s"): ("stylize", lambda v: int(v) if v else None),
+            ("chaos", "c"): ("chaos", lambda v: int(v) if v else None),
+            ("weird",): ("weird", lambda v: int(v) if v else None),
+            ("iw",): ("image_weight", lambda v: float(v) if v else None),
             ("seed",): ("seed", lambda v: int(v) if v else None),
-            ("stop",): ("stop", lambda v: int(v) if v else 100),
-            ("quality", "q"): ("quality", lambda v: float(v) if v else 1.0),
+            ("stop",): ("stop", lambda v: int(v) if v else None),
+            ("quality", "q"): ("quality", lambda v: float(v) if v else None),
             ("repeat", "r"): ("repeat", lambda v: int(v) if v else None),
             ("character_weight", "cw"): (
                 "character_weight",
-                lambda v: int(v) if v else 100,
+                lambda v: int(v) if v else None,
             ),
-            ("style_weight", "sw"): ("style_weight", lambda v: int(v) if v else 100),
+            ("style_weight", "sw"): ("style_weight", lambda v: int(v) if v else None),
             ("style_version", "sv"): ("style_version", lambda v: int(v) if v else None),
         }
 
@@ -89,10 +89,16 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
         if name == "style":
             return "style", value
-        elif name == "v":
-            return "version", f"v{value}" if value else None
+        elif name == "v" or name == "version":
+            if not value:
+                return "version", None
+            return "version", value if value.startswith("v") else f"v{value}"
         elif name == "niji":
-            return "version", f"niji {value}" if value else "niji"
+            if not value:
+                return "version", "niji"
+            return "version", f"niji {value}"
+        elif name == "p" or name == "personalization":
+            return "personalization", value if value else ""
         return "", None
 
     def _handle_reference_param(
@@ -104,9 +110,12 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
         # Convert string to list if needed
         if isinstance(raw_value, str):
-            values = [raw_value]
+            values = raw_value.split(",")
         else:
             values = raw_value
+
+        # Filter out empty strings and strip whitespace
+        values = [v.strip() for v in values if v.strip()]
 
         if name == "cref":
             return "character_reference", values
@@ -157,6 +166,8 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             "text": midjargon_dict["text"],
             "image_prompts": [ImagePrompt(url=url) for url in images],
             "extra_params": {},
+            "version": None,
+            "personalization": None,
         }
 
         # Process each parameter
