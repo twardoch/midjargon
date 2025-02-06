@@ -1,514 +1,640 @@
+
 # **Midjourney Prompt Format Specification**
 
-A Midjourney prompt uses the "midjargon": a structured text syntax that instructs the Midjourney Bot to generate images. The prompt consists of three main sections, in order:
+_2025-02-06 by Adam Twardoch, not affiliated with Midjourney_
 
-1. **Image Prompts (Optional)**
+Midjourney prompts use “midjargon”, a structured syntax to instruct the Midjourney models to generate images. A prompt consists of three main sections, in order:
+
+1. **Image Reference (Optional)**
 2. **Text Description (Required if no image is provided)**
 3. **Parameters (Optional)**
 
-Each section has a defined syntax and placement requirement. Advanced features (such as multi-prompts with weights and permutation prompts) are integrated into the text description and parameters.
+Each section has defined syntax and placement requirements. Advanced features such as multi-prompts with weights, permutation prompts, personalization, and style or character references are integrated into the text description and parameters.
+
+Midjourney supports two distinct types of stylizations. The official Midjourney documentation often ambiguously calls both “style”: 
+
+- Style reference
+- Personalization
+
+## Parameters
+
+Parameters are modifiers appended at the end of the prompt that adjust various aspects of image generation. Parameters always begin with two hyphens `--` and may accept a value. The order of parameters (after the text description) is flexible.
+
+Terms that follow a parameter `--a` are treated as its arguments (values). If `--a` is directly followed by another parameter `--b`, then `--a` is considered a boolean flag. 
 
 ---
 
-## [∞](#1-image-prompts) **1. Image Prompts**
+## Choosing the model
 
-- **Definition:**  
-  One or more direct image URLs used to influence the generated image's style, color, and composition.
-  
-- **Syntax & Placement:**  
-  - Must appear at the very start of the prompt.
-  - Each URL must be a direct link ending with one of the following extensions:  
-    `.png`, `.jpg`, `.jpeg`, `.gif`, or `.webp`.
-  - Multiple image URLs are separated by whitespace.  
-  - *Example:*  
-    ```
-    https://example.com/image1.jpg https://example.com/image2.png
-    ```
+### Midjourney series (`--v` or `--version`)
 
-- **Optional Adjustments:**  
-  - **Image Weight (`--iw`)**:  
-    Adjusts the influence of image prompts relative to the text prompt.
-    - **Syntax:** `--iw <value>`
-    - **Value Range:** 0.0 to 3.0 (float)
-    - **Default:** 1.0
-    - *Example:*  
-      ```
-      --iw 1.5
-      ```
-  - **Style Reference (`--sref`)**:
-    Uses images as style references without influencing content.
-    - **Syntax:** `--sref <url1> [url2...]`
-    - **Value:** One or more image URLs
-    - *Example:*  
-      ```
-      --sref https://example.com/style.jpg
-      ```
+Uses the specified version of the general Midjourney model series. 
 
----
+#### Syntax
 
-## [∞](#2-text-description) **2. Text Description**
+```
+--v <version_number>
+```
 
-- **Definition:**  
-  A natural language description of the desired image. This is the core creative input where you specify the subject, mood, style, and other artistic details.
+#### Values
 
-- **Guidelines:**
-  - **Clarity & Specificity:**  
-    Use specific adjectives, nouns, and phrases. Describe the subject, medium (e.g., photo, painting), environment, lighting, color, mood, and composition.
-  - **Positive Framing:**  
-    Emphasize what should appear in the image rather than what should be excluded (exclusions are handled by the `--no` parameter).
-  - **Tokenization:**  
-    The text is tokenized internally; word order and precision are important.
+- `5`, `5.1`, `5.2`, `6`, `6.1`
 
-- **Advanced Constructs:**
-  - **Multi-Prompts & Weights:**  
-    Separate distinct concepts using a double colon (`::`), optionally followed by a weight.
-    - **Syntax:**  
-      ```
-      concept1 ::<weight1> concept2 ::<weight2> ...
-      ```
-      If a weight is omitted, a default of 1 is assumed.
-    - **Weight Range:** -10.0 to 10.0 (float)
-    - **Negative Weights:**  
-      Use negative numbers (e.g., `::-.5`) to de-emphasize or effectively exclude a concept.
-    - *Examples:*  
-      ```
-      futuristic city ::2 cyberpunk skyline ::1
-      beautiful landscape ::1.5 mountains ::-0.5 water
-      ```
-  
-  - **Permutation Prompts:**  
-    Create multiple prompt variations by including comma-separated options within curly braces `{}`.
-    - **Syntax:**  
-      ```
-      Some fixed text {option1, option2, option3} more fixed text
-      ```
-    - **Rules:**
-      - All options are combined with the surrounding text to generate separate variations.
-      - **Nesting:**  
-        Nested curly braces are allowed for more complex combinations.
-      - **Escaping:**  
-        To include a literal comma within an option, escape it with a backslash (`\,`).
-      - **Parameter Permutations:**  
-        Permutations can include parameters and their values.
-    - *Examples:*  
-      ```
-      # Basic permutation
-      A {red, blue, green} bird on a {flower, leaf}
+> Example
 
-      # With escaped comma
-      A {solid\, bright, pale\, soft} color
+```
+--v 6
+```
 
-      # With parameters
-      A portrait {--ar 1:1, --ar 16:9} {--stylize 100, --stylize 1000}
-      ```
+### Niji series (`--niji`)
 
----
+Uses the specified version of the Niji model series, optimized for anime and illustrative styles.
 
-## [∞](#3-parameters) **3. Parameters**
+#### Syntax
 
-Parameters are modifiers appended at the end of the prompt that adjust various aspects of image generation. They always begin with two hyphens (`--`) and may accept a value. The order of parameters (after the text description) is generally flexible.
+```
+--niji <version_number>
+```
 
-### [∞](#31-composition-and-formatting-parameters) **3.1. Composition and Formatting Parameters**
+- Values: `5`, `6`
 
-- **Aspect Ratio:**  
-  - **Purpose:** Sets the width-to-height ratio of the image.
-  - **Syntax:**  
-    ```
-    --ar <width>:<height>
-    ```
-    (An alternate flag is `--aspect`.)
-  - **Value Format:** Two integers separated by a colon
-  - **Common Ratios:** `1:1`, `16:9`, `4:3`, `3:2`
-  - **Example:**  
-    ```
-    --ar 16:9
-    ```
-  - **Notes:**  
-    Both `<width>` and `<height>` must be whole numbers. Default is 1:1.
+> Example
 
-- **Tile:**  
-  - **Purpose:** Creates images that are seamlessly tileable.
-  - **Syntax:**  
-    ```
-    --tile
-    ```
-  - **Value:** None (boolean flag)
-  - **Example:**  
-    ```
-    --tile
-    ```
+```
+--niji 6
+```
 
-- **Repeat:**  
-  - **Purpose:** Runs the same prompt multiple times to generate variations.
-  - **Syntax:**  
-    ```
-    --repeat <number>
-    ```
-    (Also available as `--r <number>`.)
-  - **Value Range:** 
-    - Basic Subscribers: 2–4  
-    - Standard Subscribers: 2–10  
-    - Pro/Mega Subscribers: 2–40
-  - **Example:**  
-    ```
-    --repeat 5
-    ```
+### Model mode (`--style`)
 
-### [∞](#32-randomness-and-variation) **3.2. Randomness and Variation**
+Applies specific model mode. 
 
-- **Chaos:**  
-  - **Purpose:** Controls the degree of variation or unpredictability in the generated output.
-  - **Syntax:**  
-    ```
-    --chaos <value>
-    ```
-    (Also available as `--c <value>`.)
-  - **Value Range:** 0 to 100 (integer)
-  - **Default:** 0
-  - **Example:**  
-    ```
-    --chaos 50
-    ```
+```
+--style <mode_name>
+```
 
-- **Seed:**  
-  - **Purpose:** Sets the random seed to reproduce specific outcomes.
-  - **Syntax:**  
-    ```
-    --seed <value>
-    ```
-  - **Value Range:** 0 to 4294967295 (integer)
-  - **Example:**  
-    ```
-    --seed 123456789
-    ```
+- Mode name can be `raw`, it reduces automatic personalization.
 
-### [∞](#33-style-and-aesthetic-control) **3.3. Style and Aesthetic Control**
+> Example
 
-- **Stylize:**  
-  - **Purpose:** Adjusts how strongly Midjourney's default artistic style is applied.
-  - **Syntax:**  
-    ```
-    --stylize <value>
-    ```
-    (Alternate flag: `--s <value>`.)
-  - **Value Range:** 0 to 1000 (integer)
-  - **Default:** 100
-  - **Example:**  
-    ```
-    --stylize 250
-    ```
+```
+--style raw
+```
 
-- **Weird:**  
-  - **Purpose:** Introduces unconventional or experimental visual elements.
-  - **Syntax:**  
-    ```
-    --weird <value>
-    ```
-    (Alternate flag: `--w <value>`.)
-  - **Value Range:** 0 to 3000 (integer)
-  - **Default:** 0
-  - **Example:**  
-    ```
-    --weird 1000
-    ```
+## Using images
 
-- **Style:**  
-  - **Purpose:** Applies a specific aesthetic preset or a raw mode.
-  - **Syntax:**  
-    ```
-    --style <style_name>
-    ```
-  - **Common Values:**  
-    - `raw`: Reduces automatic stylization
-    - `expressive`: Enhances artistic interpretation
-    - `cute`: Applies a cute, cartoon-like style
-  - **Example:**  
-    ```
-    --style raw
-    ```
+### Image references
 
-### [∞](#34-model-and-iteration-control) **3.4. Model and Iteration Control**
+One or more direct image URLs or attachments used to influence the generated image's style, color, composition, and content.
 
-- **Version:**  
-  - **Purpose:** Selects which Midjourney model version to use.
-  - **Syntax:**  
-    ```
-    --v <version_number>
-    ```
-  - **Common Values:**  
-    - `5`, `5.1`, `5.2`: Version 5 series
-    - `6`: Latest version 6
-  - **Niji Model:**  
-    Use `--niji <version_number>` for the Niji model (optimized for anime/illustration).
-  - **Examples:**  
-    ```
-    --v 5.2
-    --niji 6
-    ```
+Must appear at the very **start** of the prompt.
 
-- **Stop:**  
-  - **Purpose:** Stops the image generation process at a specified percentage of completion.
-  - **Syntax:**  
-    ```
-    --stop <value>
-    ```
-  - **Value Range:** 10 to 100 (integer)
-  - **Default:** 100
-  - **Example:**  
-    ```
-    --stop 80
-    ```
+Each image can be:
 
-### [∞](#35-exclusion-parameters) **3.5. Exclusion Parameters**
+- A direct image URL ending with `.png`, `.jpg`, `.jpeg`, `.gif`, or `.webp`.
+- An attached image in Discord or uploaded via the Midjourney web interface.
 
-- **No:**  
-  - **Purpose:** Explicitly excludes specified elements from the image.
-  - **Syntax:**  
-    ```
-    --no <item1, item2, ...>
-    ```
-  - **Value Format:** Comma-separated list of terms
-  - **Example:**  
-    ```
-    --no cars, trees, watermarks
-    ```
-  - **Note:** This acts similarly to applying a negative weight to concepts in multi-prompts.
+Multiple images are separated by whitespace.
 
----
+> Example
 
-## [∞](#4-advanced-prompting-features) **4. Advanced Prompting Features**
+```
+https://example.com/image1.jpg https://example.com/image2.png
+```
 
-### [∞](#41-multi-prompts-with-weighting) **4.1. Multi-Prompts with Weighting**
+#### Image weight (`--iw`)
 
-- **Purpose:**  
-  To blend or balance multiple distinct concepts within one prompt.
-- **Syntax:**  
-  ```
-  concept1 ::<weight1> concept2 ::<weight2> concept3 ...
-  ```
-  - **Weights:**  
-    - When omitted, a default weight of 1 is assumed.
-    - Negative weights (e.g., `::-0.5`) reduce the prominence of a concept.
-    - Weight values can be floating-point numbers.
-- **Examples:**  
-  ```
-  # Basic weighting
-  serene lake ::2 foggy mountains ::1
+`--iw <value>`
 
-  # With negative weights
-  beautiful landscape ::1 urban elements ::-0.5
+Adjusts the influence of all image references relative to the text prompt. 
 
-  # Complex mixing
-  portrait ::1.5 dramatic lighting ::1 dark background ::0.8
-  ```
+- Value Range `0.0` to `3.0` (float)
+- Default: `1.0` (varies by model)
 
-### [∞](#42-permutation-prompts) **4.2. Permutation Prompts**
+> Example
 
-- **Purpose:**  
-  Quickly generate multiple variations of a prompt by providing several options for parts of the text.
-- **Syntax:**  
-  - Enclose a comma-separated list of options within curly braces `{}`.
-  - The surrounding fixed text is combined with each option to produce different variations.
-  - **Basic Example:**  
-    ```
-    A {red, blue, green} car
-    ```
-    Expands to:  
-    - "A red car"  
-    - "A blue car"  
-    - "A green car"
-- **Advanced Features:**
-  - **Nested Permutations:**  
-    ```
-    A {red, blue} {car, truck} with {chrome, matte} finish
-    ```
-  - **Parameter Permutations:**  
-    ```
-    portrait --ar {1:1, 16:9} --stylize {100, 500, 1000}
-    ```
-  - **Mixed Content:**  
-    ```
-    {realistic, artistic} scene {--v 5, --v 6} {--style raw, }
-    ```
-  - **Escaping:**  
-    ```
-    A {bright\, vibrant, dark\, moody} atmosphere
-    ```
+```
+--iw 1.5
+```
+
+As with other parameters, `--iw` must be placed after the text description, even though it refers to the image references that are placed at the very start of the prompt.
+
+### Character reference (`--cref`)
+
+`--cref <url1> [<url2> ...]`
+
+Uses images as character references to maintain consistency.
+
+#### Character weight (`--cw`)
+
+Adjusts the strength of the character reference.
+
+`--cw <value>`
+
+- Value range: `0` to `100` (integer)
+- Default: `100`
+
+The character weight `0` typically only copies the face. 
+
+> Example
+
+```
+--cref https://example.com/character.jpg --cw 50
+```
+
+### Style reference (`--sref`)
+
+The `--sref` parameter uses images as style references without influencing content. It applies the visual characteristics of a specific images or stylization code. 
+
+In effect, it pulls the generated image towards a specific look that is expressed explicitly (via the image) or less directly (via the stylization code).
+
+```
+--sref <url|code> [<url|code> ...]
+```
+
+One or more image URLs or a specific stylization CODE (the CODE acts as a shorthand for a predefined image reference)
+
+#### Style weight (`--sw`)
+
+Adjusts the strength of the style reference.
+
+`--sw <value>`
+
+- Value Range: `0` to `1000` (integer)
+
+#### Style version (`--sv`)
+
+Selects different style reference algorithms.
+
+`--sv <value>`
+
+- Values: `1`, `2`, `3`, `4`
+
+> Example
+
+```
+--sref https://example.com/style.jpg --sw 200 --sv 2
+```
+
+#### Random style reference
+
+`--sref random`
+
+Generates a random style reference.
+
+### Persona reference (`--p`)
+
+References one or more “personas”, personalized style profiles, which pull the generated image towards the preferences or a general style of a particular user or moodboard, with the degree controlled by `--s`.
+
+- Without specifying a persona code, `--p` uses your current personalization profile.
+- Providing one or more persona codes of a personalization profile or moodboard (e.g., `--p p123456789`) applies a specific personalization.
+
+#### Personalization weight (`--s`)
+
+```
+--stylize <value>
+```
+
+The `--s` (`--stylize`, or personalization weight) parameter controls the degree of personalization. 
+
+- If a persona with a code is provided, the `--s` parameter controls how much the generated image will be pulled towards that persona.
+- If the personalization switch is used (`--p`) without a code, the `--s` parameter controls how much the generated image will be pulled towards your current personalization profile.
+- If the personalization switch is not used (no `--p` at all), the `--s` parameter controls how much the generated image will be pulled towards the model’s general “persona” (overall aesthetic preference).
+
+- Value range: `0` to `1000` (integer)
+- Default: `100`
+
+The value of `0` applies minimal personalization, though certain influence of the model remains. To reduce the model influence, and have purer personalization use `--style raw` together with a low `--s` value.
+
+> Example:
+
+```
+--p p123456789 --s 500 --style raw
+```
+
+## Describing the image
+
+A natural language description of the desired image, specifying the subject, mood, style, and other artistic details.
+
+### Clarity & specificity
+
+Use specific adjectives, nouns, and phrases. Describe the subject, medium, environment, lighting, color, mood, and composition.
+
+### Positive framing
+
+Emphasize what should appear in the image rather than what should be excluded (exclusions are handled by the `--no` parameter).
+
+### Tokenization
+
+The text is internally tokenized; word order and precision are important.
+
+### Text generation
+
+Use double quotation marks `"` around words or phrases to specify exact text you want to appear in the image.
+
+> Example
+
+```
+A neon sign that says "Open"
+```
+
+### Negative text description (`--no`)
+
+Signals to the model elements or aspects that you don’t want to see in the image. 
+
+```
+--no <item1, item2, ...>
+```
+
+- Value: Comma-separated list of terms
+
+> Example:
+
+```
+--no cars, trees, watermarks
+```
+
+## Image layout
+
+### Aspect ratio (`--ar`)
+
+Sets the width-to-height ratio of the image
+
+```
+--ar <width>:<height>
+```
+
+- Value: Two integers separated by a colon
+- Default: `1:1`
+
+> Example:
+
+```
+--ar 16:9
+```
+
+### Tile (`--tile`)
+
+Creates images that are seamlessly tileable
+
+```
+--tile
+```
+
+- Value: None (boolean flag)
+
+> Example:
+
+```
+--tile
+```
 
 ---
 
-## [∞](#5-complete-prompt-structure-examples) **5. Complete Prompt Structure Examples**
+## Separating and prioritizing
 
-1. **Basic Text-Only Prompt:**  
-   ```
-   /imagine prompt: A serene sunset over the ocean
-   ```
+Use a double colon `::` to separate concepts, optionally followed by a weight. If omitted, the weight defaults to 1.
 
-2. **Prompt with Image URL, Text, and Parameters:**  
-   ```
-   /imagine prompt: https://example.com/inspiration.jpg A portrait of a wise old man --style raw --v 5.1
-   ```
+```
+concept1 ::<weight1> concept2 ::<weight2> ...
+```
 
-3. **Multi-Prompt with Weighting:**  
-   ```
-   /imagine prompt: futuristic city ::2 cyberpunk skyline ::1 --chaos 20
-   ```
+- Weight values can be floating-point numbers within the range `-10.0` to `10.0`.
+- Negative weights (e.g., `::-0.5`) de-emphasize or exclude a concept.
 
-4. **Permutation Prompt for Multiple Variations:**  
-   ```
-   /imagine prompt: A {red, blue, green} bird on a {flower, leaf} --ar 16:9
-   ```
+### Purpose
 
-5. **Complex Mixed Prompt:**  
-   ```
-   /imagine prompt: https://example.com/ref.jpg 
-   {realistic, artistic} portrait of a {young, old} {man, woman} 
-   --style {raw, expressive} --v 6 --ar 1:1 --stylize {100, 1000}
-   ```
+This syntax allows you to balance and blend different concepts in one prompt. Weights are normalized internally to maintain their proportional relationships.
 
-6. **Prompt with Multiple Parameters:**  
-   ```
-   /imagine prompt: A futuristic landscape at dusk 
-   --ar 21:9 --stylize 300 --chaos 50 
-   --seed 987654321 --no buildings,cars
-   ```
+### Examples
+
+```
+futuristic city ::2 cyberpunk skyline ::1
+beautiful landscape ::1.5 mountains ::-0.5 water
+serene lake ::2 foggy mountains ::1
+portrait ::1.5 dramatic lighting ::1 dark background ::0.8
+still life painting ::1 fruit ::-0.5
+```
 
 ---
 
-## [∞](#implementation-notes) **Implementation Notes**
+## Variation
 
-### Parsing Order
+### Chaos (`--chaos` or `--c`)
 
-1. **Image URL Extraction:**
-   - Identify and validate URLs at the start of the prompt
-   - Check for supported file extensions
-   - Handle multiple URLs
+Controls variation or unpredictability in the output
 
-2. **Permutation Expansion:**
-   - Process all permutation groups `{...}`
-   - Handle nested permutations
-   - Expand into individual prompts
+```
+--chaos <value>
+```
 
-3. **Parameter Processing:**
-   - Extract parameters starting with `--`
-   - Parse parameter values
-   - Handle boolean flags
-   - Validate parameter ranges
+- Value range: `0` to `100` (integer)
+- Default: `0`
 
-4. **Text Processing:**
-   - Extract main prompt text
-   - Process weight markers `::`
-   - Handle escaped characters
+> Example
 
-### Parameter Handling
+```
+--chaos 50
+```
 
-- **Boolean Parameters:**
-  If a parameter is followed by another parameter (e.g., `--tile --ar 16:9`), it's treated as a boolean flag.
+### Weird (`--weird` or `--w`)
 
-- **Multi-Value Parameters:**
-  Some parameters can accept multiple values (e.g., `--no cars,trees`). These are typically comma-separated.
+Introduces unconventional aesthetics
 
-- **Parameter Validation:**
-  - Numeric ranges are enforced
-  - Aspect ratios must be valid integers
-  - Version numbers must be supported
-  - Style names must be recognized
+```
+--weird <value>
+```
 
-### Error Handling
+- Value range: `0` to `3000` (integer)
+- Default: `0`
+
+> Example
+
+```
+--weird 1000
+```
+
+---
+
+## Generation process
+
+### Seed (`--seed`)
+
+Sets a specific seed to reproduce outcomes
+
+```
+--seed <value>
+```
+
+- Value range: `0` to `4294967295` (integer)
+
+> Example:
+
+```
+--seed 123456789
+```
+
+### Prompt permutation
+
+Prompt permutation allows you to quickly generate multiple prompts by including comma-separated options within curly braces `{}`. The surrounding fixed text is repeated with each provided option to create separate prompt variations.
+
+Enclose a comma-separated list of options within curly braces. 
+
+```
+A {red, blue, green} car
+```
+
+This expands to 3 prompts:
+
+- `A red car`
+- `A blue car`
+- `A green car`
+
+Repeat permutations.
+
+```
+A {red, blue} {car, truck} with {chrome, matte} finish
+```
+
+This expands to 2×2×2=8 prompts. 
+
+Permute parameters.
+
+```
+portrait --ar {1:1, 16:9} --s {100, 500, 1000}
+```
+
+This expands to 2×3=6 prompts. 
+
+Nest permutations.
+
+```
+{realistic, artistic} scene --v {5.2, 6 {, --style raw}} 
+```
+
+This expands to 2×(2+1)=6 prompts:
+
+- `realistic scene --v 5.2`
+- `realistic scene --v 6`
+- `realistic scene --v 6 --style raw`
+- `artistic scene --v 5.2`
+- `artistic scene --v 6`
+- `artistic scene --v 6 --style raw`
+
+Within a permutation group, use commas to separate portions, prefix a comma with a backslash to actually have it in the expanded prompt.
+
+```
+A {bright\, vibrant, dark\, moody} atmosphere
+```
+
+This expands to 2 prompts:
+
+- `A bright, vibrant atmosphere`
+- `A dark, moody atmosphere`
+
+The total number of permutations may be limited based on subscription tier. Permutation prompts are only available in Fast Mode.
+
+Permutation is great for exploring various syntaxes and prompt structures: 
+
+```
+beautiful woman{::, ::2, ::0.3, \,} sports car
+```
+
+expands into
+
+- `beautiful woman:: sports car`
+- `beautiful woman::2 sports car`
+- `beautiful woman::0.3 sports car`
+- `beautiful woman, sports car`
+
+
+
+### Repeat (`--repeat` or `--r`)
+
+The `--r` parameter produces multiple prompts, similarly to prompt permutation, but the multiplication happens on the model side. It can be combined with permutation prompts.
+
+If a prompt includes the `--r` parameter, the model runs the same prompt multiple times to generate variations. It can be used with `--sref random` to generate different style references each time. 
+
+```
+--repeat <number>
+```
+
+- Value range: Basic Subscribers: 2–4, Standard Subscribers: 2–10, Pro/Mega Subscribers: 2–40
+
+> Example:
+
+```
+--repeat 5
+```
+
+## Quality and speed
+
+### Quality (`--quality` or `--q`)
+
+Controls the time spent generating an image; affects detail
+
+```
+--quality <value>
+```
+
+- Values: `0.25`, `0.5`, `1` (default)
+
+> Example
+
+```
+--quality 0.5
+```
+
+#### Turbo Mode (`--turbo`)
+
+Generates images faster using additional GPU resources
+
+```
+--turbo
+```
+
+- Value: None (boolean flag)
+
+#### Relax Mode (`--relax`)
+
+Generates images in relaxed mode without consuming GPU time
+
+```
+--relax
+```
+
+- Value: None (boolean flag)
+
+### Stop (`--stop`)
+
+Stops image generation at a specified percentage of completion for different artistic effects
+
+```
+--stop <value>
+```
+
+- Value range: `10` to `100` (integer)
+- Default: `100`
+
+> Example:
+
+```
+--stop 80
+```
+
+---
+
+## Summary
+
+- **Order matters**: Image prompts come first (if used), followed by the text description, and then all parameters.
+- **Parameter prefix**: Every parameter starts with `--` and, if required, is followed by a space and its value.
+- **Advanced techniques**: Use multi-prompts with `::` and permutation prompts with `{}` to fine-tune creative direction and generate multiple variations.
+- **Personalization and references**: `--sw` controls the weight of the style reference (`--sref`). `--s` controls the weight of personalization (`--p`, or of the default persona when `--p` is not provided). Style reference and personalization operate independently: each pulls the image in a distinct stylistic direction. To test the full effect of style reference without personalization influence, use: `--style raw --s 0`.
+- **Model and feature dependencies**: Some parameters (e.g., `--iw`, `--sv`, `--p`, permutation prompts) are model-specific or depend on the subscription tier or mode (e.g., Fast Mode).
+- **Text generation**: Use double quotation marks `"` to specify exact text to appear in the image.
+
+## Prompt examples
+
+1. **Basic Text-Only Prompt:**
+
+```
+/imagine prompt: A serene sunset over the ocean
+```
+
+2. **Prompt with Image URLs, Text, and Parameters:**
+
+```
+/imagine prompt: https://example.com/inspiration.jpg A portrait of a wise old man --style raw --v 5.1
+```
+
+3. **Prompt with Character and Style References:**
+
+```
+/imagine prompt: A hero in battle --cref https://example.com/hero.png --cw 75 --sref https://example.com/style.jpg --sw 150
+```
+
+4. **Multi-Prompt with Weighting:**
+
+```
+/imagine prompt: futuristic city ::2 cyberpunk skyline ::1 --chaos 20
+```
+
+5. **Permutation Prompt for Multiple Variations:**
+
+```
+/imagine prompt: A {red, blue, green} bird on a {flower, leaf} --ar {16:9, 1:1}
+```
+
+6. **Prompt with Personalization and Parameters:**
+
+```
+/imagine prompt: A vibrant garden in spring --p p123456789 --stylize 500 --seed 987654321
+```
+
+7. **Complex Mixed Prompt:**
+
+```
+/imagine prompt: {realistic, artistic} portrait of a {young, old} {man, woman} --style {raw, expressive} --v 6 --ar 1:1 --stylize {100, 1000}
+```
+
+8. **Prompt with Exclusions and Turbo Mode:**
+
+```
+/imagine prompt: A futuristic landscape at dusk --ar 21:9 --stylize 300 --chaos 50 --seed 987654321 --no buildings, cars --turbo
+```
+
+---
+
+## Notes for parser implementers
+
+### Parsing order
+
+1. **Permutation:**
+
+- Process all permutation groups `{...}`.
+- Handle nested permutations.
+- Expand into individual prompts.
+
+2. **Image referece:**
+
+- Identify and validate image URLs or attachments at the start.
+- Check for supported file formats.
+- Handle multiple images.
+
+3. **Text description:**
+
+- Extract main prompt text.
+- Segment text by weight markers `::`.
+- Handle escaped characters.
+- Identify text in double quotes `"` for explicit text generation.
+
+4. **Parameter Processing:**
+
+- Extract parameters starting with `--`.
+- Parse parameter values.
+- Handle boolean flags.
+- Validate parameter ranges.
+
+### Boolean Parameters
+
+- If a parameter is followed by another parameter (e.g., `--tile --ar 16:9`), it's treated as a boolean flag.
+
+### Multi-Value Parameters
+
+- Some parameters accept multiple values (e.g., `--no cars, trees`).
+
+### Parameter Validation
+
+- Numeric ranges are enforced.
+- Aspect ratios must be valid integers.
+- Version numbers must be supported.
+- Style names and codes must be recognized.
+
+### Error handling
 
 The parser should handle common errors gracefully:
 
-- Invalid URL formats
-- Malformed permutation syntax
-- Invalid parameter values
-- Missing required components
-- Unsupported parameter combinations
-
----
-
-## [∞](#summary) **Summary**
-
-- **Order Matters:**  
-  Image URLs come first (if used), followed by the text description, and then all parameters.
-
-- **Parameter Prefix:**  
-  Every parameter starts with `--` and (if required) is followed by a space and its value.
-
-- **Advanced Techniques:**  
-  Use multi-prompts with `::` and permutation prompts with `{}` to fine-tune creative direction and generate multiple variations.
-
-- **Model and Feature Dependencies:**  
-  Some parameters (e.g., `--iw`, `--stop`, `--v`/`--niji`, permutation prompts) are model-specific or depend on the subscription tier or mode (e.g., Fast mode).
-
-## Notes
-
-When parsing midjargon, we need to first permute (expand the {} into simple prompts), then parse each of the simple prompts.
-
-### Null values
-
-If a --param2 directly follows another --param1, then --param1 is present but has a null value (equivalent to a boolean True). But nonparams that follow a --param1 become its values, and can be multiple
-
-### Permutation prompts
-
-This prompt: 
-
-```input
-a {black, white, red\,blue} cat {, --p {, PERSOCODE}} --ar {16:9}
-```
-
-should permute into 9 prompts:
-
-```permutation
-a black cat --ar 16:9
-a black cat --p --ar 16:9
-a black cat --p PERSOCODE --ar 16:9
-a white cat --ar 16:9
-a white cat --p --ar 16:9
-a white cat --p PERSOCODE --ar 16:9
-a red,blue cat --ar 16:9
-a red,blue cat --p --ar 16:9
-a red,blue cat --p PERSOCODE --ar 16:9
-```
----
-
-```input
-{bulldog, dachshund} cute claymation character --no blur --style raw --ar {16:9, 1:1} {--p m7284532597038776332, --p} --s {150, 800}
-```
-
-```permutation
-bulldog cute claymation character --no blur --style raw --ar 16:9 --p m7284532597038776332 --s 150 --ar 16:9
-bulldog cute claymation character --no blur --style raw --ar 16:9 --p m7284532597038776332 --s 800 --ar 16:9
-bulldog cute claymation character --no blur --style raw --ar 16:9 --p --s 150 --ar 16:9
-bulldog cute claymation character --no blur --style raw --ar 16:9 --p --s 800 --ar 16:9
-bulldog cute claymation character --no blur --style raw --ar 1:1 --p m7284532597038776332 --s 150 --ar 16:9
-bulldog cute claymation character --no blur --style raw --ar 1:1 --p m7284532597038776332 --s 800 --ar 16:9
-bulldog cute claymation character --no blur --style raw --ar 1:1 --p --s 150 --ar 16:9
-bulldog cute claymation character --no blur --style raw --ar 1:1 --p --s 800 --ar 16:9
-dachshund cute claymation character --no blur --style raw --ar 16:9 --p m7284532597038776332 --s 150 --ar 16:9
-dachshund cute claymation character --no blur --style raw --ar 16:9 --p m7284532597038776332 --s 800 --ar 16:9
-dachshund cute claymation character --no blur --style raw --ar 16:9 --p --s 150 --ar 16:9
-dachshund cute claymation character --no blur --style raw --ar 16:9 --p --s 800 --ar 16:9
-dachshund cute claymation character --no blur --style raw --ar 1:1 --p m7284532597038776332 --s 150 --ar 16:9
-dachshund cute claymation character --no blur --style raw --ar 1:1 --p m7284532597038776332 --s 800 --ar 16:9
-dachshund cute claymation character --no blur --style raw --ar 1:1 --p --s 150 --ar 16:9
-dachshund cute claymation character --no blur --style raw --ar 1:1 --p --s 800 --ar 16:9
-```
-
----
-
-```input
-comic strip in style of {John, Bill}, bright colors --s {20, 999} --sref https://picsum.photos/id/237/200/300 https://picsum.photos/200/300?grayscale --sw {20, 999}
-```
-
-```permutation
-comic strip in style of John, bright colors --s 20 --sref https://picsum.photos/id/237/200/300 https://picsum.photos/200/300?grayscale --sw 20 --ar 16:9
-comic strip in style of John, bright colors --s 20 --sref https://picsum.photos/id/237/200/300 https://picsum.photos/200/300?grayscale --sw 999 --ar 16:9
-comic strip in style of John, bright colors --s 999 --sref https://picsum.photos/id/237/200/300 https://picsum.photos/200/300?grayscale --sw 20 --ar 16:9
-comic strip in style of John, bright colors --s 999 --sref https://picsum.photos/id/237/200/300 https://picsum.photos/200/300?grayscale --sw 999 --ar 16:9
-comic strip in style of Bill, bright colors --s 20 --sref https://picsum.photos/id/237/200/300 https://picsum.photos/200/300?grayscale --sw 20 --ar 16:9
-comic strip in style of Bill, bright colors --s 20 --sref https://picsum.photos/id/237/200/300 https://picsum.photos/200/300?grayscale --sw 999 --ar 16:9
-comic strip in style of Bill, bright colors --s 999 --sref https://picsum.photos/id/237/200/300 https://picsum.photos/200/300?grayscale --sw 20 --ar 16:9
-comic strip in style of Bill, bright colors --s 999 --sref https://picsum.photos/id/237/200/300 https://picsum.photos/200/300?grayscale --sw 999 --ar 16:9
-```
----
-
+- Invalid URL formats.
+- Malformed permutation syntax.
+- Invalid parameter values.
+- Missing required components.
+- Unsupported parameter combinations.

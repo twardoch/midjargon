@@ -3,16 +3,25 @@ Models for Midjourney engine.
 """
 
 import re
+from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .constants import (
     ALLOWED_IMAGE_EXTENSIONS,
     CHAOS_RANGE,
+    CHARACTER_WEIGHT_RANGE,
     IMAGE_WEIGHT_RANGE,
+    QUALITY_RANGE,
+    REPEAT_RANGE,
     SEED_RANGE,
     STOP_RANGE,
+    STYLE_VERSION_RANGE,
+    STYLE_WEIGHT_RANGE,
     STYLIZE_RANGE,
+    VALID_NIJI_VERSIONS,
+    VALID_STYLES,
+    VALID_VERSIONS,
     WEIRD_RANGE,
 )
 
@@ -77,6 +86,29 @@ class MidjourneyPrompt(BaseModel):
     version: str | None = Field(None)  # v5, v6, niji, etc.
     personalization: str | None = Field(None)  # Profile ID or code for --p parameter
 
+    # New parameters
+    quality: float | None = Field(None, ge=QUALITY_RANGE[0], le=QUALITY_RANGE[1])
+    character_reference: list[str] = Field(default_factory=list)
+    character_weight: int | None = Field(
+        None, ge=CHARACTER_WEIGHT_RANGE[0], le=CHARACTER_WEIGHT_RANGE[1]
+    )
+    style_reference: list[str] = Field(default_factory=list)
+    style_weight: int | None = Field(
+        None, ge=STYLE_WEIGHT_RANGE[0], le=STYLE_WEIGHT_RANGE[1]
+    )
+    style_version: int | None = Field(
+        None, ge=STYLE_VERSION_RANGE[0], le=STYLE_VERSION_RANGE[1]
+    )
+    repeat: int | None = Field(None, ge=REPEAT_RANGE[0], le=REPEAT_RANGE[1])
+
+    # Flag parameters
+    turbo: bool = Field(default=False)
+    relax: bool = Field(default=False)
+    tile: bool = Field(default=False)
+
+    # Negative prompts
+    negative_prompt: str | None = Field(None)
+
     # Store any unknown parameters
     extra_params: dict[str, str | None] = Field(default_factory=dict)
 
@@ -85,3 +117,42 @@ class MidjourneyPrompt(BaseModel):
     def clean_text(cls, v: str) -> str:
         """Basic text cleanup."""
         return v.strip()
+
+    @field_validator("style")
+    @classmethod
+    def validate_style(cls, v: str | None) -> str | None:
+        """Validate style value."""
+        if v is not None and v not in VALID_STYLES:
+            msg = f"Invalid style value. Must be one of: {VALID_STYLES}"
+            raise ValueError(msg)
+        return v
+
+    @field_validator("version")
+    @classmethod
+    def validate_version(cls, v: str | None) -> str | None:
+        """Validate version value."""
+        if v is None:
+            return v
+        if v.startswith("v"):
+            version = v[1:]
+            if version not in VALID_VERSIONS:
+                msg = f"Invalid version value. Must be one of: {VALID_VERSIONS}"
+                raise ValueError(msg)
+        elif v.startswith("niji"):
+            version = v.split()[-1]
+            if version not in VALID_NIJI_VERSIONS:
+                msg = f"Invalid niji version. Must be one of: {VALID_NIJI_VERSIONS}"
+                raise ValueError(msg)
+        else:
+            msg = "Version must start with 'v' or 'niji'"
+            raise ValueError(msg)
+        return v
+
+    @model_validator(mode="after")
+    @classmethod
+    def validate_mode_flags(cls, data: "MidjourneyPrompt") -> "MidjourneyPrompt":
+        """Validate mode flag combinations."""
+        if data.turbo and data.relax:
+            msg = "Cannot use both turbo and relax modes"
+            raise ValueError(msg)
+        return data

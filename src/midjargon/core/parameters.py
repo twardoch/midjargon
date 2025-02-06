@@ -27,6 +27,16 @@ PARAM_SHORTCUTS = {
     "ar": "aspect",
     "no": None,  # Flag parameter
     "tile": None,  # Flag parameter
+    # New shortcuts
+    "q": "quality",
+    "r": "repeat",
+    "cw": "character_weight",
+    "sw": "style_weight",
+    "sv": "style_version",
+    "cref": "character_reference",
+    "sref": "style_reference",
+    "turbo": None,  # Flag parameter
+    "relax": None,  # Flag parameter
 }
 
 # Constants
