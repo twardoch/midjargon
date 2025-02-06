@@ -10,11 +10,11 @@ and engine-specific prompt types.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Generic, TypeVar, cast
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel
 
-from midjargon.core.type_defs import MidjargonDict, MidjargonPrompt
+from midjargon.core.type_defs import MidjargonDict
 
 # Type variable for engine-specific prompt type, must be a Pydantic model
 T = TypeVar("T", bound=BaseModel)
