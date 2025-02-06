@@ -338,7 +338,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             ValueError: If data is invalid.
         """
         # Validate text
-        text = data.get("text", "").strip()
+        text = str(data.get("text", "")).strip()
         if not text:
             msg = "Empty prompt text"
             raise ValueError(msg)
@@ -347,34 +347,50 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         raw_image_prompts = data.get("images", [])
         if not isinstance(raw_image_prompts, list):
             raw_image_prompts = [raw_image_prompts]
-        image_prompts = [str(p) for p in raw_image_prompts if p]
+        image_prompts = [ImagePrompt(url=str(p)) for p in raw_image_prompts if p]
 
-        # Convert numeric parameters with defaults
-        numeric_params = {
+        # Convert integer parameters with defaults
+        int_params: dict[str, int | None] = {
             "stylize": None,
             "chaos": None,
             "weird": None,
-            "image_weight": None,
             "seed": None,
             "stop": None,
             "aspect_width": None,
             "aspect_height": None,
+            "character_weight": None,
+            "style_weight": None,
+            "style_version": None,
+            "repeat": None,
         }
-        for name, default in numeric_params.items():
+        for name, default in int_params.items():
             value = data.get(name)
             if value is not None:
                 try:
-                    numeric_params[name] = float(value)
+                    int_params[name] = int(float(str(value)))
+                except (ValueError, TypeError):
+                    msg = f"Invalid value for {name}: {value}"
+                    raise ValueError(msg) from None
+
+        # Convert float parameters
+        float_params: dict[str, float | None] = {
+            "image_weight": None,
+            "quality": None,
+        }
+        for name, default in float_params.items():
+            value = data.get(name)
+            if value is not None:
+                try:
+                    float_params[name] = float(str(value))
                 except (ValueError, TypeError):
                     msg = f"Invalid value for {name}: {value}"
                     raise ValueError(msg) from None
 
         # Convert string parameters
-        string_params = {
+        string_params: dict[str, str | None] = {
             "style": None,
             "version": None,
             "personalization": None,
-            "quality": None,
         }
         for name in string_params:
             value = data.get(name)
@@ -382,7 +398,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
                 string_params[name] = str(value)
 
         # Convert reference lists
-        reference_lists = {
+        reference_lists: dict[str, list[str]] = {
             "character_reference": [],
             "style_reference": [],
         }
@@ -392,24 +408,8 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
                 value = [value]
             reference_lists[name] = [str(v) for v in value if v]
 
-        # Convert reference weights
-        reference_weights = {
-            "character_weight": None,
-            "style_weight": None,
-            "style_version": None,
-            "repeat": None,
-        }
-        for name in reference_weights:
-            value = data.get(name)
-            if value is not None:
-                try:
-                    reference_weights[name] = float(value)
-                except (ValueError, TypeError):
-                    msg = f"Invalid value for {name}: {value}"
-                    raise ValueError(msg) from None
-
         # Convert boolean flags
-        boolean_flags = {
+        boolean_flags: dict[str, bool] = {
             "turbo": False,
             "relax": False,
             "tile": False,
@@ -422,15 +422,38 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
                 else:
                     boolean_flags[name] = bool(value)
 
-        # Create prompt object
+        # Get extra parameters
+        extra_params = data.get("extra_params", {})
+        if not isinstance(extra_params, dict):
+            extra_params = {}
+
+        # Create prompt object with explicit parameter groups
         return MidjourneyPrompt(
             text=text,
             image_prompts=image_prompts,
-            negative_prompt=data.get("negative_prompt"),
-            extra_params=data.get("extra_params", {}),
-            **numeric_params,
-            **string_params,
-            **reference_lists,
-            **reference_weights,
-            **boolean_flags,
+            negative_prompt=str(data.get("negative_prompt"))
+            if data.get("negative_prompt")
+            else None,
+            extra_params=extra_params,
+            stylize=int_params["stylize"],
+            chaos=int_params["chaos"],
+            weird=int_params["weird"],
+            image_weight=float_params["image_weight"],
+            seed=int_params["seed"],
+            stop=int_params["stop"],
+            aspect_width=int_params["aspect_width"],
+            aspect_height=int_params["aspect_height"],
+            style=string_params["style"],
+            version=string_params["version"],
+            personalization=string_params["personalization"],
+            quality=float_params["quality"],
+            character_reference=reference_lists["character_reference"],
+            style_reference=reference_lists["style_reference"],
+            character_weight=int_params["character_weight"],
+            style_weight=int_params["style_weight"],
+            style_version=int_params["style_version"],
+            repeat=int_params["repeat"],
+            turbo=boolean_flags["turbo"],
+            relax=boolean_flags["relax"],
+            tile=boolean_flags["tile"],
         )
