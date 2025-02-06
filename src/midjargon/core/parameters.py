@@ -15,7 +15,7 @@ from typing import TypeAlias
 
 # Type aliases for clarity
 ParamName: TypeAlias = str
-ParamValue: TypeAlias = str | None
+ParamValue: TypeAlias = str | list[str] | None
 ParamDict: TypeAlias = dict[ParamName, ParamValue]
 
 # Common parameter shortcuts
@@ -63,6 +63,101 @@ def validate_param_name(name: str) -> None:
     if not name.replace("-", "").replace("_", "").isalnum():
         msg = f"Invalid parameter name: {name}"
         raise ValueError(msg)
+    if name.startswith("-"):
+        msg = f"Parameter name cannot start with dash: {name}"
+        raise ValueError(msg)
+
+
+def validate_param_value(name: str, value: ParamValue) -> None:
+    """
+    Validate a parameter value.
+
+    Args:
+        name: Parameter name.
+        value: Parameter value to validate.
+
+    Raises:
+        ValueError: If value is invalid for the parameter type.
+    """
+    if value is None:
+        return
+
+    # Handle list values for reference parameters
+    if isinstance(value, list):
+        if name not in {"character_reference", "style_reference"}:
+            msg = f"List values only allowed for reference parameters, got: {name}"
+            raise ValueError(msg)
+        for item in value:
+            if not any(
+                item.lower().endswith(ext) for ext in {".jpg", ".jpeg", ".png", ".gif"}
+            ):
+                msg = f"Invalid reference file extension for {name}: {item}"
+                raise ValueError(msg)
+        return
+
+    # Validate numeric parameters
+    if name in {
+        "stylize",
+        "chaos",
+        "weird",
+        "image_weight",
+        "quality",
+        "character_weight",
+        "style_weight",
+        "repeat",
+    }:
+        try:
+            num = float(value)
+            if num < 0:
+                msg = f"Parameter {name} cannot be negative: {value}"
+                raise ValueError(msg)
+        except ValueError as e:
+            msg = f"Invalid numeric value for {name}: {value}"
+            raise ValueError(msg) from e
+
+    # Validate version parameter
+    if name == "version":
+        if not value.replace(".", "").isdigit() and not value.startswith("niji"):
+            msg = f"Invalid version value: {value}"
+            raise ValueError(msg)
+
+    # Validate reference parameters
+    if name in {"character_reference", "style_reference"}:
+        if not any(
+            value.lower().endswith(ext) for ext in {".jpg", ".jpeg", ".png", ".gif"}
+        ):
+            msg = f"Invalid reference file extension for {name}: {value}"
+            raise ValueError(msg)
+
+
+def expand_shorthand_param(name: str) -> tuple[str, bool]:
+    """
+    Expand a shorthand parameter name to its full form.
+
+    Args:
+        name: Parameter name that might be in shorthand form.
+
+    Returns:
+        Tuple of (expanded_name, is_flag_param).
+    """
+    # Handle special case for niji versions
+    if name.startswith("niji"):
+        return "version", True
+
+    # Handle special case for version parameter
+    if name == "v":
+        return "version", False
+
+    # Handle special case for personalization
+    if name == "p":
+        return "personalization", True
+
+    # Check for shorthand in mapping
+    if name in PARAM_SHORTCUTS:
+        expanded = PARAM_SHORTCUTS[name]
+        return (expanded if expanded else name, expanded is None)
+
+    return name, False
 
 
 def process_param_value(values: list[str]) -> str | None:
@@ -83,37 +178,22 @@ def process_param_value(values: list[str]) -> str | None:
         value = value[1:-1]  # Remove surrounding quotes
     elif value.startswith("'") and value.endswith("'"):
         value = value[1:-1]  # Remove surrounding quotes
+
+    # Handle version parameter specially
+    if value.startswith("v") and value[1:].replace(".", "").isdigit():
+        return value[1:]  # Strip 'v' prefix for version numbers
+    elif value.startswith("niji"):
+        return value  # Keep niji version as is
+
+    # Handle reference files
+    if "," in value and any(
+        ext in value.lower() for ext in {".jpg", ".jpeg", ".png", ".gif"}
+    ):
+        # Split on commas and clean up each file path
+        files = [f.strip() for f in value.split(",")]
+        return ",".join(files)
+
     return value
-
-
-def expand_shorthand_param(name: str) -> tuple[str, bool]:
-    """
-    Expand a shorthand parameter name to its full form.
-
-    Args:
-        name: Parameter name that might be in shorthand form.
-
-    Returns:
-        Tuple of (expanded_name, is_flag_param).
-    """
-    # Handle special case for niji versions
-    if name.startswith("niji"):
-        return "version", False
-
-    # Handle special case for personalization
-    if name == "p" or name.startswith("p "):
-        return "personalization", False
-
-    # Handle version shorthand
-    if name == "v" or name.startswith("v "):
-        return "version", False
-
-    # Look up in shortcuts
-    if name in PARAM_SHORTCUTS:
-        expanded = PARAM_SHORTCUTS[name]
-        return (name if expanded is None else expanded, expanded is None)
-
-    return name, False
 
 
 def _expand_param_name(name: str) -> str:
@@ -223,65 +303,63 @@ def _process_param_chunk(
     return expanded_name, value
 
 
-def parse_parameters(param_str: str) -> dict[str, str | None]:
+def parse_parameters(param_str: str) -> ParamDict:
     """
     Parse parameter string into a dictionary.
 
     Args:
-        param_str: Parameter string to parse.
+        param_str: String containing parameters (e.g., "--ar 16:9 --stylize 100").
 
     Returns:
-        Dictionary of parameter names and values.
+        Dictionary mapping parameter names to values.
 
     Raises:
-        ValueError: If parameters are invalid.
+        ValueError: If parameter format is invalid.
     """
-    if not param_str:
-        return {}
+    params: ParamDict = {}
+    current_param = ""
+    current_values = []
 
-    # Split on spaces, preserving quoted strings
-    chunks = []
-    current_chunk = []
-    in_quotes = False
-    quote_char = None
+    # Split into chunks and process each
+    chunks = param_str.split("--")
+    for chunk in chunks[1:]:  # Skip first empty chunk
+        if not chunk.strip():
+            msg = "Empty parameter"
+            raise ValueError(msg)
 
-    for char in param_str:
-        if char in {'"', "'"}:
-            if not in_quotes:
-                in_quotes = True
-                quote_char = char
-            elif char == quote_char:
-                in_quotes = False
-                quote_char = None
-            current_chunk.append(char)
-        elif char.isspace() and not in_quotes:
-            if current_chunk:
-                chunks.append("".join(current_chunk))
-                current_chunk = []
+        # Split at first space to separate name and value
+        parts = chunk.strip().split(maxsplit=1)
+        name = parts[0]
+        value = parts[1] if len(parts) > 1 else None
+
+        # Validate and expand parameter name
+        validate_param_name(name)
+        expanded_name, is_flag = expand_shorthand_param(name)
+
+        # Process value
+        if is_flag:
+            if value is None:
+                params[expanded_name] = None
+            else:
+                params[expanded_name] = value
         else:
-            current_chunk.append(char)
+            if value is not None:
+                processed_value = process_param_value([value])
+                validate_param_value(expanded_name, processed_value)
 
-    if current_chunk:
-        chunks.append("".join(current_chunk))
-
-    # Process each parameter chunk
-    params = {}
-    current_chunk = []
-
-    for chunk in chunks:
-        if chunk.startswith("--"):
-            if current_chunk:
-                name, value = _process_param_chunk(" ".join(current_chunk), params)
-                if name:  # Only add if name is not empty
-                    params[name] = value
-                current_chunk = []
-            current_chunk.append(chunk)
-        else:
-            current_chunk.append(chunk)
-
-    if current_chunk:
-        name, value = _process_param_chunk(" ".join(current_chunk), params)
-        if name:  # Only add if name is not empty
-            params[name] = value
+                # Handle reference parameters specially
+                if (
+                    expanded_name in {"character_reference", "style_reference"}
+                    and processed_value
+                ):
+                    # Convert comma-separated list to actual list
+                    params[expanded_name] = [
+                        f.strip() for f in processed_value.split(",")
+                    ]
+                else:
+                    params[expanded_name] = processed_value
+            else:
+                msg = f"Missing value for parameter: {name}"
+                raise ValueError(msg)
 
     return params

@@ -170,17 +170,29 @@ def _format_part(before: str, option: str, after: str) -> str:
     """
     # Handle empty option
     if not option:
-        return before.rstrip() + after.lstrip()
+        return before.rstrip() + " " + after.lstrip()
 
     # Handle word boundaries
-    result = before.rstrip()
-    if result and not result.endswith(" "):
-        result += " "
-    result += option.strip()
-    if after and not after.startswith(" "):
-        result += " "
-    result += after.lstrip()
-    return result.rstrip()
+    result = []
+
+    # Add before text
+    if before:
+        result.append(before.rstrip())
+        # Add space if before ends with alphanumeric and option starts with alphanumeric
+        if before.rstrip()[-1:].isalnum() and option.lstrip()[:1].isalnum():
+            result.append(" ")
+
+    # Add option
+    result.append(option.strip())
+
+    # Add after text
+    if after:
+        # Add space if option ends with alphanumeric and after starts with alphanumeric
+        if option.rstrip()[-1:].isalnum() and after.lstrip()[:1].isalnum():
+            result.append(" ")
+        result.append(after.lstrip())
+
+    return "".join(result)
 
 
 def _add_spacing(before: str, after: str) -> tuple[str, str]:

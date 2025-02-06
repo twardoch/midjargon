@@ -26,8 +26,29 @@ def expand_midjargon_input(prompt: MidjargonInput) -> MidjargonList:
         msg = "Empty prompt"
         raise ValueError(msg)
 
-    # Handle escaped braces by temporarily replacing them
-    processed = prompt.replace(r"\{", "‹").replace(r"\}", "›")
+    # Handle escaped characters by temporarily replacing them
+    # Use unique markers that won't appear in normal text
+    replacements = {
+        r"\{": "‹ESCAPED_OPEN›",
+        r"\}": "‹ESCAPED_CLOSE›",
+        r"\,": "‹ESCAPED_COMMA›",
+    }
+    processed = prompt
+    for escaped, marker in replacements.items():
+        processed = processed.replace(escaped, marker)
+
+    # Expand permutations
     expanded = expand_text(processed)
-    # Restore escaped braces
-    return [text.replace("‹", "{").replace("›", "}") for text in expanded]
+
+    # Restore escaped characters
+    restored = []
+    for text in expanded:
+        for marker, original in {
+            "‹ESCAPED_OPEN›": "{",
+            "‹ESCAPED_CLOSE›": "}",
+            "‹ESCAPED_COMMA›": ",",
+        }.items():
+            text = text.replace(marker, original)
+        restored.append(text)
+
+    return restored

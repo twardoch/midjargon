@@ -115,7 +115,11 @@ def _handle_error(console: Console, error: Exception) -> NoReturn:
 
 
 def _output_json(data: Any) -> None:
-    """Output data as JSON."""
+    """Output data as formatted JSON."""
+    if isinstance(data, (list, dict)):
+        print(json.dumps(data, indent=2))
+    else:
+        print(json.dumps(data.model_dump(), indent=2))
 
 
 def process_prompt(prompt: str) -> list[MidjourneyPrompt]:
@@ -172,69 +176,63 @@ def main(
     console = Console(force_terminal=not no_color)
 
     try:
-        # First parse with midjargon
-        if raw:
-            # Parse and expand the input
-            expanded = expand_midjargon_input(prompt)
-            # Convert each expanded prompt to a dictionary
-            midjargon_dicts = [parse_midjargon_prompt_to_dict(p) for p in expanded]
-
-            if json_output:
-                # Output raw parsed prompts as JSON
-                _output_json(midjargon_dicts)
-            else:
-                for i, p in enumerate(midjargon_dicts, 1):
-                    console.print(
-                        Panel(
-                            Syntax(
-                                json.dumps(p, indent=2),
-                                "json",
-                                theme="monokai",
-                            ),
-                            title=f"[bold]Raw Prompt {i}[/bold]",
-                        )
-                    )
-            return
-
-        # Parse and validate with Midjourney rules
-        # First expand the input
+        # Expand permutations
         expanded = expand_midjargon_input(prompt)
-        # Convert each expanded prompt to a dictionary
-        midjargon_dicts = [parse_midjargon_prompt_to_dict(p) for p in expanded]
-        # Parse each dictionary into a MidjourneyPrompt
-        prompts = [parse_midjourney_dict(d) for d in midjargon_dicts]
+
+        # Process each expanded prompt
+        results = []
+        for exp_prompt in expanded:
+            # Parse into dictionary
+            parsed = parse_midjargon_prompt_to_dict(exp_prompt)
+            if raw:
+                results.append(parsed)
+                continue
+
+            # Parse for Midjourney
+            midjourney = parse_midjourney_dict(parsed)
+            results.append(midjourney)
 
         if json_output:
-            # Output validated prompts as JSON
-            _output_json([p.model_dump() for p in prompts])
-        else:
-            for i, p in enumerate(prompts, 1):
-                if len(prompts) > 1:
-                    console.print(f"\n[bold]Prompt {i}:[/bold]")
+            if raw:
+                _output_json(results)
+            else:
+                # Convert Pydantic models to dicts for JSON serialization
+                json_results = [prompt.model_dump() for prompt in results]
+                _output_json(json_results)
+            return
 
-                # Show formatted prompt
-                formatted = format_prompt(p)
-                console.print(
-                    Panel(
-                        formatted,
-                        title="[bold]Formatted[/bold]",
-                        style="green",
-                    )
-                )
-
-                # Show structured data
+        # Display results
+        for result in results:
+            if raw:
+                # Show raw parsed structure
                 console.print(
                     Panel(
                         Syntax(
-                            p.model_dump_json(indent=2),
+                            json.dumps(result, indent=2),
                             "json",
-                            theme="monokai",
+                            background_color="default",
                         ),
-                        title="[bold]Structured[/bold]",
+                        title="Raw Parsed",
+                    )
+                )
+            else:
+                # Show formatted prompt
+                console.print(Panel(format_prompt(result), title="Formatted"))
+                console.print(
+                    Panel(
+                        Syntax(
+                            json.dumps(result.model_dump(), indent=2),
+                            "json",
+                            background_color="default",
+                        ),
+                        title="Structured",
                     )
                 )
 
     except Exception as e:
+        if json_output:
+            _output_json({"error": str(e)})
+            sys.exit(1)
         _handle_error(console, e)
 
 
