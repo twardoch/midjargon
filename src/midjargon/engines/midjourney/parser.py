@@ -346,7 +346,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         raw_image_prompts = data.get("image_prompts", [])
         if not isinstance(raw_image_prompts, list):
             raw_image_prompts = [raw_image_prompts]
-        image_prompts = [str(x) for x in raw_image_prompts if x]
+        image_prompts = [ImagePrompt(url=str(x)) for x in raw_image_prompts if x]
 
         # Handle numeric parameters
         numeric_params = {
@@ -379,9 +379,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         if aspect_width is not None or aspect_height is not None:
             try:
                 aspect_width = int(aspect_width) if aspect_width is not None else None
-                aspect_height = (
-                    int(aspect_height) if aspect_height is not None else None
-                )
+                aspect_height = int(aspect_height) if aspect_height is not None else None
             except (ValueError, TypeError):
                 msg = f"Invalid aspect ratio: {aspect_width}:{aspect_height}"
                 raise ValueError(msg)
@@ -398,6 +396,11 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             value = data.get(param)
             if value is not None:
                 string_params[param] = str(value)
+
+        # Special handling for personalization
+        if "personalization" in data.get("extra_params", {}):
+            string_params["personalization"] = str(data["extra_params"]["personalization"])
+            del data["extra_params"]["personalization"]
 
         # Handle style version
         style_version = data.get("style_version")

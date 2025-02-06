@@ -115,90 +115,96 @@ def _handle_error(console: Console, error: Exception) -> NoReturn:
 
 
 def _output_json(data: Any) -> None:
-    """Output data as formatted JSON."""
+    """Output data as JSON."""
     json_str = json.dumps(data, indent=2)
     print(json_str)
 
 
+def process_prompt(prompt: str) -> list[MidjourneyPrompt]:
+    """
+    Process a prompt string into a list of MidjourneyPrompt objects.
+
+    Args:
+        prompt: The prompt text to process.
+
+    Returns:
+        List of MidjourneyPrompt objects.
+
+    Raises:
+        ValueError: If the prompt is invalid.
+    """
+    # Expand any permutations in the prompt
+    expanded_prompts = expand_midjargon_input(prompt)
+
+    # Process each expanded prompt
+    results = []
+    for expanded in expanded_prompts:
+        # Parse into dictionary
+        prompt_dict = parse_midjargon_prompt_to_dict(expanded)
+        # Convert to MidjourneyPrompt
+        prompt_obj = parse_midjourney_dict(prompt_dict)
+        results.append(prompt_obj)
+
+    return results
+
+
 def main(
     prompt: str,
-    *,  # Make all following arguments keyword-only
     raw: bool = False,
     json_output: bool = False,
     no_color: bool = False,
 ) -> None:
     """
-    Process and validate a Midjourney prompt.
+    Main entry point for the CLI.
 
     Args:
-        prompt: The prompt text to process.
-        raw: If True, skip Midjourney-specific validation.
-        json_output: If True, output in JSON format.
-        no_color: If True, disable colored output.
+        prompt: Input prompt to process.
+        raw: Whether to output raw text only.
+        json_output: Whether to output JSON.
+        no_color: Whether to disable color output.
     """
-    # Create console for output
-    console = Console(force_terminal=not no_color)
-    error_console = Console(file=sys.stderr)
-
     try:
-        # Expand any permutations in the prompt
-        expanded_prompts = expand_midjargon_input(prompt)
+        if not prompt:
+            msg = "Empty prompt"
+            raise ValueError(msg)
 
-        # Process each expanded prompt
-        results = []
-        for expanded in expanded_prompts:
-            # Parse into dictionary
-            prompt_dict = parse_midjargon_prompt_to_dict(expanded)
+        # Process the prompt
+        results = process_prompt(prompt)
 
-            # Validate as Midjourney prompt if not raw
-            if not raw:
-                prompt_dict = parse_midjourney_dict(prompt_dict).model_dump()
-
-            results.append(prompt_dict)
-
-        # Output results
         if json_output:
-            if len(results) == 1:
-                _output_json(results[0])
-            else:
-                _output_json(results)
+            # Convert results to JSON-serializable format
+            output = [result.model_dump() for result in results]
+            _output_json(output)
             return
 
-        # Format each result
-        for result in results:
-            if raw:
-                # Display raw dictionary
-                console.print(
-                    Panel(
-                        Syntax(
-                            json.dumps(result, indent=2),
-                            "json",
-                            background_color="default",
-                        ),
-                        title="Raw",
-                    )
-                )
-            else:
-                # Display formatted prompt
-                prompt_obj = MidjourneyPrompt(**result)
-                formatted = format_prompt(prompt_obj)
-                console.print(
-                    Panel(formatted, title="Formatted"),
-                    Panel(
-                        Syntax(
-                            json.dumps(result, indent=2),
-                            "json",
-                            background_color="default",
-                        ),
-                        title="Structured",
-                    ),
-                )
-
-    except Exception as e:
-        if isinstance(e, ValueError):
-            print(f"Error: {str(e)}", file=sys.stderr)
+        # Format output
+        console = Console(force_terminal=not no_color)
+        if raw:
+            for result in results:
+                console.print(result.text)
         else:
-            error_console.print_exception(show_locals=True)
+            # Show formatted output
+            panel = Panel(
+                "\n".join(result.text for result in results),
+                title="Formatted",
+                expand=False,
+            )
+            console.print(panel)
+
+            # Show structured output
+            if len(results) == 1:
+                panel = Panel(
+                    json.dumps(results[0].model_dump(), indent=2),
+                    title="Structured",
+                    expand=False,
+                )
+                console.print(panel)
+
+    except ValueError as e:
+        print(f"Error: {str(e)}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {str(e)}", file=sys.stderr)
         sys.exit(1)
 
 

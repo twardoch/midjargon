@@ -74,26 +74,28 @@ def _find_matching_brace(text: str, start: int) -> int:
 
     Args:
         text: Text to search in.
-        start: Starting position of the opening brace.
+        start: Starting position of opening brace.
 
     Returns:
-        Position of the matching closing brace.
+        Position of matching closing brace.
 
     Raises:
         ValueError: If no matching brace is found.
     """
-    depth = 1
-    pos = start + 1
+    depth = 0
+    pos = start
     while pos < len(text):
-        if text[pos] == "{" and text[pos - 1] != "\\":
+        if pos > 0 and text[pos - 1] == "\\":
+            pos += 1
+            continue
+        if text[pos] == "{":
             depth += 1
-        elif text[pos] == "}" and text[pos - 1] != "\\":
+        elif text[pos] == "}":
             depth -= 1
             if depth == 0:
                 return pos
         pos += 1
-
-    msg = f"No matching closing brace found for opening brace at position {start}"
+    msg = "No matching closing brace found"
     raise ValueError(msg)
 
 
@@ -238,28 +240,25 @@ def split_permutation_options(text: str) -> list[str]:
     Split permutation text into individual options.
 
     Args:
-        text: Text containing comma-separated options.
+        text: Text to split.
 
     Returns:
-        List of individual options.
+        List of options.
     """
-    if not text.strip():
+    if not text:
         return [""]
 
     options = []
     current = []
+    in_quotes = False
     pos = 0
-    in_braces = 0
 
     while pos < len(text):
         char = text[pos]
-        if char == "{" and (pos == 0 or text[pos - 1] != "\\"):
-            in_braces += 1
+        if char == '"':
+            in_quotes = not in_quotes
             current.append(char)
-        elif char == "}" and (pos == 0 or text[pos - 1] != "\\"):
-            in_braces -= 1
-            current.append(char)
-        elif char == "," and in_braces == 0:
+        elif char == "," and not in_quotes:
             options.append("".join(current).strip())
             current = []
         else:
@@ -277,43 +276,46 @@ def expand_permutations(text: str) -> list[str]:
     Expand all permutations in a text string.
 
     Args:
-        text: Text containing permutation expressions.
+        text: Text to expand.
 
     Returns:
-        List of all possible permutations.
+        List of expanded texts.
 
     Raises:
         ValueError: If permutation syntax is invalid.
     """
-    results = [""]
+    if not text:
+        return [""]
+
+    result = [""]
     pos = 0
 
     while pos < len(text):
-        if text[pos] == "{" and (pos == 0 or text[pos - 1] != "\\"):
-            # Find matching closing brace
-            end = _find_matching_brace(text, pos)
+        if pos > 0 and text[pos - 1] == "\\":
+            # Handle escaped characters
+            for i in range(len(result)):
+                result[i] += text[pos]
+            pos += 1
+            continue
 
-            # Add text before permutation
-            prefix = text[:pos].replace("\\{", "{").replace("\\}", "}")
-            for i in range(len(results)):
-                results[i] = results[i] + prefix
-
-            # Get options and create new permutations
-            options = split_permutation_options(text[pos + 1 : end])
-            new_results = []
-            for result in results:
-                for option in options:
-                    new_results.append(result + option)
-            results = new_results
-
-            pos = end + 1
+        if text[pos] == "{":
+            try:
+                end = _find_matching_brace(text, pos)
+                prefix = result[:]
+                result = []
+                options = split_permutation_options(text[pos + 1 : end])
+                
+                for p in prefix:
+                    for opt in options:
+                        result.append(p + opt)
+                
+                pos = end + 1
+            except ValueError as e:
+                msg = f"Invalid permutation syntax: {str(e)}"
+                raise ValueError(msg) from e
         else:
+            for i in range(len(result)):
+                result[i] += text[pos]
             pos += 1
 
-    # Add remaining text
-    if pos < len(text):
-        suffix = text[pos:].replace("\\{", "{").replace("\\}", "}")
-        for i in range(len(results)):
-            results[i] = results[i] + suffix
-
-    return results
+    return result

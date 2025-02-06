@@ -60,7 +60,7 @@ def validate_param_name(name: str) -> None:
     if not name:
         msg = "Empty parameter name"
         raise ValueError(msg)
-    if not all(c.isalnum() or c in "-_" for c in name):
+    if not name.replace("-", "").replace("_", "").isalnum():
         msg = f"Invalid parameter name: {name}"
         raise ValueError(msg)
 
@@ -118,19 +118,15 @@ def expand_shorthand_param(name: str) -> tuple[str, bool]:
 
 def _expand_param_name(name: str) -> str:
     """
-    Expand parameter name aliases to their full names.
+    Expand parameter shorthand to full name.
 
     Args:
-        name: Parameter name to expand.
+        name: Parameter shorthand or full name.
 
     Returns:
-        Expanded parameter name.
+        Full parameter name.
     """
-    # Remove leading dashes
-    name = name.lstrip("-")
-
-    # Map of parameter aliases
-    aliases = {
+    shorthand_map = {
         "s": "stylize",
         "c": "chaos",
         "w": "weird",
@@ -140,14 +136,13 @@ def _expand_param_name(name: str) -> str:
         "sw": "style_weight",
         "sv": "style_version",
         "p": "personalization",
-        "ar": "ar",  # Keep ar as is
         "v": "version",
+        "ar": "ar",  # Keep ar as is
         "cref": "character_reference",
         "sref": "style_reference",
         "no": "no",  # Keep no as is
     }
-
-    return aliases.get(name, name)
+    return shorthand_map.get(name, name)
 
 
 def _process_param_chunk(chunk: str) -> tuple[str, str | None]:
@@ -183,7 +178,6 @@ def _process_param_chunk(chunk: str) -> tuple[str, str | None]:
     value = parts[1]
     name = name.lstrip("-")  # Remove leading dashes
     expanded_name = _expand_param_name(name)
-    validate_param_name(expanded_name)
 
     # Special handling for niji parameter
     if expanded_name == "niji" and value.isdigit():
@@ -191,21 +185,25 @@ def _process_param_chunk(chunk: str) -> tuple[str, str | None]:
     elif expanded_name == "niji":
         return "version", "niji"
 
+    # Special handling for personalization parameter
+    if expanded_name == "personalization" or expanded_name == "p":
+        return "personalization", value or ""
+
     return expanded_name, value
 
 
 def parse_parameters(param_str: str) -> dict[str, str | None]:
     """
-    Parse a parameter string into a dictionary.
+    Parse parameter string into a dictionary.
 
     Args:
         param_str: Parameter string to parse.
 
     Returns:
-        Dictionary of parameter names to values.
+        Dictionary of parameter names and values.
 
     Raises:
-        ValueError: If parameter string is invalid.
+        ValueError: If parameters are invalid.
     """
     if not param_str:
         return {}
