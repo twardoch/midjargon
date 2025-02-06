@@ -324,12 +324,12 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
         return result
 
-    def parse_midjourney_dict(self, data: dict[str, Any]) -> MidjourneyPrompt:
+    def parse_midjourney_dict(self, data: MidjargonDict) -> MidjourneyPrompt:
         """
         Parse a dictionary into a MidjourneyPrompt object.
 
         Args:
-            data: Dictionary containing prompt data.
+            data: Dictionary to parse.
 
         Returns:
             MidjourneyPrompt object.
@@ -338,131 +338,99 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             ValueError: If data is invalid.
         """
         # Validate text
-        if not data.get("text", "").strip():
+        text = data.get("text", "").strip()
+        if not text:
             msg = "Empty prompt text"
             raise ValueError(msg)
 
         # Convert image prompts
-        raw_image_prompts = data.get("image_prompts", [])
+        raw_image_prompts = data.get("images", [])
         if not isinstance(raw_image_prompts, list):
             raw_image_prompts = [raw_image_prompts]
-        image_prompts = [ImagePrompt(url=str(x)) for x in raw_image_prompts if x]
+        image_prompts = [str(p) for p in raw_image_prompts if p]
 
-        # Handle numeric parameters
+        # Convert numeric parameters with defaults
         numeric_params = {
-            "stylize": 100,  # Default stylize value
+            "stylize": None,
             "chaos": None,
             "weird": None,
             "image_weight": None,
             "seed": None,
             "stop": None,
-            "quality": None,
-            "character_weight": None,
-            "style_weight": None,
-            "repeat": None,
+            "aspect_width": None,
+            "aspect_height": None,
         }
-
-        for param, default in numeric_params.items():
-            value = data.get(param)
+        for name, default in numeric_params.items():
+            value = data.get(name)
             if value is not None:
                 try:
-                    numeric_params[param] = float(value)
+                    numeric_params[name] = float(value)
                 except (ValueError, TypeError):
-                    msg = f"Invalid value for {param}: {value}"
-                    raise ValueError(msg)
-            else:
-                numeric_params[param] = default
+                    msg = f"Invalid value for {name}: {value}"
+                    raise ValueError(msg) from None
 
-        # Handle aspect ratio
-        aspect_width = data.get("aspect_width")
-        aspect_height = data.get("aspect_height")
-        if aspect_width is not None or aspect_height is not None:
-            try:
-                aspect_width = int(aspect_width) if aspect_width is not None else None
-                aspect_height = int(aspect_height) if aspect_height is not None else None
-            except (ValueError, TypeError):
-                msg = f"Invalid aspect ratio: {aspect_width}:{aspect_height}"
-                raise ValueError(msg)
-
-        # Handle string parameters
-        string_params: dict[str, str | None] = {
+        # Convert string parameters
+        string_params = {
             "style": None,
             "version": None,
             "personalization": None,
-            "negative_prompt": None,
+            "quality": None,
         }
-
-        for param in string_params:
-            value = data.get(param)
+        for name in string_params:
+            value = data.get(name)
             if value is not None:
-                string_params[param] = str(value)
+                string_params[name] = str(value)
 
-        # Special handling for personalization
-        if "personalization" in data.get("extra_params", {}):
-            string_params["personalization"] = str(data["extra_params"]["personalization"])
-            del data["extra_params"]["personalization"]
-
-        # Handle style version
-        style_version = data.get("style_version")
-        if style_version is not None:
-            try:
-                style_version = int(style_version)
-            except (ValueError, TypeError):
-                msg = f"Invalid style version: {style_version}"
-                raise ValueError(msg)
-
-        # Handle reference lists
+        # Convert reference lists
         reference_lists = {
             "character_reference": [],
             "style_reference": [],
         }
-
-        for param in reference_lists:
-            value = data.get(param, [])
+        for name in reference_lists:
+            value = data.get(name, [])
             if not isinstance(value, list):
                 value = [value]
-            reference_lists[param] = [str(v) for v in value if v]
+            reference_lists[name] = [str(v) for v in value if v]
 
-        # Handle boolean flags
-        bool_params = {
+        # Convert reference weights
+        reference_weights = {
+            "character_weight": None,
+            "style_weight": None,
+            "style_version": None,
+            "repeat": None,
+        }
+        for name in reference_weights:
+            value = data.get(name)
+            if value is not None:
+                try:
+                    reference_weights[name] = float(value)
+                except (ValueError, TypeError):
+                    msg = f"Invalid value for {name}: {value}"
+                    raise ValueError(msg) from None
+
+        # Convert boolean flags
+        boolean_flags = {
             "turbo": False,
             "relax": False,
             "tile": False,
         }
-
-        for param in bool_params:
-            value = data.get(param)
+        for name in boolean_flags:
+            value = data.get(name)
             if value is not None:
                 if isinstance(value, str):
-                    bool_params[param] = value.lower() == "true"
+                    boolean_flags[name] = value.lower() == "true"
                 else:
-                    bool_params[param] = bool(value)
+                    boolean_flags[name] = bool(value)
 
-        # Create and return prompt object
+        # Create prompt object
         return MidjourneyPrompt(
-            text=data["text"],
+            text=text,
             image_prompts=image_prompts,
-            stylize=numeric_params["stylize"],
-            chaos=numeric_params["chaos"],
-            weird=numeric_params["weird"],
-            image_weight=numeric_params["image_weight"],
-            seed=numeric_params["seed"],
-            stop=numeric_params["stop"],
-            quality=numeric_params["quality"],
-            character_weight=numeric_params["character_weight"],
-            style_weight=numeric_params["style_weight"],
-            repeat=numeric_params["repeat"],
-            aspect_width=aspect_width,
-            aspect_height=aspect_height,
-            style=string_params["style"],
-            version=string_params["version"],
-            personalization=string_params["personalization"],
-            style_version=style_version,
-            negative_prompt=string_params["negative_prompt"],
-            character_reference=reference_lists["character_reference"],
-            style_reference=reference_lists["style_reference"],
-            turbo=bool_params["turbo"],
-            relax=bool_params["relax"],
-            tile=bool_params["tile"],
+            negative_prompt=data.get("negative_prompt"),
             extra_params=data.get("extra_params", {}),
+            **numeric_params,
+            **string_params,
+            **reference_lists,
+            **reference_weights,
+            **boolean_flags,
         )
