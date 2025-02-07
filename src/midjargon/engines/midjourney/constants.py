@@ -17,6 +17,22 @@ STYLE_WEIGHT_RANGE = (0, 2000)  # More lenient than spec
 STYLE_VERSION_RANGE = (1, 10)  # More lenient than spec
 REPEAT_RANGE = (1, 100)  # More lenient than spec
 
+# Default values from SPEC.md
+DEFAULT_STYLIZE = 100  # --s (stylize) default
+DEFAULT_CHAOS = 0  # --chaos default
+DEFAULT_WEIRD = 0  # --weird default
+DEFAULT_IMAGE_WEIGHT = 1.0  # --iw default
+DEFAULT_STOP = 100  # --stop default
+DEFAULT_QUALITY = 1  # --quality default
+DEFAULT_CHARACTER_WEIGHT = 100  # --cw default
+DEFAULT_STYLE_VERSION = 2  # --sv default
+DEFAULT_ASPECT_RATIO = "1:1"  # --ar default
+
+# Boolean parameter defaults (all False by default)
+DEFAULT_TILE = False  # --tile
+DEFAULT_TURBO = False  # --turbo
+DEFAULT_RELAX = False  # --relax
+
 # File extensions
 ALLOWED_IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 

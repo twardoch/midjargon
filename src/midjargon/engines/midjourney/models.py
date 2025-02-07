@@ -11,6 +11,18 @@ from .constants import (
     ALLOWED_IMAGE_EXTENSIONS,
     CHAOS_RANGE,
     CHARACTER_WEIGHT_RANGE,
+    DEFAULT_ASPECT_RATIO,
+    DEFAULT_CHAOS,
+    DEFAULT_CHARACTER_WEIGHT,
+    DEFAULT_IMAGE_WEIGHT,
+    DEFAULT_QUALITY,
+    DEFAULT_RELAX,
+    DEFAULT_STOP,
+    DEFAULT_STYLE_VERSION,
+    DEFAULT_STYLIZE,
+    DEFAULT_TILE,
+    DEFAULT_TURBO,
+    DEFAULT_WEIRD,
     IMAGE_WEIGHT_RANGE,
     QUALITY_RANGE,
     REPEAT_RANGE,
@@ -67,47 +79,61 @@ class MidjourneyPrompt(BaseModel):
     text: str = Field(min_length=1)
     image_prompts: list[ImagePrompt] = Field(default_factory=list)
 
-    # Validated numeric parameters
-    stylize: int | None = Field(None, ge=STYLIZE_RANGE[0], le=STYLIZE_RANGE[1])
-    chaos: int | None = Field(None, ge=CHAOS_RANGE[0], le=CHAOS_RANGE[1])
-    weird: int | None = Field(None, ge=WEIRD_RANGE[0], le=WEIRD_RANGE[1])
-    image_weight: float | None = Field(
-        None, ge=IMAGE_WEIGHT_RANGE[0], le=IMAGE_WEIGHT_RANGE[1]
+    # Validated numeric parameters with defaults
+    stylize: int | None = Field(
+        default=DEFAULT_STYLIZE, ge=STYLIZE_RANGE[0], le=STYLIZE_RANGE[1]
     )
-    seed: int | None = Field(None, ge=SEED_RANGE[0], le=SEED_RANGE[1])
-    stop: int | None = Field(None, ge=STOP_RANGE[0], le=STOP_RANGE[1])
+    chaos: int | None = Field(
+        default=DEFAULT_CHAOS, ge=CHAOS_RANGE[0], le=CHAOS_RANGE[1]
+    )
+    weird: int | None = Field(
+        default=DEFAULT_WEIRD, ge=WEIRD_RANGE[0], le=WEIRD_RANGE[1]
+    )
+    image_weight: float | None = Field(
+        default=DEFAULT_IMAGE_WEIGHT, ge=IMAGE_WEIGHT_RANGE[0], le=IMAGE_WEIGHT_RANGE[1]
+    )
+    seed: int | None = Field(default=None, ge=SEED_RANGE[0], le=SEED_RANGE[1])
+    stop: int | None = Field(default=DEFAULT_STOP, ge=STOP_RANGE[0], le=STOP_RANGE[1])
 
-    # Aspect ratio as separate width/height
-    aspect_width: int | None = Field(None, gt=0)
-    aspect_height: int | None = Field(None, gt=0)
+    # Aspect ratio as separate width/height, initialized from DEFAULT_ASPECT_RATIO
+    aspect_width: int = Field(default=1, gt=0)
+    aspect_height: int = Field(default=1, gt=0)
 
     # Style parameters
-    style: str | None = Field(None)  # raw, cute, expressive, etc.
-    version: str | None = Field(None)  # v5, v6, niji, etc.
-    personalization: str | None = Field(None)  # Profile ID or code for --p parameter
+    style: str | None = Field(default=None)  # raw, cute, expressive, etc.
+    version: str | None = Field(default=None)  # v5, v6, niji, etc.
+    personalization: str | None = Field(
+        default=None
+    )  # Profile ID or code for --p parameter
 
-    # New parameters
-    quality: float | None = Field(None, ge=QUALITY_RANGE[0], le=QUALITY_RANGE[1])
+    # New parameters with defaults
+    quality: float | None = Field(
+        default=DEFAULT_QUALITY, ge=QUALITY_RANGE[0], le=QUALITY_RANGE[1]
+    )
     character_reference: list[str] = Field(default_factory=list)
     character_weight: int | None = Field(
-        None, ge=CHARACTER_WEIGHT_RANGE[0], le=CHARACTER_WEIGHT_RANGE[1]
+        default=DEFAULT_CHARACTER_WEIGHT,
+        ge=CHARACTER_WEIGHT_RANGE[0],
+        le=CHARACTER_WEIGHT_RANGE[1],
     )
     style_reference: list[str] = Field(default_factory=list)
     style_weight: int | None = Field(
-        None, ge=STYLE_WEIGHT_RANGE[0], le=STYLE_WEIGHT_RANGE[1]
+        default=None, ge=STYLE_WEIGHT_RANGE[0], le=STYLE_WEIGHT_RANGE[1]
     )
     style_version: int | None = Field(
-        None, ge=STYLE_VERSION_RANGE[0], le=STYLE_VERSION_RANGE[1]
+        default=DEFAULT_STYLE_VERSION,
+        ge=STYLE_VERSION_RANGE[0],
+        le=STYLE_VERSION_RANGE[1],
     )
-    repeat: int | None = Field(None, ge=REPEAT_RANGE[0], le=REPEAT_RANGE[1])
+    repeat: int | None = Field(default=None, ge=REPEAT_RANGE[0], le=REPEAT_RANGE[1])
 
-    # Flag parameters
-    turbo: bool = Field(default=False)
-    relax: bool = Field(default=False)
-    tile: bool = Field(default=False)
+    # Flag parameters with defaults
+    turbo: bool = Field(default=DEFAULT_TURBO)
+    relax: bool = Field(default=DEFAULT_RELAX)
+    tile: bool = Field(default=DEFAULT_TILE)
 
     # Negative prompts
-    negative_prompt: str | None = Field(None)
+    negative_prompt: str | None = Field(default=None)
 
     # Store any unknown parameters
     extra_params: dict[str, str | None] = Field(default_factory=dict)
@@ -158,4 +184,16 @@ class MidjourneyPrompt(BaseModel):
         if self.turbo and self.relax:
             msg = "Cannot use both turbo and relax modes"
             raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def parse_aspect_ratio(self) -> Any:
+        """Parse default aspect ratio if not set."""
+        if self.aspect_width == 1 and self.aspect_height == 1:
+            try:
+                width, height = DEFAULT_ASPECT_RATIO.split(":")
+                self.aspect_width = int(width)
+                self.aspect_height = int(height)
+            except (ValueError, AttributeError):
+                pass  # Keep defaults if parsing fails
         return self

@@ -10,6 +10,17 @@ from midjargon.engines.base import EngineParser
 from .constants import (
     CHAOS_RANGE,
     CHARACTER_WEIGHT_RANGE,
+    DEFAULT_CHAOS,
+    DEFAULT_CHARACTER_WEIGHT,
+    DEFAULT_IMAGE_WEIGHT,
+    DEFAULT_QUALITY,
+    DEFAULT_RELAX,
+    DEFAULT_STOP,
+    DEFAULT_STYLE_VERSION,
+    DEFAULT_STYLIZE,
+    DEFAULT_TILE,
+    DEFAULT_TURBO,
+    DEFAULT_WEIRD,
     IMAGE_WEIGHT_RANGE,
     QUALITY_RANGE,
     REPEAT_RANGE,
@@ -335,19 +346,23 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             if name not in numeric_params:
                 continue
 
-            try:
-                if raw_value is None:
-                    continue
+            param_name = numeric_params[name]
 
+            # If raw_value is explicitly None, set it in prompt_data
+            if raw_value is None:
+                prompt_data[param_name] = None
+                continue
+
+            try:
                 processed_value = (
                     raw_value[0]
                     if isinstance(raw_value, list) and raw_value
                     else raw_value
                 )
                 if processed_value is None:
+                    prompt_data[param_name] = None
                     continue
 
-                param_name = numeric_params[name]
                 param_value = self._convert_numeric_param(param_name, processed_value)
                 self._validate_numeric_range(param_name, param_value)
                 prompt_data[param_name] = param_value
@@ -723,6 +738,21 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         prompt_data["text"] = self._validate_text(data)
         prompt_data["image_prompts"] = self._process_images(data)
 
+        # Preserve explicitly passed None values for numeric parameters
+        numeric_params = [
+            "stylize",
+            "chaos",
+            "weird",
+            "image_weight",
+            "stop",
+            "quality",
+            "character_weight",
+            "style_version",
+        ]
+        for param in numeric_params:
+            if param in data and data[param] is None:
+                prompt_data[param] = None
+
         # Process parameters
         self._process_numeric_params(prompt_data, data)
         self._process_aspect_ratio(data, prompt_data)
@@ -780,27 +810,27 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             "text": "",
             "image_prompts": [],
             "negative_prompt": None,
-            "stylize": None,
-            "chaos": None,
-            "weird": None,
-            "image_weight": None,
+            "stylize": DEFAULT_STYLIZE,
+            "chaos": DEFAULT_CHAOS,
+            "weird": DEFAULT_WEIRD,
+            "image_weight": DEFAULT_IMAGE_WEIGHT,
             "seed": None,
-            "stop": None,
-            "quality": None,
-            "character_weight": None,
+            "stop": DEFAULT_STOP,
+            "quality": DEFAULT_QUALITY,
+            "character_weight": DEFAULT_CHARACTER_WEIGHT,
             "style_weight": None,
-            "style_version": None,
+            "style_version": DEFAULT_STYLE_VERSION,
             "repeat": None,
-            "aspect_width": None,
-            "aspect_height": None,
+            "aspect_width": 1,
+            "aspect_height": 1,
             "style": None,
             "version": None,
             "personalization": None,
             "character_reference": [],
             "style_reference": [],
-            "turbo": False,
-            "relax": False,
-            "tile": False,
+            "turbo": DEFAULT_TURBO,
+            "relax": DEFAULT_RELAX,
+            "tile": DEFAULT_TILE,
             "extra_params": {},
         }
 
