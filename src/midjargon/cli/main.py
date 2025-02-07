@@ -210,6 +210,7 @@ def main(
     except Exception as error:
         if json_output:
             _output_json({"error": str(error)})
+            sys.stdout.flush()
             sys.exit(1)
         else:
             _handle_error(console, error)

@@ -165,14 +165,11 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         self, name: str, raw_value: str | list[str] | None
     ) -> tuple[str | None, Any]:
         """Handle style parameter conversion."""
-        # If parameter name is 'niji', do not process here so that version handler can take over
-        if name == "niji":
+        if name != "style":
             return None, None
-
         value = self._normalize_value(raw_value)
         if value is None:
             return None, None
-
         if isinstance(value, list):
             new_value = value[0] if value else None
             if new_value is None or not isinstance(new_value, str):
@@ -181,7 +178,6 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             if not isinstance(value, str):
                 return None, None
             new_value = value
-
         # new_value is now guaranteed to be a string
         return "style", new_value
 
@@ -197,18 +193,16 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
         if isinstance(value, list):
             new_value = value[0] if value else None
-            if new_value is None or not isinstance(new_value, str):
-                return None, None
         else:
-            if not isinstance(value, str):
-                return None, None
             new_value = value
 
-        # Handle niji version
+        # If new_value already starts with 'niji', return it as is
+        if isinstance(new_value, str) and new_value.lower().startswith("niji"):
+            return "version", new_value
+
         if name == "niji":
             return "version", f"niji {new_value}" if new_value else "niji"
 
-        # Handle regular version
         if name in ("v", "version"):
             return "version", f"v{new_value}"
 
@@ -237,17 +231,16 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
     def _handle_negative_prompt(
         self, name: str, raw_value: str | list[str] | None
     ) -> tuple[str | None, Any]:
-        """Handle negative prompt parameter conversion."""
+        """Handle negative prompt parameter conversion only if name is 'negative_prompt'."""
+        if name != "negative_prompt":
+            return None, None
         value = self._normalize_value(raw_value)
         if value is None:
             return None, None
-
-        # Convert value to string if it's a list
         if isinstance(value, list):
             value = value[0] if value else None
             if value is None:
                 return None, None
-
         return "negative_prompt", value
 
     def _handle_reference_param(
@@ -279,12 +272,12 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
         return name, value
 
-    def parse_dict(self, midjargon_dict: MidjargonDict) -> MidjourneyPrompt:
+    def parse_dict(self, midjargon_dict: "MidjargonDict") -> "MidjourneyPrompt":
         """
         Parse a MidjargonDict into a validated MidjourneyPrompt.
 
         Args:
-            midjargon_dict: Dictionary from basic parser.
+            midjargon_dict: Dictionary from basic parser or a raw prompt string.
 
         Returns:
             Validated MidjourneyPrompt.
@@ -292,6 +285,9 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         Raises:
             ValueError: If the prompt text is empty or if validation fails.
         """
+        if not isinstance(midjargon_dict, dict):
+            midjargon_dict = {"text": str(midjargon_dict)}
+
         # Validate text is not empty
         text_value = midjargon_dict.get("text")
         if text_value is None:

@@ -36,50 +36,49 @@ class EngineParser(ABC, Generic[T]):
     @abstractmethod
     def parse_dict(self, midjargon_dict: MidjargonDict) -> T:
         """
-        Parse a MidjargonDict into an engine-specific prompt type.
-
-        This method should:
-        1. Extract relevant fields from the input dictionary
-        2. Convert parameter values to appropriate types
-        3. Validate all values according to engine rules
-        4. Construct and return a validated prompt object
+        Parse a MidjargonDict into an engine-specific prompt model.
 
         Args:
-            midjargon_dict: Dictionary from basic parser containing:
-                - "text": The main prompt text
-                - "images": List of image URLs (if any)
-                - "parameters": Dictionary of parameter name/value pairs
+            midjargon_dict: Dictionary from basic parser.
 
         Returns:
-            An engine-specific prompt object.
+            Engine-specific prompt model.
 
         Raises:
-            ValueError: If the input dictionary is invalid for this engine.
+            ValueError: If the prompt is empty or validation fails.
         """
-        if not midjargon_dict.get("text") and not midjargon_dict.get("images"):
-            msg = "Empty prompt: must provide text or image URLs"
+        text_value = midjargon_dict.get("text")
+        if text_value is None:
+            msg = "Empty prompt"
             raise ValueError(msg)
+
+        if isinstance(text_value, list):
+            text = text_value[0] if text_value else ""
+        else:
+            text = str(text_value)
+
+        if not text.strip():
+            msg = "Empty prompt"
+            raise ValueError(msg)
+
+        return self._parse_dict(midjargon_dict)
+
+    def _parse_dict(self, midjargon_dict: MidjargonDict) -> T:
+        """
+        Internal method to parse dictionary into model.
+        Should be implemented by subclasses.
+        """
+        msg = "Not implemented"
+        raise NotImplementedError(msg)
 
     @abstractmethod
     def to_dict(self, prompt: T) -> dict[str, Any]:
         """
-        Convert an engine-specific prompt back to a dictionary.
-
-        This method should:
-        1. Extract all relevant fields from the prompt
-        2. Convert values to appropriate string representations
-        3. Structure the output to match MidjargonDict format
-
-        Args:
-            prompt: Engine-specific prompt instance.
-
-        Returns:
-            Dictionary with keys:
-                - "text": The main prompt text
-                - "images": List of image URLs (if any)
-                - Additional parameter key/value pairs
+        Convert a prompt model back to a dictionary.
+        Should be implemented by subclasses.
         """
-        pass
+        msg = "Not implemented"
+        raise NotImplementedError(msg)
 
     def validate(self, prompt: T) -> bool:
         """

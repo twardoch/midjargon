@@ -336,7 +336,10 @@ def parse_parameters(param_str: str) -> ParamDict:
                 # Process and store the parameter
                 value = process_param_value(current_values)
                 validate_param_value(expanded_name, value)
-                params[expanded_name] = value
+                if expanded_name == "version" and current_param == "niji":
+                    params[expanded_name] = "niji" if value is None else f"niji {value}"
+                else:
+                    params[expanded_name] = value
 
             # Start new parameter
             param_name = chunk[2:]  # Strip --
@@ -358,6 +361,9 @@ def parse_parameters(param_str: str) -> ParamDict:
 
         value = process_param_value(current_values)
         validate_param_value(expanded_name, value)
-        params[expanded_name] = value
+        if expanded_name == "version" and current_param == "niji":
+            params[expanded_name] = "niji" if value is None else f"niji {value}"
+        else:
+            params[expanded_name] = value
 
     return params

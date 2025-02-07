@@ -1,3 +1,7 @@
+---
+description: 
+globs: 
+---
 # `midjargon`
 
 `midjargon` is a hatch-managed Python library for parsing and manipulating Midjourney prompts using a specialized syntax. This tool helps you work with Midjourney prompts in a structured way, handling complex features like permutations, parameter validation, and image URL extraction.
@@ -7,12 +11,12 @@
 ### Root
 
 ├── LICENSE # MIT license
-├── README.md # Project intro, should be updated after you make changes
+├── @README.md # Project intro, should be updated after you make changes
 ├── SPEC.md # Compact specification of the Midjourney prompt syntax
-├── TODO.md # Read it, actually TEST and CHECK if the problem is real, perform some changes, then UPDATE the TODO.md, remove problems/issues, add newly discovered problems. Work until you CLEAR the TODO.md!     
+├── @TODO.md # Read it, actually TEST and CHECK if the problem is real, perform some changes, then UPDATE the TODO.md, remove problems/issues, add newly discovered problems. Work until you CLEAR the TODO.md!     
 ├── dist # Distribution files
 ├── package.toml # Hatch project files
-├── pyproject.toml # Python project files
+├── @pyproject.toml # Python project files
 ├── pytest.ini # pytest configuration
 
 ### Original documentation of Midjourney (large file)
