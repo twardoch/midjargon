@@ -18,13 +18,13 @@ def expand_midjargon_input(prompt: MidjargonInput) -> MidjargonList:
 
     Returns:
         A list of MidjargonPrompt strings with all permutation expressions resolved.
+        Returns [""] for empty input.
 
     Raises:
         ValueError: If the prompt is empty or invalid.
     """
     if not prompt.strip():
-        msg = "Empty prompt"
-        raise ValueError(msg)
+        return [""]
 
     # Handle escaped characters by temporarily replacing them
     # Use unique markers that won't appear in normal text

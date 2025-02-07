@@ -196,6 +196,10 @@ def main(
                 # Convert Pydantic models to dicts for JSON serialization
                 json_results = [prompt.model_dump() for prompt in results]
                 _output_json(json_results)
+            sys.stdout.flush()
+            import time
+
+            time.sleep(0.05)
             return
 
         # Display results

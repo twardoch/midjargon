@@ -8,6 +8,7 @@
 import json
 import re
 import sys
+import time
 from io import StringIO
 from typing import Any
 
@@ -27,30 +28,10 @@ PERMUTATION_COUNT_2X2 = 4  # 2 options x 2 options
 ANSI_ESCAPE = re.compile(r"\x1B[@-_][0-?]*[ -/]*[@-~]")
 
 
-@pytest.fixture
-def capture_stdout():
-    """Capture stdout for testing."""
-    stdout = StringIO()
-    old_stdout = sys.stdout
-    sys.stdout = stdout
-    try:
-        yield stdout
-    finally:
-        sys.stdout = old_stdout
-
-
-@pytest.fixture
-def capture_stderr():
-    """Capture stderr for testing."""
-    stderr = StringIO()
-    old_stderr = sys.stderr
-    sys.stderr = stderr
-    yield stderr
-    sys.stderr = old_stderr
-
-
-def parse_json_output(output: str) -> Any:
+def parse_json_output(output_stream: StringIO) -> Any:
     """Parse JSON output from the CLI, removing ANSI escape sequences if any."""
+    output_stream.seek(0)
+    output = output_stream.getvalue()
     # Remove ANSI escape sequences
     output = ANSI_ESCAPE.sub("", output)
     output = output.strip()
@@ -62,11 +43,16 @@ def parse_json_output(output: str) -> Any:
         raise ValueError("No JSON found in output")
 
 
-def test_basic_prompt(capture_stdout):
+def test_basic_prompt():
     """Test basic prompt processing."""
-    main(f"a beautiful landscape --ar {ASPECT_WIDTH}:{ASPECT_HEIGHT}", json_output=True)
-    output = capture_stdout.getvalue()
-    data = parse_json_output(output)
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        main(
+            f"a beautiful landscape --ar {ASPECT_WIDTH}:{ASPECT_HEIGHT}",
+            json_output=True,
+        )
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
     assert isinstance(data, list)
     assert len(data) == 1
     prompt = data[0]
@@ -75,62 +61,76 @@ def test_basic_prompt(capture_stdout):
     assert prompt["aspect_height"] == ASPECT_HEIGHT
 
 
-def test_permutations(capture_stdout):
+def test_permutations():
     """Test permutation processing."""
-    main("a {red, blue} bird", json_output=True)
-    output = capture_stdout.getvalue()
-    data = parse_json_output(output)
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        main("a {red, blue} bird", json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
     assert isinstance(data, list)
     assert len(data) == 2
     texts = {p["text"] for p in data}
     assert texts == {"a red bird", "a blue bird"}
 
 
-def test_raw_output(capture_stdout):
+def test_raw_output():
     """Test raw output mode."""
-    main(f"a photo --stylize {STYLIZE_VALUE}", raw=True, json_output=True)
-    output = capture_stdout.getvalue()
-    data = parse_json_output(output)
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        main(f"a photo --stylize {STYLIZE_VALUE}", raw=True, json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
     assert isinstance(data, list)
     assert len(data) == 1
     prompt = data[0]
     assert prompt["text"] == "a photo"
-    assert prompt["stylize"] == str(STYLIZE_VALUE)
+    assert prompt["stylize"] == STYLIZE_VALUE
 
 
-def test_json_output_formatting(capture_stdout):
+def test_json_output_formatting():
     """Test JSON output formatting."""
-    main("a photo", json_output=True)
-    output = capture_stdout.getvalue()
-    data = parse_json_output(output)
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        main("a photo", json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
     assert isinstance(data, list)
     assert len(data) == 1
 
 
-def test_invalid_input(capture_stdout):
+def test_invalid_input():
     """Test handling of invalid input."""
-    with pytest.raises(SystemExit):
-        main("", json_output=True)
-    output = capture_stdout.getvalue()
-    data = parse_json_output(output)
-    assert "error" in data
+    with StringIO() as capture_stdout:
+        with pytest.raises(SystemExit):
+            sys.stdout = capture_stdout
+            main("", json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
+        assert "error" in data
 
 
-def test_parameter_validation(capture_stdout):
+def test_parameter_validation():
     """Test parameter validation."""
-    with pytest.raises(SystemExit):
-        main(f"a photo --stylize {STYLIZE_VALUE * 20}", json_output=True)  # Over max
-    output = capture_stdout.getvalue()
-    data = parse_json_output(output)
-    assert "error" in data
+    with StringIO() as capture_stdout:
+        with pytest.raises(SystemExit):
+            sys.stdout = capture_stdout
+            main(
+                f"a photo --stylize {STYLIZE_VALUE * 20}", json_output=True
+            )  # Over max
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
+        assert "error" in data
 
 
-def test_image_url_handling(capture_stdout):
+def test_image_url_handling():
     """Test handling of image URLs."""
     url = "https://example.com/image.jpg"
-    main(f"{url} a fusion", json_output=True)
-    output = capture_stdout.getvalue()
-    data = parse_json_output(output)
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        main(f"{url} a fusion", json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
     assert isinstance(data, list)
     assert len(data) == 1
     prompt = data[0]
@@ -139,26 +139,30 @@ def test_image_url_handling(capture_stdout):
     assert prompt["image_prompts"][0]["url"] == url
 
 
-def test_no_color_output(capture_stdout):
+def test_no_color_output():
     """Test no-color output mode."""
     Console(force_terminal=False)
-    main("a photo", json_output=True)
-    output = capture_stdout.getvalue()
-    data = parse_json_output(output)
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        main("a photo", json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
     assert isinstance(data, list)
     assert len(data) == 1
 
 
-def test_complex_prompt(capture_stdout):
+def test_complex_prompt():
     """Test complex prompt with multiple features."""
     prompt = (
         "https://example.com/img1.jpg https://example.com/img2.jpg "
         "a {red, blue} bird on a {branch, rock} "
         f"--ar {ASPECT_WIDTH}:{ASPECT_HEIGHT} --stylize {STYLIZE_VALUE} --chaos {CHAOS_VALUE}"
     )
-    main(prompt, json_output=True)
-    output = capture_stdout.getvalue()
-    data = parse_json_output(output)
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        main(prompt, json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
     assert isinstance(data, list)
     assert len(data) == PERMUTATION_COUNT_2X2
     for prompt in data:

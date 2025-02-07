@@ -343,6 +343,9 @@ def parse_parameters(param_str: str) -> ParamDict:
 
             # Start new parameter
             param_name = chunk[2:]  # Strip --
+            if not param_name:  # Check for empty parameter name
+                msg = "Empty parameter name"
+                raise ValueError(msg)
             validate_param_name(param_name)
             current_param = param_name
             current_values = []

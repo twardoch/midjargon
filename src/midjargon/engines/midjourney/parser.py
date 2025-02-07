@@ -18,6 +18,8 @@ from .constants import (
     STYLE_VERSION_RANGE,
     STYLE_WEIGHT_RANGE,
     STYLIZE_RANGE,
+    VALID_NIJI_VERSIONS,
+    VALID_VERSIONS,
     WEIRD_RANGE,
 )
 from .models import ImagePrompt, MidjourneyPrompt
@@ -184,13 +186,20 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
     def _handle_version_param(
         self, name: str, raw_value: str | list[str] | None
     ) -> tuple[str | None, Any]:
-        """Handle version parameter conversion."""
+        """Handle version parameter conversion. Enforces that the first version parameter wins by using a _version_found flag."""
+        # Reset version_found flag if we see a --v parameter
+        if name in ("v", "version"):
+            self._version_found = False
+
+        if getattr(self, "_version_found", False):
+            return None, None
+
         value = self._normalize_value(raw_value)
         if value is None:
             if name == "niji":
+                self._version_found = True
                 return "version", "niji"
             return None, None
-
         if isinstance(value, list):
             new_value = value[0] if value else None
         else:
@@ -198,12 +207,28 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
         # If new_value already starts with 'niji', return it as is
         if isinstance(new_value, str) and new_value.lower().startswith("niji"):
+            # Validate niji version
+            parts = new_value.split()
+            if len(parts) > 1 and parts[1] not in VALID_NIJI_VERSIONS:
+                msg = f"Invalid niji version: {parts[1]}"
+                raise ValueError(msg)
+            self._version_found = True
             return "version", new_value
 
         if name == "niji":
+            # Validate niji version
+            if new_value and str(new_value) not in VALID_NIJI_VERSIONS:
+                msg = f"Invalid niji version: {new_value}"
+                raise ValueError(msg)
+            self._version_found = True
             return "version", f"niji {new_value}" if new_value else "niji"
 
         if name in ("v", "version"):
+            # Validate version number
+            if not new_value or str(new_value) not in VALID_VERSIONS:
+                msg = f"Invalid version: {new_value}"
+                raise ValueError(msg)
+            self._version_found = True
             return "version", f"v{new_value}"
 
         return None, None
@@ -258,19 +283,24 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         }
         name = name_map.get(name, name)
 
-        # Convert value to list if needed
-        if isinstance(value, str):
-            value = [value]
+        # Only validate extensions for reference parameters
+        if name in ["character_reference", "style_reference"]:
+            # Convert value to list if needed
+            if isinstance(value, str):
+                value = [value]
 
-        # Validate file extensions
-        for ref in value:
-            if not any(
-                ref.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".gif")
-            ):
-                msg = f"Invalid reference file extension for {name}: {ref}"
-                raise ValueError(msg)
+            # Validate file extensions
+            for ref in value:
+                if not any(
+                    ref.lower().endswith(ext)
+                    for ext in (".jpg", ".jpeg", ".png", ".gif")
+                ):
+                    msg = f"Invalid reference file extension for {name}: {ref}"
+                    raise ValueError(msg)
 
-        return name, value
+            return name, value
+
+        return None, None
 
     def parse_dict(self, midjargon_dict: "MidjargonDict") -> "MidjourneyPrompt":
         """
@@ -285,23 +315,19 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         Raises:
             ValueError: If the prompt text is empty or if validation fails.
         """
+        # Call super() to validate empty prompt
+        super().parse_dict(midjargon_dict)
+
         if not isinstance(midjargon_dict, dict):
             midjargon_dict = {"text": str(midjargon_dict)}
 
-        # Validate text is not empty
+        # Validate text
         text_value = midjargon_dict.get("text")
         if text_value is None:
-            msg = "Missing prompt text"
-            raise ValueError(msg)
-
-        if isinstance(text_value, list):
-            text = text_value[0] if text_value else ""
-        else:
-            text = str(text_value)
-
-        if not text.strip():
-            msg = "Empty prompt text"
-            raise ValueError(msg)
+            raise ValueError("Missing prompt text")
+        text = str(text_value).strip()
+        if not text:
+            raise ValueError("Empty prompt text")
 
         # Initialize with core components
         images = midjargon_dict.get("images", [])
@@ -319,7 +345,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
         # Process each parameter
         for name, value in midjargon_dict.items():
-            if name in ("text", "images"):
+            if name in ("text", "images", "extra_params"):
                 continue
 
             # Try numeric parameters first
@@ -388,8 +414,25 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
                         prompt_data[name] = False
                 continue
 
-            # Store unknown parameters
-            prompt_data["extra_params"][name] = value
+            # Store unknown parameters in extra_params
+            if value is not None:
+                prompt_data["extra_params"][name] = str(value) if value else None
+            else:
+                prompt_data["extra_params"][name] = None
+
+        # Validate version if present
+        if prompt_data["version"]:
+            version = prompt_data["version"]
+            if version.startswith("niji"):
+                parts = version.split()
+                if len(parts) > 1 and parts[1] not in VALID_NIJI_VERSIONS:
+                    msg = f"Invalid niji version: {parts[1]}"
+                    raise ValueError(msg)
+            else:
+                version_num = version[1:]  # Strip 'v' prefix
+                if version_num not in VALID_VERSIONS:
+                    msg = f"Invalid version: {version_num}"
+                    raise ValueError(msg)
 
         # Create and validate prompt
         return MidjourneyPrompt(**prompt_data)
@@ -530,10 +573,12 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             ValueError: If data is invalid.
         """
         # Validate text
-        text = str(data.get("text", "")).strip()
+        text_value = data.get("text")
+        if text_value is None:
+            raise ValueError("Missing prompt text")
+        text = str(text_value).strip()
         if not text:
-            msg = "Empty prompt text"
-            raise ValueError(msg)
+            raise ValueError("Empty prompt text")
 
         # Convert image prompts
         raw_image_prompts = data.get("images", [])
@@ -624,8 +669,18 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         if negative_prompt is not None:
             negative_prompt = str(negative_prompt)
 
+        # Updated logic: if '--v' (version) is provided, it takes precedence over '--niji'
+        if "version" in data and data["version"]:
+            version_value = data["version"]
+            final_version = f"v{version_value}"  # version from --v
+        elif "niji" in data and data["niji"]:
+            niji_value = data["niji"]
+            final_version = f"niji {niji_value}"
+        else:
+            final_version = None
+
         # Create prompt object with explicit parameter groups
-        return MidjourneyPrompt(
+        prompt_model = MidjourneyPrompt(
             text=text,
             image_prompts=image_prompts,
             negative_prompt=negative_prompt,
@@ -639,7 +694,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             aspect_width=int_params["aspect_width"],
             aspect_height=int_params["aspect_height"],
             style=string_params["style"],
-            version=string_params["version"],
+            version=final_version,
             personalization=string_params["personalization"],
             quality=float_params["quality"],
             character_reference=reference_lists["character_reference"],
@@ -652,3 +707,5 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             relax=boolean_flags["relax"],
             tile=boolean_flags["tile"],
         )
+
+        return prompt_model
