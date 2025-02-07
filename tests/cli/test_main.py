@@ -8,7 +8,6 @@
 import json
 import re
 import sys
-import time
 from io import StringIO
 from typing import Any
 
@@ -36,11 +35,13 @@ def parse_json_output(output_stream: StringIO) -> Any:
     output = ANSI_ESCAPE.sub("", output)
     output = output.strip()
     if not output:
-        raise ValueError("No JSON found in output")
+        msg = "No JSON found in output"
+        raise ValueError(msg)
     try:
         return json.loads(output)
     except json.JSONDecodeError:
-        raise ValueError("No JSON found in output")
+        msg = "No JSON found in output"
+        raise ValueError(msg)
 
 
 def test_basic_prompt():
