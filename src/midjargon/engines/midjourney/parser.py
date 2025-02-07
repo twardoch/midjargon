@@ -60,15 +60,8 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
                 )
                 raise ValueError(msg)
 
-    def _handle_numeric_param(
-        self, name: str, raw_value: str | list[str] | None
-    ) -> tuple[str | None, Any]:
-        """Handle numeric parameter conversion."""
-        value = self._normalize_value(raw_value)
-        if value is None:
-            return None, None
-
-        # Handle shorthand names
+    def _get_normalized_name(self, name: str) -> str:
+        """Get normalized parameter name from shorthand."""
         name_map = {
             "s": "stylize",
             "c": "chaos",
@@ -80,65 +73,73 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             "sv": "style_version",
             "r": "repeat",
         }
-        name = name_map.get(name, name)
+        return name_map.get(name, name)
 
-        # Convert value to string if it's a list
+    def _convert_numeric_value(
+        self, name: str, value: str | list[str] | None
+    ) -> tuple[str | None, Any]:
+        """Convert and validate numeric value."""
+        if value is None:
+            return None, None
+
         if isinstance(value, list):
             value = value[0] if value else None
             if value is None:
                 return None, None
 
-        # Convert value to appropriate type
         try:
-            if name == "stylize":
-                val = int(value)
-                self._validate_numeric_range(name, val)
-                return "stylize", val
-            if name == "chaos":
-                val = int(value)
-                self._validate_numeric_range(name, val)
-                return "chaos", val
-            if name == "weird":
-                val = int(value)
-                self._validate_numeric_range(name, val)
-                return "weird", val
-            if name == "image_weight":
-                val = float(value)
-                self._validate_numeric_range(name, val)
-                return "image_weight", val
-            if name == "seed":
-                val = int(value)
-                self._validate_numeric_range(name, val)
-                return "seed", val
-            if name == "stop":
-                val = int(value)
-                self._validate_numeric_range(name, val)
-                return "stop", val
-            if name == "quality":
-                val = float(value)
-                self._validate_numeric_range(name, val)
-                return "quality", val
-            if name == "character_weight":
-                val = int(value)
-                self._validate_numeric_range(name, val)
-                return "character_weight", val
-            if name == "style_weight":
-                val = int(value)
-                self._validate_numeric_range(name, val)
-                return "style_weight", val
-            if name == "style_version":
-                val = int(value)
-                self._validate_numeric_range(name, val)
-                return "style_version", val
-            if name == "repeat":
-                val = int(value)
-                self._validate_numeric_range(name, val)
-                return "repeat", val
-        except (ValueError, TypeError) as e:
-            msg = f"Invalid numeric value for {name}: {value}"
-            raise ValueError(msg) from e
+            # Define parameter types and their validation functions
+            param_types = {
+                "stylize": (int, lambda x: self._validate_numeric_range("stylize", x)),
+                "chaos": (int, lambda x: self._validate_numeric_range("chaos", x)),
+                "weird": (int, lambda x: self._validate_numeric_range("weird", x)),
+                "image_weight": (
+                    float,
+                    lambda x: self._validate_numeric_range("image_weight", x),
+                ),
+                "quality": (
+                    float,
+                    lambda x: self._validate_numeric_range("quality", x),
+                ),
+                "character_weight": (
+                    float,
+                    lambda x: self._validate_numeric_range("character_weight", x),
+                ),
+                "style_weight": (
+                    float,
+                    lambda x: self._validate_numeric_range("style_weight", x),
+                ),
+                "style_version": (
+                    int,
+                    lambda x: self._validate_numeric_range("style_version", x),
+                ),
+                "repeat": (int, lambda x: self._validate_numeric_range("repeat", x)),
+            }
 
-        return None, None
+            if name in param_types and isinstance(value, str):
+                type_func, validate_func = param_types[name]
+                val = type_func(value)
+                validate_func(val)
+                return name, val
+
+            return None, None
+
+        except (ValueError, TypeError):
+            return None, None
+
+    def _handle_numeric_param(
+        self, name: str, raw_value: str | list[str] | None
+    ) -> tuple[str | None, Any]:
+        """Handle numeric parameter conversion."""
+        value = self._normalize_value(raw_value)
+        if value is None:
+            return None, None
+
+        # Get normalized parameter name
+        name = self._get_normalized_name(name)
+
+        # Convert and validate the value
+        return self._convert_numeric_value(name, value)
 
     def _handle_aspect_ratio(
         self, raw_value: str | list[str] | None
@@ -295,9 +296,9 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
         return None, None
 
-    def _parse_dict(self, midjargon_dict: MidjargonDict) -> MidjourneyPrompt:
-        """Parse a dictionary into a MidjourneyPrompt."""
-        prompt_data: dict[str, Any] = {
+    def _get_default_prompt_data(self) -> dict[str, Any]:
+        """Get default prompt data structure."""
+        return {
             "text": "",
             "image_prompts": [],
             "negative_prompt": None,
@@ -325,7 +326,10 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             "extra_params": {},
         }
 
-        # Extract text and image prompts
+    def _process_text_and_images(
+        self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
+    ) -> None:
+        """Process text and image prompts."""
         text = midjargon_dict.get("text", "")
         if not text:
             msg = "Prompt text cannot be empty"
@@ -340,7 +344,10 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
                 image_prompts.append(ImagePrompt(url=image_url))
         prompt_data["image_prompts"] = image_prompts
 
-        # First pass: handle version parameters to ensure correct precedence
+    def _process_version_params(
+        self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
+    ) -> None:
+        """Process version parameters."""
         for name, value in midjargon_dict.items():
             if name in ("v", "version"):
                 param_name, param_value = self._handle_version_param(name, value)
@@ -348,94 +355,104 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
                     prompt_data[param_name] = param_value
                     break  # Stop after finding a --v parameter
 
-        # Second pass: handle all other parameters
+    def _process_numeric_params(
+        self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
+    ) -> None:
+        """Process numeric parameters."""
+        numeric_params = {
+            "s",
+            "stylize",
+            "c",
+            "chaos",
+            "w",
+            "weird",
+            "iw",
+            "image_weight",
+            "seed",
+            "stop",
+            "q",
+            "quality",
+            "cw",
+            "character_weight",
+            "sw",
+            "style_weight",
+            "sv",
+            "style_version",
+            "r",
+            "repeat",
+        }
         for name, value in midjargon_dict.items():
-            if name in ("text", "images", "v", "version"):
-                continue
-
-            # Handle numeric parameters
-            param_name, param_value = self._handle_numeric_param(name, value)
-            if param_name:
-                prompt_data[param_name] = param_value
-                continue
-
-            # Handle aspect ratio
-            if name == "aspect":
-                width, height = self._handle_aspect_ratio(value)
-                if width is not None and height is not None:
-                    prompt_data["aspect_width"] = width
-                    prompt_data["aspect_height"] = height
-                continue
-
-            # Handle niji version parameter only if no --v was found
-            if name == "niji" and not (
-                prompt_data["version"] and prompt_data["version"].startswith("v")
-            ):
-                param_name, param_value = self._handle_version_param(name, value)
+            if name in numeric_params:
+                param_name, param_value = self._handle_numeric_param(name, value)
                 if param_name:
                     prompt_data[param_name] = param_value
-                continue
 
-            # Handle style parameter
-            param_name, param_value = self._handle_style_param(name, value)
-            if param_name:
-                prompt_data[param_name] = param_value
-                continue
+    def _process_style_params(
+        self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
+    ) -> None:
+        """Process style parameters."""
+        style_params = {"style", "raw"}
+        for name, value in midjargon_dict.items():
+            if name in style_params:
+                param_name, param_value = self._handle_style_param(name, value)
+                if param_name:
+                    prompt_data[param_name] = param_value
 
-            # Handle personalization parameter
-            param_name, param_value = self._handle_personalization_param(name, value)
-            if param_name:
-                prompt_data[param_name] = param_value
-                continue
+    def _process_aspect_ratio(
+        self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
+    ) -> None:
+        """Process aspect ratio parameters."""
+        if "ar" in midjargon_dict:
+            width, height = self._handle_aspect_ratio(midjargon_dict["ar"])
+            if width is not None and height is not None:
+                prompt_data["aspect_width"] = width
+                prompt_data["aspect_height"] = height
 
-            # Handle negative prompt
-            param_name, param_value = self._handle_negative_prompt(name, value)
-            if param_name:
-                prompt_data[param_name] = param_value
-                continue
+    def _process_reference_params(
+        self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
+    ) -> None:
+        """Process reference parameters."""
+        for name, value in midjargon_dict.items():
+            if name in ("cr", "character_reference", "sr", "style_reference"):
+                param_name, param_value = self._handle_reference_param(name, value)
+                if param_name and param_value:
+                    prompt_data[param_name] = param_value
 
-            # Handle reference parameter
-            param_name, param_value = self._handle_reference_param(name, value)
-            if param_name:
-                prompt_data[param_name] = param_value
-                continue
+    def _process_flag_params(
+        self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
+    ) -> None:
+        """Process flag parameters."""
+        flag_params = {"turbo", "relax", "tile"}
+        for name in flag_params:
+            if name in midjargon_dict:
+                prompt_data[name] = True
 
-            # Handle boolean flags
-            if name in ("turbo", "relax", "tile"):
-                if value is None:
-                    prompt_data[name] = True
-                else:
-                    norm_value = self._normalize_value(value)
-                    if isinstance(norm_value, list):
-                        norm_value = norm_value[0] if norm_value else None
-                    if norm_value is not None:
-                        norm_str = str(norm_value).lower()
-                        prompt_data[name] = norm_str == "true"
-                    else:
-                        prompt_data[name] = False
-                continue
+    def _process_extra_params(
+        self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
+    ) -> None:
+        """Process extra parameters."""
+        for name, value in midjargon_dict.items():
+            if name not in prompt_data and not name.startswith("_"):
+                prompt_data["extra_params"][name] = value
 
-            # Store unknown parameters in extra_params
-            if value is not None:
-                prompt_data["extra_params"][name] = str(value) if value else None
-            else:
-                prompt_data["extra_params"][name] = None
+    def _parse_dict(self, midjargon_dict: MidjargonDict) -> MidjourneyPrompt:
+        """Parse a dictionary into a MidjourneyPrompt."""
+        prompt_data = self._get_default_prompt_data()
 
-        # Validate version if present
-        if prompt_data["version"]:
-            version = prompt_data["version"]
-            if version.startswith("niji"):
-                parts = version.split()
-                if len(parts) > 1 and parts[1] not in VALID_NIJI_VERSIONS:
-                    msg = f"Invalid niji version: {parts[1]}"
-                    raise ValueError(msg)
-            else:
-                version_num = version[1:]  # Strip 'v' prefix
-                if version_num not in VALID_VERSIONS:
-                    msg = f"Invalid version: {version_num}"
-                    raise ValueError(msg)
+        # Process text and images first
+        self._process_text_and_images(prompt_data, midjargon_dict)
 
-        # Create and validate prompt
+        # Process version parameters first to ensure correct precedence
+        self._process_version_params(prompt_data, midjargon_dict)
+
+        # Process other parameter types
+        self._process_numeric_params(prompt_data, midjargon_dict)
+        self._process_style_params(prompt_data, midjargon_dict)
+        self._process_aspect_ratio(prompt_data, midjargon_dict)
+        self._process_reference_params(prompt_data, midjargon_dict)
+        self._process_flag_params(prompt_data, midjargon_dict)
+        self._process_extra_params(prompt_data, midjargon_dict)
+
         return MidjourneyPrompt(**prompt_data)
 
     def parse_dict(self, midjargon_dict: MidjargonDict) -> MidjourneyPrompt:

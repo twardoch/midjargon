@@ -301,6 +301,41 @@ def split_permutation_options(text: str) -> list[str]:
     return options
 
 
+def _handle_escaped_char(text: str, pos: int, result: list[str]) -> int:
+    """Handle escaped characters in the text."""
+    for i in range(len(result)):
+        result[i] += text[pos]
+    return pos + 1
+
+
+def _handle_permutation(
+    text: str, pos: int, result: list[str]
+) -> tuple[list[str], int]:
+    """Handle permutation expansion at the current position."""
+    try:
+        end = _find_matching_brace(text, pos)
+        prefix = result[:]
+        new_result = []
+        options = split_permutation_options(text[pos + 1 : end])
+
+        for p in prefix:
+            for opt in options:
+                new_result.append(p + opt)
+
+        return new_result, end + 1
+    except ValueError:
+        # If no matching brace is found, treat as literal text
+        for i in range(len(result)):
+            result[i] += text[pos]
+        return result, pos + 1
+
+
+def _handle_literal_char(text: str, pos: int, result: list[str]) -> None:
+    """Handle literal character in the text."""
+    for i in range(len(result)):
+        result[i] += text[pos]
+
+
 def expand_permutations(text: str) -> list[str]:
     """
     Expand all permutations in a text string.
@@ -322,32 +357,13 @@ def expand_permutations(text: str) -> list[str]:
 
     while pos < len(text):
         if pos > 0 and text[pos - 1] == "\\":
-            # Handle escaped characters
-            for i in range(len(result)):
-                result[i] += text[pos]
-            pos += 1
+            pos = _handle_escaped_char(text, pos, result)
             continue
 
         if text[pos] == "{":
-            try:
-                end = _find_matching_brace(text, pos)
-                prefix = result[:]
-                result = []
-                options = split_permutation_options(text[pos + 1 : end])
-
-                for p in prefix:
-                    for opt in options:
-                        result.append(p + opt)
-
-                pos = end + 1
-            except ValueError:
-                # If no matching brace is found, treat as literal text
-                for i in range(len(result)):
-                    result[i] += text[pos]
-                pos += 1
+            result, pos = _handle_permutation(text, pos, result)
         else:
-            for i in range(len(result)):
-                result[i] += text[pos]
+            _handle_literal_char(text, pos, result)
             pos += 1
 
     return result
