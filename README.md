@@ -4,46 +4,37 @@
 
 ## Features
 
-- **Robust Prompt Parsing**: 
-  - Parse Midjourney prompts into structured components (text, parameters, image URLs)
+- **Robust Prompt Parsing**:
+  - Parses Midjourney prompts into structured components (text, parameters, image URLs)
   - Type-safe parsing with comprehensive validation
-  - Support for complex prompt structures and syntax
+  - Supports complex prompt structures and syntax
 
-- **Advanced Permutation Support**: 
-  - Handle nested permutations in curly braces `{option1, option2}`
-  - Support for escaped characters in permutations (e.g., `\,` for literal commas)
-  - Combine permutations across text and parameters
-  - Automatic expansion of all possible combinations
+- **Advanced Permutation Support**:
+  - Handles nested permutations in curly braces `{option1, option2}`
+  - Supports escaped characters in permutations (e.g., `\,` for literal commas)
+  - Automatically expands all possible combinations
 
 - **Comprehensive Parameter Handling**:
-  - Validate parameter names and values
-  - Support for numeric ranges (stylize, chaos, weird, etc.)
-  - Handle aspect ratios and style parameters
-  - Process boolean flags and multi-value parameters
-  - Proper type conversion and validation
+  - Validates parameter names and values
+  - Supports numeric ranges and type conversion
+  - Processes boolean flags and multi-value parameters
 
 - **Image URL Processing**:
-  - Extract and validate image URLs
-  - Support for multiple image inputs
-  - Validate file extensions and URL formats
-  - Handle image weights and reference images
+  - Extracts and validates image URLs
+  - Supports multiple image inputs and file extensions
 
 - **Multi-prompt Support**:
-  - Handle weighted prompts using `::`
-  - Process multiple variations in a single input
-  - Support for negative weights and prompt mixing
+  - Handles weighted prompts using `::`
+  - Processes multiple variations in a single input
 
 - **Type Safety**:
   - Full type hints throughout the codebase
   - Pydantic models for robust validation
-  - Clear error messages for invalid inputs
-  - Modern Python type annotations
 
 - **Rich CLI Interface**:
-  - Beautiful console output with syntax highlighting
+  - Fire-based command-line interface with rich output
+  - CLI commands for converting prompts to different formats (Midjourney, Fal.ai)
   - JSON output option for automation
-  - Support for raw parsing and full validation
-  - Helpful error messages and formatting
 
 ## Installation
 
@@ -62,79 +53,125 @@ from midjargon import parse_midjourney_dict, expand_midjargon_input
 prompt = "a serene landscape --ar 16:9 --stylize 100"
 result = expand_midjargon_input(prompt)[0]
 validated = parse_midjourney_dict(result)
-
-# Work with permutations
-prompt_with_perms = "a {red, blue} bird on a {flower, leaf} --ar 16:9"
-variations = expand_midjargon_input(prompt_with_perms)
-for variation in variations:
-    parsed = parse_midjourney_dict(variation)
-    print(parsed.text)  # Prints each combination
-
-# Complex prompt with images and weights
-complex_prompt = """
-https://example.com/image.jpg 
-mystical forest ::2 foggy mountains ::1 
---chaos 20 --stylize 100
-"""
-parsed = parse_midjourney_dict(complex_prompt)
 ```
 
 ### CLI Usage
 
+Midjargon exposes a single CLI interface with multiple commands. Here are some examples:
+
 ```bash
-# Basic prompt parsing
-midjargon "a photo of a cat --ar 16:9"
+# Running the default CLI interface using Python module
+python -m midjargon
 
-# Get JSON output
-midjargon --json-output "a photo of a cat --ar 16:9"
+# Help for Fal.ai conversion (convert prompt to Fal.ai format)
+uv run midjargon fal --help
 
-# Raw parsing without validation
-midjargon --raw "any text with parameters"
+# Help for Midjourney conversion
+midjargon mj --help
 
-# Parse prompt with permutations
-midjargon "a {red, blue} bird --stylize {100, 500}"
+# Help for JSON parsing (MidjargonDict output)
+midjargon json --help
+
+# Help for permutation expansion
+midjargon perm --help
+```
+
+You can also run commands directly:
+
+```bash
+# Convert prompt to Fal.ai format:
+midjargon fal "a portrait of a cat --ar 1:1"
+
+# Parse prompt to MidjargonDict:
+midjargon json "a futuristic city --chaos 20 --stylize 200"
+
+# Convert prompt to Midjourney format:
+midjargon mj "a landscape --ar 16:9 --tile"
+
+# Expand prompt permutations:
+midjargon perm "a {red, blue} bird on a tree"
 ```
 
 ## Project Structure
 
 ```
-midjargon/
-├── src/midjargon/
-│   ├── core/           # Core parsing functionality
-│   ├── engines/        # Engine-specific implementations
-│   └── cli/            # Command-line interface
-├── tests/              # Test suite
-├── SPEC.md            # Format specification
-└── CODE.md            # Code documentation
+.
+├── LICENSE                    # MIT license
+├── README.md                  # Project introduction and documentation
+├── TODO.md                    # Task list to clear before release
+├── TODO2.md                   # Additional tasks and feature proposals
+├── dist                       # Distribution files
+├── docs                       # Project documentation
+│   ├── midjourney-docs.md      # Original Midjourney documentation
+│   ├── refactoring-ideas.md    # Ideas for refactoring and improvements
+│   └── specification.md        # Detailed prompt syntax specification
+├── package.toml               # Hatch project configuration
+├── pyproject.toml             # Python project configuration
+├── pytest.ini                 # Pytest configuration
+├── uv.lock                    # UV dependency lock file
+├── src                        # Source code
+│   └── midjargon
+│       ├── __init__.py
+│       ├── __main__.py        # CLI entry point (Fire-based)
+│       ├── cli
+│       │   ├── __init__.py
+│       │   └── main.py        # CLI command definitions
+│       ├── core
+│       │   ├── __init__.py
+│       │   ├── converter.py     # Conversion utilities for prompts
+│       │   ├── input.py         # Input processing and permutation expansion
+│       │   ├── parameters.py    # Parsing and validation of parameters
+│       │   ├── parser.py        # Basic prompt parsing into dictionaries
+│       │   ├── permutations.py  # Permutation expansion logic
+│       │   └── type_defs.py     # Type definitions for midjargon
+│       └── engines
+│           ├── __init__.py
+│           ├── base.py          # Abstract base for engine-specific converters
+│           ├── fal            # Fal.ai engine implementation
+│           │   ├── __init__.py
+│           │   └── converter.py   # Conversion of Midjargon dict to Fal.ai format
+│           └── midjourney     # Midjourney engine implementation
+│               ├── __init__.py
+│               ├── constants.py   # Parameter constraints and defaults
+│               ├── models.py      # Pydantic models for Midjourney prompts
+│               └── parser.py      # Engine-specific parsing logic
+└── tests                      # Test suite for midjargon
+    ├── cli
+    │   ├── __init__.py
+    │   └── test_main.py       # CLI tests
+    ├── conftest.py
+    ├── core
+    │   ├── __init__.py
+    │   ├── test_input.py      # Tests for input handling
+    │   ├── test_parameters.py # Tests for parameter parsing
+    │   └── test_permutations.py # Tests for permutation expansion
+    ├── engines
+    │   ├── __init__.py
+    │   ├── midjourney
+    │   │   ├── __init__.py
+    │   │   └── test_parser.py  # Tests for Midjourney parser
+    │   └── test_base.py       # Tests for engine base functionality
+    ├── integration
+    │   └── test_workflow.py   # Integration tests for full prompt processing
+    ├── test_package.py        # Package interface tests
+    └── tests                # Additional tests
 ```
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. Some ways to contribute:
-
-- Bug fixes and feature improvements
-- Documentation updates
-- Additional test cases
-- Performance optimizations
-- New engine implementations
-- CLI enhancements
+Contributions are welcome! Please submit a pull request with your changes.
 
 ### Development Setup
 
 1. Clone the repository
-2. Install development dependencies:
+2. Install dependencies:
    ```bash
    uv pip install --system --upgrade ".[all]"
    ```
 3. Run tests:
    ```bash
-   python -m pytest
+   pytest
    ```
-   or 
-    ```bash
-   python -m pytest
-   ```
-
 4. Format code:
    ```bash
    ruff check --fix --unsafe-fixes . && ruff format --respect-gitignore --target-version py312 .

@@ -1,8 +1,3 @@
-#!/usr/bin/env -S uv run
-# /// script
-# dependencies = ["pytest", "pydantic"]
-# ///
-
 """Integration tests for complete midjargon workflow."""
 
 import pytest

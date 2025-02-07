@@ -1,8 +1,3 @@
-#!/usr/bin/env -S uv run
-# /// script
-# dependencies = ["pytest", "pydantic"]
-# ///
-
 """Tests for base engine functionality."""
 
 import pytest

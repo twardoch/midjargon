@@ -1,8 +1,3 @@
-#!/usr/bin/env -S uv run
-# /// script
-# dependencies = ["pydantic"]
-# ///
-
 """
 parameters.py
 
@@ -156,9 +151,12 @@ def process_param_value(values: list[str]) -> str | None:
         return None
     value = " ".join(values)
     # Remove surrounding quotes if present
-    if value.startswith('"') and value.endswith('"'):
-        value = value[1:-1]  # Remove surrounding quotes
-    elif value.startswith("'") and value.endswith("'"):
+    if (
+        value.startswith('"')
+        and value.endswith('"')
+        or value.startswith("'")
+        and value.endswith("'")
+    ):
         value = value[1:-1]  # Remove surrounding quotes
 
     # Handle version parameter specially

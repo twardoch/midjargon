@@ -1,8 +1,3 @@
-#!/usr/bin/env -S uv run
-# /// script
-# dependencies = ["pytest"]
-# ///
-
 """Tests for permutation handling functionality."""
 
 from midjargon.core.permutations import expand_text, split_options

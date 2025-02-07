@@ -1,8 +1,3 @@
-#!/usr/bin/env -S uv run
-# /// script
-# dependencies = ["pytest"]
-# ///
-
 """Tests for Midjourney parser."""
 
 import pytest

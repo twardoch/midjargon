@@ -1,8 +1,3 @@
-#!/usr/bin/env -S uv run
-# /// script
-# dependencies = ["pytest"]
-# ///
-
 """Tests for input handling."""
 
 from midjargon.core.input import expand_midjargon_input

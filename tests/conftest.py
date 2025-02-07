@@ -1,8 +1,3 @@
-#!/usr/bin/env -S uv run
-# /// script
-# dependencies = ["pytest"]
-# ///
-
 """Pytest configuration and shared fixtures."""
 
 import pytest
