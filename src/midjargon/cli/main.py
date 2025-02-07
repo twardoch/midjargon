@@ -15,7 +15,7 @@ import json
 import sys
 from typing import Any, NoReturn
 
-import fire
+import fire  # type: ignore
 from rich.console import Console
 from rich.panel import Panel
 from rich.traceback import install
@@ -85,7 +85,7 @@ class MidjargonCLI:
             for i, result in enumerate(results, 1):
                 if len(results) > 1:
                     console.print(f"\nVariant {i}:", style="bold blue")
-                console.print(Panel(result))
+                console.print(Panel(_format_prompt(result)))
 
         except (
             ValueError,
@@ -178,7 +178,7 @@ class MidjargonCLI:
                 if isinstance(results, list):
                     json_results = [prompt.model_dump() for prompt in results]
                 else:
-                    json_results = results.model_dump()
+                    json_results = [results.model_dump()]
                 _output_json(json_results)
                 return
 
@@ -248,23 +248,17 @@ class MidjargonCLI:
             else:
                 _handle_error(console, error)
 
+    def fal(self, prompt: str) -> None:
+        """
+        Convert a prompt to Fal.ai format and output JSON.
+        """
+        result = to_fal_dicts(prompt)
+        print(json.dumps(result, indent=2))
+
 
 def main() -> None:
     from rich.ansi import AnsiDecoder
-    from rich.console import Console, Group
-    from rich.theme import Theme
-    from rich.traceback import install
 
-    install(show_locals=True)
-    ansi_decoder = AnsiDecoder()
-    console = Console(theme=Theme({"prompt": "cyan", "question": "bold cyan"}))
-
-    def display(lines, out):
-        console.print(Group(*map(ansi_decoder.decode_line, lines)))
-
-    fire.core.Display = display
-
-    """Run the CLI application."""
     fire.Fire(MidjargonCLI())
 
 

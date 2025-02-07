@@ -376,15 +376,21 @@ def test_new_parameter_validation():
         parser.parse_dict({"text": "a photo", "quality": "5"})
 
     # Test invalid character weight value
-    with pytest.raises(ValueError, match=r"Invalid numeric value for character_weight: 2000"):
+    with pytest.raises(
+        ValueError, match=r"Invalid numeric value for character_weight: 2000"
+    ):
         parser.parse_dict({"text": "a photo", "character_weight": "2000"})
 
     # Test invalid style weight value
-    with pytest.raises(ValueError, match=r"Invalid numeric value for style_weight: 5000"):
+    with pytest.raises(
+        ValueError, match=r"Invalid numeric value for style_weight: 5000"
+    ):
         parser.parse_dict({"text": "a photo", "style_weight": "5000"})
 
     # Test invalid style version value
-    with pytest.raises(ValueError, match=r"Invalid numeric value for style_version: 20"):
+    with pytest.raises(
+        ValueError, match=r"Invalid numeric value for style_version: 20"
+    ):
         parser.parse_dict({"text": "a photo", "style_version": "20"})
 
     # Test invalid repeat value

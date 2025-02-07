@@ -101,7 +101,7 @@ class MidjourneyPrompt(BaseModel):
     # Style parameters
     style: str | None = Field(default=None)  # raw, cute, expressive, etc.
     version: str | None = Field(default=None)  # v5, v6, niji, etc.
-    personalization: bool | list[str] | None = Field(
+    personalization: bool | list[str] = Field(
         default=False
     )  # Profile IDs or codes for --p parameter
 
@@ -176,6 +176,36 @@ class MidjourneyPrompt(BaseModel):
             msg = f"Invalid version value. Must be one of: {VALID_VERSIONS}"
             raise ValueError(msg)
         return v  # Return original value to preserve 'v' prefix
+
+    @field_validator("personalization", mode="before")
+    @classmethod
+    def validate_personalization(cls, v: Any) -> bool | list[str]:
+        """Validate personalization field."""
+        if v is None or v == "":
+            return True
+        if isinstance(v, list):
+            if not v:
+                return False
+            # Handle case where the list might be a string representation
+            if (
+                len(v) == 1
+                and isinstance(v[0], str)
+                and v[0].startswith("[")
+                and v[0].endswith("]")
+            ):
+                try:
+                    # Try to parse as a list
+                    import ast
+
+                    parsed = ast.literal_eval(v[0])
+                    if isinstance(parsed, list):
+                        return [str(item) for item in parsed]
+                except (ValueError, SyntaxError):
+                    pass
+            return [str(item) for item in v]
+        if isinstance(v, bool):
+            return v
+        return [str(v)]
 
     @model_validator(mode="after")
     def validate_mode_flags(self) -> Any:

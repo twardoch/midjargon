@@ -74,12 +74,13 @@ def validate_range(
     def wrapper(value: str, param: str, min_max: RangeType) -> T:
         try:
             result = func(value, param, min_max)
+        except ValueError:
+            _raise_validation_error(value, param)
+        else:
             min_val, max_val = min_max
             if not min_val <= result <= max_val:
                 _raise_validation_error(value, param, min_val, max_val)
             return result
-        except ValueError:
-            _raise_validation_error(value, param)
 
     return wrapper
 
