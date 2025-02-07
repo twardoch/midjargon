@@ -2,8 +2,8 @@
 Engine-specific parsers for midjargon.
 """
 
-from . import fal
-from .midjourney import MidjourneyPrompt, parse_midjourney_dict
+from midjargon.engines import fal
+from midjargon.engines.midjourney import MidjourneyPrompt, parse_midjourney_dict
 
 __all__ = [
     "MidjourneyPrompt",

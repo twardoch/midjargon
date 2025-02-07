@@ -124,11 +124,15 @@ def test_parameter_ranges():
     parser = MidjourneyParser()
 
     # Test maximum values
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match=r"Value 2000 for stylize must be between \d+ and \d+"
+    ):
         parser.parse_dict({"text": "a photo", "stylize": "2000"})  # Over max
 
     # Test minimum values
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match=r"Value -1 for chaos must be between \d+ and \d+"
+    ):
         parser.parse_dict({"text": "a photo", "chaos": "-1"})  # Under min
 
 
@@ -137,7 +141,7 @@ def test_empty_values():
     parser = MidjourneyParser()
 
     # Empty text
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Empty prompt"):
         parser.parse_dict({"text": ""})
 
     # Empty image list

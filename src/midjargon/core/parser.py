@@ -13,8 +13,9 @@ This parser does not perform strict validation; it only tokenizes and groups val
 import re
 from typing import cast
 
-from .parameters import parse_parameters
-from .type_defs import MidjargonDict, MidjargonPrompt
+from midjargon.core.parameters import parse_parameters
+from midjargon.core.type_defs import MidjargonDict, MidjargonPrompt
+import contextlib
 
 
 def split_text_and_parameters(text: str) -> tuple[str, str]:
@@ -125,10 +126,8 @@ def parse_midjargon_prompt_to_dict(expanded_prompt: MidjargonPrompt) -> Midjargo
 
     for param, converter in numeric_params.items():
         if param in params and params[param] is not None:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 params[param] = converter(params[param])
-            except (ValueError, TypeError):
-                pass
 
     # Build the dictionary according to the specification
     result = {

@@ -6,8 +6,7 @@ from typing import Any
 
 from midjargon.core.type_defs import MidjargonDict
 from midjargon.engines.base import EngineParser
-
-from .constants import (
+from midjargon.engines.midjourney.constants import (
     CHAOS_RANGE,
     CHARACTER_WEIGHT_RANGE,
     DEFAULT_CHAOS,
@@ -33,7 +32,7 @@ from .constants import (
     VALID_VERSIONS,
     WEIRD_RANGE,
 )
-from .models import ImagePrompt, MidjourneyPrompt
+from midjargon.engines.midjourney.models import ImagePrompt, MidjourneyPrompt
 
 
 class MidjourneyParser(EngineParser[MidjourneyPrompt]):
@@ -47,7 +46,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             return value if value else None
         return value
 
-    def _validate_numeric_range(self, name: str, value: int | float) -> None:
+    def _validate_numeric_range(self, name: str, value: float) -> None:
         """Validate numeric value is within allowed range."""
         ranges = {
             "stylize": STYLIZE_RANGE,
@@ -353,23 +352,21 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
                 prompt_data[param_name] = None
                 continue
 
+            processed_value = (
+                raw_value[0] if isinstance(raw_value, list) and raw_value else raw_value
+            )
+            if processed_value is None:
+                prompt_data[param_name] = None
+                continue
+
             try:
-                processed_value = (
-                    raw_value[0]
-                    if isinstance(raw_value, list) and raw_value
-                    else raw_value
-                )
-                if processed_value is None:
-                    prompt_data[param_name] = None
-                    continue
-
                 param_value = self._convert_numeric_param(param_name, processed_value)
-                self._validate_numeric_range(param_name, param_value)
-                prompt_data[param_name] = param_value
-
             except (ValueError, TypeError) as e:
                 msg = f"Invalid numeric value for {name}: {raw_value}"
                 raise ValueError(msg) from e
+
+            self._validate_numeric_range(param_name, param_value)
+            prompt_data[param_name] = param_value
 
     def _process_style_params(
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
@@ -427,10 +424,16 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
     ) -> None:
         """Process flag parameters."""
-        flag_params = {"turbo", "relax", "tile"}
-        for name in flag_params:
-            if name in midjargon_dict:
-                prompt_data[name] = True
+        if "no" in midjargon_dict:
+            no_value = midjargon_dict["no"]
+            if isinstance(no_value, str):
+                prompt_data[no_value] = False
+        if "tile" in midjargon_dict:
+            prompt_data["tile"] = True
+        if "turbo" in midjargon_dict:
+            prompt_data["turbo"] = True
+        if "relax" in midjargon_dict:
+            prompt_data["relax"] = True
 
     def _process_extra_params(
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
@@ -671,7 +674,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             for image_url in images:
                 if not isinstance(image_url, str):
                     msg = f"Invalid image URL: {image_url}"
-                    raise ValueError(msg)
+                    raise TypeError(msg)
                 image_prompts.append(ImagePrompt(url=image_url))
         return image_prompts
 

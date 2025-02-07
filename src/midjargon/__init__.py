@@ -6,7 +6,7 @@ A Python library for parsing and manipulating Midjourney prompts.
 
 from importlib import metadata
 
-from .core import (
+from midjargon.core import (
     MidjargonDict,
     MidjargonInput,
     MidjargonList,
@@ -14,7 +14,7 @@ from .core import (
     expand_midjargon_input,
     parse_midjargon_prompt_to_dict,
 )
-from .engines.midjourney import MidjourneyPrompt, parse_midjourney_dict
+from midjargon.engines.midjourney import MidjourneyPrompt, parse_midjourney_dict
 
 __version__ = metadata.version(__name__)
 

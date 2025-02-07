@@ -2,6 +2,6 @@
 CLI interface for midjargon.
 """
 
-from .main import main
+from midjargon.cli.main import main
 
 __all__ = ["main"]

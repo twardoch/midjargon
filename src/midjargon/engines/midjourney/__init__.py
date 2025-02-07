@@ -2,8 +2,8 @@
 Midjourney engine for midjargon.
 """
 
-from .models import ImagePrompt, MidjourneyPrompt
-from .parser import MidjourneyParser
+from midjargon.engines.midjourney.models import ImagePrompt, MidjourneyPrompt
+from midjargon.engines.midjourney.parser import MidjourneyParser
 
 # Create a default parser instance
 _parser = MidjourneyParser()

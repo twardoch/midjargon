@@ -39,7 +39,7 @@ class TestEngine(EngineParser[TestPrompt]):
 
     def to_dict(self, prompt: TestPrompt) -> dict:
         """Convert a TestPrompt back to a dictionary."""
-        result = {"text": prompt.text}
+        result: dict[str, str | None] = {"text": prompt.text}
         result.update(prompt.parameters)
         return result
 
@@ -63,7 +63,9 @@ def test_prompt_to_string():
 
 def test_engine_validation():
     """Test engine validation."""
-    with pytest.raises(TypeError):
+    with pytest.raises(
+        TypeError, match="Can't instantiate abstract class EngineParser"
+    ):
         # Should fail because EngineParser is abstract
         EngineParser()
 
@@ -71,7 +73,7 @@ def test_engine_validation():
 def test_engine_with_empty_prompt():
     """Test engine handling of empty prompt."""
     engine = TestEngine()
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Empty prompt"):
         engine.parse_dict({"text": ""})
 
 

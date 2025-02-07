@@ -55,6 +55,9 @@ def validate_param_name(name: str) -> None:
     if not name:
         msg = "Empty parameter name"
         raise ValueError(msg)
+    if not isinstance(name, str):
+        msg = f"Parameter name must be a string, got: {type(name)}"
+        raise TypeError(msg)
     if not name.replace("-", "").replace("_", "").isalnum():
         msg = f"Invalid parameter name: {name}"
         raise ValueError(msg)
@@ -83,7 +86,7 @@ def validate_param_value(name: str, value: ParamValue) -> None:
         for item in value:
             if not isinstance(item, str):
                 msg = f"List values must be strings, got: {type(item)}"
-                raise ValueError(msg)
+                raise TypeError(msg)
         return
 
     # Validate numeric parameters can be converted to float
@@ -149,31 +152,27 @@ def process_param_value(values: list[str]) -> str | None:
     """
     if not values:
         return None
-    value = " ".join(values)
-    # Remove surrounding quotes if present
-    if (
-        value.startswith('"')
-        and value.endswith('"')
-        or value.startswith("'")
-        and value.endswith("'")
+
+    result = " ".join(values)
+
+    # Handle quoted values
+    if (result.startswith('"') and result.endswith('"')) or (
+        result.startswith("'") and result.endswith("'")
     ):
-        value = value[1:-1]  # Remove surrounding quotes
-
-    # Handle version parameter specially
-    if value.startswith("v") and value[1:].replace(".", "").isdigit():
-        return value[1:]  # Strip 'v' prefix for version numbers
-    elif value.startswith("niji"):
-        return value  # Keep niji version as is
-
+        result = result[1:-1]  # Remove surrounding quotes
+    # Handle version parameter
+    elif result.startswith("v") and result[1:].replace(".", "").isdigit():
+        result = result[1:]  # Strip 'v' prefix for version numbers
     # Handle reference files
-    if "," in value and any(
-        ext in value.lower() for ext in (".jpg", ".jpeg", ".png", ".gif")
+    elif "," in result and any(
+        ext in result.lower() for ext in (".jpg", ".jpeg", ".png", ".gif")
     ):
         # Split on commas and clean up each file path
-        files = [f.strip() for f in value.split(",")]
-        return ",".join(files)
+        files = [f.strip() for f in result.split(",")]
+        result = ",".join(files)
+    # No special processing needed for niji or other values
 
-    return value
+    return result
 
 
 def _expand_param_name(name: str) -> str:
@@ -327,6 +326,9 @@ def _process_current_param(
     """Process and store the current parameter."""
     if current_param is None:
         return
+    if current_param == "":
+        msg = "Empty parameter name"
+        raise ValueError(msg)
 
     # Validate that required parameters have values
     expanded_name, is_flag = expand_shorthand_param(current_param)

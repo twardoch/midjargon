@@ -70,6 +70,7 @@ class EngineParser(ABC, Generic[T]):
 
         return self._parse_dict(midjargon_dict)
 
+    @abstractmethod
     def _parse_dict(self, midjargon_dict: MidjargonDict) -> T:
         """
         Internal method to parse dictionary into model.

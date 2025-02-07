@@ -87,7 +87,11 @@ class MidjargonCLI:
                     console.print(f"\nVariant {i}:", style="bold blue")
                 console.print(Panel(result))
 
-        except Exception as error:
+        except (
+            ValueError,
+            TypeError,
+            SyntaxError,
+        ) as error:  # More specific exceptions
             if json_output:
                 _output_json({"error": str(error)})
                 sys.exit(1)
@@ -132,7 +136,11 @@ class MidjargonCLI:
             else:
                 console.print(Panel(_format_prompt(results)))
 
-        except Exception as error:
+        except (
+            ValueError,
+            TypeError,
+            SyntaxError,
+        ) as error:  # More specific exceptions
             if json_output:
                 _output_json({"error": str(error)})
                 sys.exit(1)
@@ -179,7 +187,11 @@ class MidjargonCLI:
             else:
                 console.print(Panel(_format_prompt(results)))
 
-        except Exception as error:
+        except (
+            ValueError,
+            TypeError,
+            SyntaxError,
+        ) as error:  # More specific exceptions
             if json_output:
                 _output_json({"error": str(error)})
                 sys.exit(1)
@@ -222,7 +234,11 @@ class MidjargonCLI:
             else:
                 console.print(Panel(_format_prompt(results)))
 
-        except Exception as error:
+        except (
+            ValueError,
+            TypeError,
+            SyntaxError,
+        ) as error:  # More specific exceptions
             if json_output:
                 _output_json({"error": str(error)})
                 sys.exit(1)

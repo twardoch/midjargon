@@ -2,7 +2,7 @@
 Fal.ai engine for midjargon.
 """
 
-from .converter import FalDict, to_fal_dict
+from midjargon.engines.fal.converter import FalDict, to_fal_dict
 
 __all__ = [
     "FalDict",

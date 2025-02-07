@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from .constants import (
+from midjargon.engines.midjourney.constants import (
     CHAOS_RANGE,
     CHARACTER_WEIGHT_RANGE,
     DEFAULT_ASPECT_RATIO,

@@ -7,7 +7,7 @@ Supports nested permutations and proper spacing handling.
 
 from collections.abc import Sequence
 
-from .type_defs import MidjargonList
+from midjargon.core.type_defs import MidjargonList
 
 # Constants
 ESCAPE_SEQUENCE_LENGTH = 2  # Length of escape sequence: backslash + character
@@ -164,13 +164,11 @@ def _expand_nested(options: Sequence[str]) -> MidjargonList:
     Returns:
         List of fully expanded options.
     """
-    expanded = []
-    for opt in options:
-        if "{" in opt:
-            expanded.extend(expand_single(opt))
-        else:
-            expanded.append(opt)
-    return expanded
+    return [
+        expanded_opt
+        for opt in options
+        for expanded_opt in (expand_single(opt) if "{" in opt else [opt])
+    ]
 
 
 def expand_single(text: str) -> list[str]:
@@ -219,11 +217,7 @@ def expand_single(text: str) -> list[str]:
             expanded_options.append(opt)
 
     # Format each option with proper spacing
-    results = []
-    for opt in expanded_options:
-        results.append(_format_part(prefix, opt, suffix))
-
-    return results
+    return [_format_part(prefix, opt, suffix) for opt in expanded_options]
 
 
 def expand_text(text: str) -> MidjargonList:

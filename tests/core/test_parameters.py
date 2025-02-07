@@ -109,14 +109,14 @@ def test_parameter_order():
 
 def test_invalid_parameters():
     """Test handling of invalid parameter formats."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Empty parameter name"):
         parse_parameters("--")  # Empty parameter name
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Missing value for parameter"):
         parse_parameters("--ar")  # Missing required value
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Parameter name cannot start with dash"):
         parse_parameters("ar 16:9")  # Missing -- prefix
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Missing value for parameter"):
         parse_parameters("--v")  # Missing version value
