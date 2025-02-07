@@ -246,16 +246,23 @@ def _process_param_chunk(
     Raises:
         ValueError: If chunk has invalid syntax.
     """
-    if not chunk:
-        msg = "Empty parameter chunk"
+    if not chunk or chunk == "--":
+        msg = "Empty parameter name"
         raise ValueError(msg)
 
     # Split on first space
     parts = chunk.split(maxsplit=1)
     name = parts[0].lstrip("-")
 
+    # Validate parameter name
+    validate_param_name(name)
+
     # Handle flag parameters (no value)
     if len(parts) == 1:
+        # Special case for version and personalization which require values
+        if name in ["v", "version"]:
+            msg = "Missing required value for version parameter"
+            raise ValueError(msg)
         return _process_flag_param(name)
 
     # Handle value parameters
@@ -365,6 +372,11 @@ def parse_parameters(param_str: str) -> ParamDict:
     current_values = []
 
     for chunk in chunks:
+        # Validate that parameters start with --
+        if not current_param and not chunk.startswith("--"):
+            msg = "Parameter must start with -- prefix"
+            raise ValueError(msg)
+
         if chunk.startswith("--"):
             # Process previous parameter if exists
             _process_current_param(current_param, current_values, params)

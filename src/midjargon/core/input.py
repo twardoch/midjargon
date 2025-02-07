@@ -50,12 +50,13 @@ def expand_midjargon_input(prompt: MidjargonInput) -> MidjargonList:
     # Restore escaped characters
     restored = []
     for input_text in expanded:
+        modified_text = input_text
         for marker, original in {
             "‹ESCAPED_OPEN›": "{",
             "‹ESCAPED_CLOSE›": "}",
             "‹ESCAPED_COMMA›": ",",
         }.items():
-            input_text = input_text.replace(marker, original)
-        restored.append(input_text)
+            modified_text = modified_text.replace(marker, original)
+        restored.append(modified_text)
 
     return restored
