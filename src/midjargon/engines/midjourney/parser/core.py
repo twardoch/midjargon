@@ -2,6 +2,7 @@
 Core parser implementation for Midjourney engine.
 """
 
+import ast
 from typing import Any
 
 from midjargon.core.type_defs import MidjargonDict
@@ -139,20 +140,40 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
     def _process_personalization(
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
     ) -> None:
-        """Process personalization parameter."""
+        """Handle personalization parameter."""
         # Check for both 'p' and 'personalization' keys
         p_value = midjargon_dict.get("p")
         personalization = midjargon_dict.get("personalization")
 
-        # If neither is present, keep default False
-        if p_value is None and personalization is None:
-            return
-
         # If both are present, personalization takes precedence
         value = personalization if personalization is not None else p_value
 
-        # Let the model's validator handle the value
-        prompt_data["personalization"] = value
+        # Handle if value is a string that represents a list
+        if isinstance(value, str) and value.startswith("[") and value.endswith("]"):
+            try:
+                evaluated = ast.literal_eval(value)
+                if isinstance(evaluated, list):
+                    value = evaluated
+            except Exception:
+                pass
+
+        # Handle flag-only case (when key exists but value is None or empty string)
+        if value is None or value == "":
+            prompt_data["personalization"] = True
+            return
+
+        # Handle list value
+        if isinstance(value, list):
+            prompt_data["personalization"] = value if value else False
+            return
+
+        # Handle string value - convert to list
+        if isinstance(value, str):
+            prompt_data["personalization"] = [value]
+            return
+
+        # Default case
+        prompt_data["personalization"] = False
 
     def _process_references(
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict

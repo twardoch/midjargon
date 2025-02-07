@@ -10,7 +10,7 @@ from typing import TypeAlias
 
 # Type aliases for clarity
 ParamName: TypeAlias = str
-ParamValue: TypeAlias = str | list[str] | None
+ParamValue: TypeAlias = str | list[str] | None | bool
 ParamDict: TypeAlias = dict[ParamName, ParamValue]
 
 # Common parameter shortcuts
@@ -79,6 +79,8 @@ def validate_param_value(name: str, value: ParamValue) -> None:
         ValueError: If value has invalid syntax.
     """
     if value is None:
+        return
+    if isinstance(value, bool):
         return
 
     # Handle list values
@@ -330,12 +332,15 @@ def _process_current_param(
 
     # Special handling for personalization parameter
     if expanded_name == "personalization":
-        if not current_values:
-            params[expanded_name] = None  # None for flag usage
+        if not current_values or all(
+            v.strip() == "" for v in current_values if isinstance(v, str)
+        ):
+            params[expanded_name] = None
             return
-        value = process_param_value(current_values)
-        validate_param_value(expanded_name, value)
-        params[expanded_name] = value
+        if len(current_values) == 1:
+            params[expanded_name] = current_values[0]
+        else:
+            params[expanded_name] = current_values
         return
 
     # Regular parameter handling

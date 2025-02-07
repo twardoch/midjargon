@@ -248,16 +248,8 @@ class MidjargonCLI:
             else:
                 _handle_error(console, error)
 
-    def fal(self, prompt: str) -> None:
-        """
-        Convert a prompt to Fal.ai format and output JSON.
-        """
-        result = to_fal_dicts(prompt)
-        print(json.dumps(result, indent=2))
-
 
 def main() -> None:
-    from rich.ansi import AnsiDecoder
 
     fire.Fire(MidjargonCLI())
 
