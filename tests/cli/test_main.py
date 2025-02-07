@@ -39,9 +39,9 @@ def parse_json_output(output_stream: StringIO) -> Any:
         raise ValueError(msg)
     try:
         return json.loads(output)
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
         msg = "No JSON found in output"
-        raise ValueError(msg)
+        raise ValueError(msg) from e
 
 
 def test_basic_prompt():

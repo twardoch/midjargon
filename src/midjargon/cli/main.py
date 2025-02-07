@@ -115,8 +115,8 @@ def _handle_error(console: Console, error: Exception) -> NoReturn:
 
 def _output_json(data: Any) -> None:
     """Output data as formatted JSON without any Rich formatting."""
-
-    print(json.dumps(data, indent=2))
+    sys.stdout.write(json.dumps(data, indent=2))
+    sys.stdout.flush()
 
 
 def process_prompt(prompt: str) -> list[MidjourneyPrompt]:
