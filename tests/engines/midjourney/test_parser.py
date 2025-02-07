@@ -18,6 +18,11 @@ STOP_VALUE = 80
 IMAGE_WEIGHT_VALUE = 2.0
 VERSION_NUMBER = "5.2"
 DEFAULT_STYLIZE = 100
+QUALITY_VALUE = 1.5
+CHARACTER_WEIGHT_VALUE = 50
+STYLE_WEIGHT_VALUE = 500
+STYLE_VERSION_VALUE = 3
+REPEAT_VALUE = 5
 
 
 def test_numeric_parameters():
@@ -338,3 +343,50 @@ def test_complex_permutations():
     }
 
     assert result_tuples == expected
+
+
+def test_new_parameters():
+    """Test parsing of new parameters."""
+    parser = MidjourneyParser()
+    prompt = parser.parse_dict(
+        {
+            "text": "a photo",
+            "quality": str(QUALITY_VALUE),
+            "character_weight": str(CHARACTER_WEIGHT_VALUE),
+            "style_weight": str(STYLE_WEIGHT_VALUE),
+            "style_version": str(STYLE_VERSION_VALUE),
+            "repeat": str(REPEAT_VALUE),
+        }
+    )
+
+    assert prompt.text == "a photo"
+    assert prompt.quality == QUALITY_VALUE
+    assert prompt.character_weight == CHARACTER_WEIGHT_VALUE
+    assert prompt.style_weight == STYLE_WEIGHT_VALUE
+    assert prompt.style_version == STYLE_VERSION_VALUE
+    assert prompt.repeat == REPEAT_VALUE
+
+
+def test_new_parameter_validation():
+    """Test validation of new parameters."""
+    parser = MidjourneyParser()
+
+    # Test invalid quality value
+    with pytest.raises(ValueError, match=r"Invalid numeric value for quality: 5"):
+        parser.parse_dict({"text": "a photo", "quality": "5"})
+
+    # Test invalid character weight value
+    with pytest.raises(ValueError, match=r"Invalid numeric value for character_weight: 2000"):
+        parser.parse_dict({"text": "a photo", "character_weight": "2000"})
+
+    # Test invalid style weight value
+    with pytest.raises(ValueError, match=r"Invalid numeric value for style_weight: 5000"):
+        parser.parse_dict({"text": "a photo", "style_weight": "5000"})
+
+    # Test invalid style version value
+    with pytest.raises(ValueError, match=r"Invalid numeric value for style_version: 20"):
+        parser.parse_dict({"text": "a photo", "style_version": "20"})
+
+    # Test invalid repeat value
+    with pytest.raises(ValueError, match=r"Invalid numeric value for repeat: 200"):
+        parser.parse_dict({"text": "a photo", "repeat": "200"})
