@@ -101,9 +101,9 @@ class MidjourneyPrompt(BaseModel):
     # Style parameters
     style: str | None = Field(default=None)  # raw, cute, expressive, etc.
     version: str | None = Field(default=None)  # v5, v6, niji, etc.
-    personalization: str | None = Field(
-        default=None
-    )  # Profile ID or code for --p parameter
+    personalization: bool | list[str] | None = Field(
+        default=False
+    )  # Profile IDs or codes for --p parameter
 
     # New parameters with defaults
     quality: float | None = Field(

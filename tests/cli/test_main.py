@@ -159,7 +159,7 @@ def test_complex_prompt(cli):
     )
     with StringIO() as capture_stdout:
         sys.stdout = capture_stdout
-        cli.json(prompt, json_output=True, permute=True)
+        cli.json(prompt, json_output=True)
         sys.stdout = sys.__stdout__
         data = parse_json_output(capture_stdout)
     assert isinstance(data, list)
@@ -169,3 +169,107 @@ def test_complex_prompt(cli):
         assert prompt["stylize"] == STYLIZE_VALUE
         assert prompt["chaos"] == CHAOS_VALUE
         assert prompt["aspect"] == f"{ASPECT_WIDTH}:{ASPECT_HEIGHT}"
+
+
+def test_personalization_parameter(cli):
+    """Test personalization parameter handling in different forms."""
+    # Test flag form (--p)
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        cli.json("a photo --p", json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
+    assert isinstance(data, dict)
+    assert data["personalization"] is None  # Flag parameters should be None
+
+    # Test with code (--p CODE1)
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        cli.json("a photo --p CODE1", json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
+    assert isinstance(data, dict)
+    assert data["personalization"] == "CODE1"
+
+    # Test with multiple codes (--p "CODE1 CODE2")
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        cli.json('a photo --p "CODE1 CODE2"', json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
+    assert isinstance(data, dict)
+    assert data["personalization"] == "CODE1 CODE2"
+
+
+def test_numeric_range_permutations(cli):
+    """Test handling of numeric parameters in permutations."""
+    # Test stylize parameter range
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        cli.json("a photo --s {75, 300}", json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
+    assert isinstance(data, list)
+    assert len(data) == 2
+    stylize_values = {prompt["stylize"] for prompt in data}
+    assert stylize_values == {75, 300}
+
+    # Test multiple numeric parameters
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        cli.json("a photo --s {75, 300} --c {0, 50}", json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
+    assert isinstance(data, list)
+    assert len(data) == 4  # 2x2 combinations
+    stylize_values = {prompt["stylize"] for prompt in data}
+    chaos_values = {prompt["chaos"] for prompt in data}
+    assert stylize_values == {75, 300}
+    assert chaos_values == {0, 50}
+
+
+def test_nested_parameter_permutations(cli):
+    """Test handling of nested permutations with parameters."""
+    # Test personalization with nested options
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        cli.json("smooth edges {, --p {, CODE1}} --s {75, 300}", json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
+    assert isinstance(data, list)
+    assert len(data) == 6  # 3x2 combinations (no --p, empty --p, --p CODE1) x (75, 300)
+
+    # Verify all combinations
+    variants = [
+        (None, 75),  # No --p, stylize 75
+        (None, 300),  # No --p, stylize 300
+        ("", 75),  # Empty --p, stylize 75
+        ("", 300),  # Empty --p, stylize 300
+        ("CODE1", 75),  # --p with code, stylize 75
+        ("CODE1", 300),  # --p with code, stylize 300
+    ]
+    for prompt in data:
+        assert prompt["text"] == "smooth edges"
+        assert (prompt.get("personalization"), prompt["stylize"]) in variants
+
+    # Test more complex nested permutations
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        cli.json("smooth edges {, --p {, CODE1 CODE2}} --s {75, 300}", json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
+    assert isinstance(data, list)
+    assert len(data) == 6  # 3x2 combinations
+
+    # Verify all combinations
+    variants = [
+        (None, 75),  # No --p, stylize 75
+        (None, 300),  # No --p, stylize 300
+        ("", 75),  # Empty --p, stylize 75
+        ("", 300),  # Empty --p, stylize 300
+        ("CODE1 CODE2", 75),  # --p with codes, stylize 75
+        ("CODE1 CODE2", 300),  # --p with codes, stylize 300
+    ]
+    for prompt in data:
+        assert prompt["text"] == "smooth edges"
+        assert (prompt.get("personalization"), prompt["stylize"]) in variants

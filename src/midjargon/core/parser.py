@@ -10,12 +10,12 @@ into a flat dictionary (MidjargonDict) with the following keys:
 This parser does not perform strict validation; it only tokenizes and groups values.
 """
 
+import contextlib
 import re
 from typing import cast
 
 from midjargon.core.parameters import parse_parameters
 from midjargon.core.type_defs import MidjargonDict, MidjargonPrompt
-import contextlib
 
 
 def split_text_and_parameters(text: str) -> tuple[str, str]:

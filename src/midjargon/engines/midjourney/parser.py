@@ -65,7 +65,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         if name in ranges:
             min_val, max_val = ranges[name]
             if not min_val <= value <= max_val:
-                msg = f"Invalid numeric value for {name}: {value}"
+                msg = f"Invalid numeric value for {name}: {value}. Must be between {min_val} and {max_val}"
                 raise ValueError(msg)
 
     def _get_normalized_name(self, name: str) -> str:
@@ -109,6 +109,8 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
                     float,
                     lambda x: self._validate_numeric_range("image_weight", x),
                 ),
+                "seed": (int, lambda x: self._validate_numeric_range("seed", x)),
+                "stop": (int, lambda x: self._validate_numeric_range("stop", x)),
                 "quality": (
                     float,
                     lambda x: self._validate_numeric_range("quality", x),
@@ -142,23 +144,30 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
             if name in param_types:
                 type_func, validate_func = param_types[name]
-                val = type_func(
-                    float(str(value))
-                )  # Convert through float for int/float compatibility
-                validate_func(val)
-                # Map shorthand names to full names
-                name_map = {
-                    "iw": "image_weight",
-                    "cw": "character_weight",
-                    "sw": "style_weight",
-                    "sv": "style_version",
-                }
-                return name_map.get(name, name), val
+                try:
+                    val = type_func(
+                        float(str(value))
+                    )  # Convert through float for int/float compatibility
+                    validate_func(val)  # This will raise ValueError if validation fails
+                    # Map shorthand names to full names
+                    name_map = {
+                        "iw": "image_weight",
+                        "cw": "character_weight",
+                        "sw": "style_weight",
+                        "sv": "style_version",
+                    }
+                    return name_map.get(name, name), val
+                except ValueError as e:
+                    # Re-raise with more descriptive message
+                    msg = f"Invalid numeric value for {name}: {value}"
+                    raise ValueError(msg) from e
 
-        except (ValueError, TypeError):
-            return None, None
+        except (ValueError, TypeError) as e:
+            # Re-raise with more descriptive message
+            msg = f"Invalid numeric value for {name}: {value}"
+            raise ValueError(msg) from e
 
-        return None, None  # Ensure all paths return a value
+        return None, None
 
     def _handle_numeric_param(
         self, name: str, raw_value: str | list[str] | None
@@ -169,7 +178,11 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             return None, None
 
         # Convert and validate the value
-        return self._convert_numeric_value(name, value)
+        param_name, val = self._convert_numeric_value(name, value)
+        if param_name and val is not None:
+            return param_name, val
+
+        return None, None
 
     def _handle_aspect_ratio(
         self, raw_value: str | list[str] | None
@@ -202,19 +215,18 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         """Handle style parameter conversion."""
         if name != "style":
             return None, None
+
         value = self._normalize_value(raw_value)
         if value is None:
             return None, None
+
         if isinstance(value, list):
-            new_value = value[0] if value else None
-            if new_value is None or not isinstance(new_value, str):
-                return None, None
-        else:
-            if not isinstance(value, str):
-                return None, None
-            new_value = value
-        # new_value is now guaranteed to be a string
-        return "style", new_value
+            value = value[0] if value else None
+
+        if value is None:
+            return None, None
+
+        return "style", str(value)
 
     def _validate_niji_version(self, version: str) -> bool:
         """Validate niji version number."""
@@ -288,19 +300,30 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
     ) -> None:
         """Handle personalization parameter."""
-        if "p" in midjargon_dict or "personalization" in midjargon_dict:
-            raw_value = midjargon_dict.get("p") or midjargon_dict.get("personalization")
-            # If raw_value is None, it means --p was used as a flag
-            if raw_value is None:
-                prompt_data["personalization"] = ""  # Empty string for flag
-            else:
-                processed_value = (
-                    raw_value[0]
-                    if isinstance(raw_value, list) and raw_value
-                    else raw_value
-                )
-                if processed_value is not None:
-                    prompt_data["personalization"] = str(processed_value)
+        # Check for both 'p' and 'personalization' keys
+        p_value = midjargon_dict.get("p")
+        personalization = midjargon_dict.get("personalization")
+
+        # If both are present, personalization takes precedence
+        value = personalization if personalization is not None else p_value
+
+        # Handle flag-only case (when key exists but value is None or empty string)
+        if value is None or value == "":
+            prompt_data["personalization"] = True
+            return
+
+        # Handle list value
+        if isinstance(value, list):
+            prompt_data["personalization"] = value if value else False
+            return
+
+        # Handle string value - convert to list
+        if isinstance(value, str):
+            prompt_data["personalization"] = [value]
+            return
+
+        # Default case
+        prompt_data["personalization"] = False
 
     def _convert_numeric_param(self, param_name: str, value: Any) -> int | float:
         """Convert parameter value to appropriate numeric type."""
@@ -543,7 +566,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             "aspect_height": 1,
             "style": None,
             "version": None,
-            "personalization": None,
+            "personalization": False,
             "quality": 1.0,
             "character_reference": [],
             "character_weight": 100,
@@ -561,9 +584,17 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
     def _handle_basic_params(
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
     ) -> None:
-        """Handle basic text and image parameters."""
-        prompt_data["text"] = midjargon_dict.get("text", "")
-        prompt_data["image_prompts"] = midjargon_dict.get("images", [])
+        """Handle basic prompt parameters."""
+        # Process text
+        text = midjargon_dict.get("text", "")
+        text = str(text).strip() if text is not None else ""
+        if not text:
+            msg = "Empty prompt"
+            raise ValueError(msg)
+        prompt_data["text"] = text
+
+        # Process images
+        prompt_data["image_prompts"] = self._process_images(midjargon_dict)
 
     def _handle_special_params(
         self, prompt_data: dict[str, Any], name: str, raw_value: Any
@@ -588,17 +619,36 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
     def _handle_standard_params(
         self, prompt_data: dict[str, Any], name: str, raw_value: Any
     ) -> bool:
-        """Handle standard parameters like numeric and style."""
+        """Handle standard parameter conversion."""
+        # Handle None values for numeric parameters
+        if raw_value is None:
+            normalized_name = self._get_normalized_name(name)
+            if normalized_name in {
+                "stylize",
+                "chaos",
+                "weird",
+                "image_weight",
+                "seed",
+                "stop",
+                "quality",
+                "character_weight",
+                "style_weight",
+                "style_version",
+                "repeat",
+            }:
+                prompt_data[normalized_name] = None
+                return True
+
         # Handle numeric parameters
-        param_name, value = self._handle_numeric_param(name, raw_value)
+        param_name, val = self._handle_numeric_param(name, raw_value)
         if param_name:
-            prompt_data[param_name] = value
+            prompt_data[param_name] = val
             return True
 
         # Handle style parameter
-        param_name, value = self._handle_style_param(name, raw_value)
+        param_name, val = self._handle_style_param(name, raw_value)
         if param_name:
-            prompt_data[param_name] = value
+            prompt_data[param_name] = val
             return True
 
         return False
@@ -751,27 +801,28 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         return result
 
     def _validate_text(self, data: MidjargonDict) -> str:
-        """Validate and extract text from data."""
-        text_value = data.get("text")
-        if text_value is None:
-            msg = "Missing prompt text"
+        """Validate and clean text input."""
+        text = data.get("text", "")
+        if not text or not str(text).strip():
+            msg = "Empty prompt"
             raise ValueError(msg)
-        text = str(text_value).strip()
-        if not text:
-            msg = "Empty prompt text"
-            raise ValueError(msg)
-        return text
+        return str(text).strip()
 
     def _process_images(self, data: MidjargonDict) -> list[ImagePrompt]:
-        """Process and validate image prompts."""
-        image_prompts = []
+        """Process image URLs into ImagePrompt objects."""
         images = data.get("images", [])
-        if images is not None:
-            for image_url in images:
-                if not isinstance(image_url, str):
-                    msg = f"Invalid image URL: {image_url}"
-                    raise TypeError(msg)
-                image_prompts.append(ImagePrompt(url=image_url))
+        if not images:
+            return []
+
+        # Convert each URL to an ImagePrompt object
+        image_prompts = []
+        for url in images:
+            try:
+                image_prompts.append(ImagePrompt(url=url))
+            except ValueError as e:
+                msg = f"Invalid image URL: {url}"
+                raise ValueError(msg) from e
+
         return image_prompts
 
     def _process_version_params(
@@ -924,7 +975,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             "aspect_height": 1,
             "style": None,
             "version": None,
-            "personalization": None,
+            "personalization": False,
             "character_reference": [],
             "style_reference": [],
             "turbo": DEFAULT_TURBO,

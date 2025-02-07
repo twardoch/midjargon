@@ -1,8 +1,13 @@
 """Tests for Midjourney parser."""
 
+from typing import TYPE_CHECKING
+
 import pytest
 
 from midjargon.engines.midjourney import MidjourneyParser
+
+if TYPE_CHECKING:
+    from midjargon.core.type_defs import MidjargonDict
 
 # Test constants
 STYLIZE_VALUE = 100
@@ -184,10 +189,10 @@ def test_multiple_permutations():
     result_tuples = {(r.text.strip(), r.stylize, r.personalization) for r in results}
 
     expected = {
-        ("smooth edges", 75, None),
-        ("smooth edges", 300, None),
-        ("smooth edges", 75, None),
-        ("smooth edges", 300, None),
+        ("smooth edges", 75, False),
+        ("smooth edges", 300, False),
+        ("smooth edges", 75, True),
+        ("smooth edges", 300, True),
     }
 
     assert result_tuples == expected
@@ -216,55 +221,92 @@ def test_multiple_permutations():
     assert result_tuples == expected
 
 
+def test_personalization_parameter():
+    """Test parsing of personalization parameter."""
+    parser = MidjourneyParser()
+
+    # Test flag without value - should be True
+    prompt = parser.parse_dict({"text": "a photo", "p": None})
+    assert prompt.personalization is True
+
+    # Test flag with empty string - should be True
+    prompt = parser.parse_dict({"text": "a photo", "p": ""})
+    assert prompt.personalization is True
+
+    # Test with string value - should be list with one item
+    prompt = parser.parse_dict({"text": "a photo", "p": "custom"})
+    assert prompt.personalization == ["custom"]
+
+    # Test with list value - should keep list
+    prompt = parser.parse_dict({"text": "a photo", "p": ["custom1", "custom2"]})
+    assert prompt.personalization == ["custom1", "custom2"]
+
+    # Test with empty list - should be False
+    prompt = parser.parse_dict({"text": "a photo", "p": []})
+    assert prompt.personalization is False
+
+    # Test without personalization - should be False
+    prompt = parser.parse_dict({"text": "a photo"})
+    assert prompt.personalization is False
+
+
 def test_complex_permutations():
     """Test handling of complex parameter permutations."""
     parser = MidjourneyParser()
 
     # Test with multiple parameter types
-    input_dicts = [
+    input_dicts: list[MidjargonDict] = [
         {
             "text": "portrait modern",
             "aspect": "1:1",
             "stylize": "100",
+            "images": [],
         },
         {
             "text": "portrait modern",
             "aspect": "16:9",
             "stylize": "100",
+            "images": [],
         },
         {
             "text": "portrait modern",
             "aspect": "1:1",
             "stylize": "100",
             "personalization": "custom",
+            "images": [],
         },
         {
             "text": "portrait modern",
             "aspect": "16:9",
             "stylize": "100",
             "personalization": "custom",
+            "images": [],
         },
         {
             "text": "portrait vintage",
             "aspect": "1:1",
             "stylize": "100",
+            "images": [],
         },
         {
             "text": "portrait vintage",
             "aspect": "16:9",
             "stylize": "100",
+            "images": [],
         },
         {
             "text": "portrait vintage",
             "aspect": "1:1",
             "stylize": "100",
             "personalization": "custom",
+            "images": [],
         },
         {
             "text": "portrait vintage",
             "aspect": "16:9",
             "stylize": "100",
             "personalization": "custom",
+            "images": [],
         },
     ]
 
@@ -275,7 +317,9 @@ def test_complex_permutations():
     result_tuples = {
         (
             r.text.strip(),
-            r.personalization,
+            r.personalization[0]
+            if isinstance(r.personalization, list)
+            else r.personalization,
             f"{r.aspect_width}:{r.aspect_height}",
             r.stylize,
         )
@@ -283,12 +327,12 @@ def test_complex_permutations():
     }
 
     expected = {
-        ("portrait modern", None, "1:1", 100),
-        ("portrait modern", None, "16:9", 100),
+        ("portrait modern", False, "1:1", 100),
+        ("portrait modern", False, "16:9", 100),
         ("portrait modern", "custom", "1:1", 100),
         ("portrait modern", "custom", "16:9", 100),
-        ("portrait vintage", None, "1:1", 100),
-        ("portrait vintage", None, "16:9", 100),
+        ("portrait vintage", False, "1:1", 100),
+        ("portrait vintage", False, "16:9", 100),
         ("portrait vintage", "custom", "1:1", 100),
         ("portrait vintage", "custom", "16:9", 100),
     }

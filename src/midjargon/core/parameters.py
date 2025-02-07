@@ -208,8 +208,8 @@ def _process_flag_param(name: str) -> tuple[str, str | None]:
     """Process a flag parameter (no value)."""
     if name == "niji":
         return "version", "niji"
-    if name == "p":
-        return "personalization", ""
+    if name in {"p", "personalization"}:
+        return "personalization", None
     if name.startswith("no"):
         return "no", name[2:]
     return name, None
@@ -249,40 +249,34 @@ def _process_param_chunk(
 
     # Split on first space
     parts = chunk.split(maxsplit=1)
-    name = parts[0].lstrip("-")
+    if not parts[0].startswith("--"):
+        msg = f"Parameter name cannot start with dash: {parts[0]}"
+        raise ValueError(msg)
 
-    # Validate parameter name
+    name = parts[0][2:]  # Strip -- prefix
     validate_param_name(name)
 
     # Handle flag parameters (no value)
     if len(parts) == 1:
-        # Special case for version and personalization which require values
-        if name in ["v", "version"]:
-            msg = "Missing required value for version parameter"
-            raise ValueError(msg)
         return _process_flag_param(name)
 
-    # Handle value parameters
+    # Process value
     value = parts[1]
-    if value.startswith('"') and value.endswith('"'):
+
+    # Handle quoted values
+    if (value.startswith('"') and value.endswith('"')) or (
+        value.startswith("'") and value.endswith("'")
+    ):
         value = value[1:-1]  # Remove quotes
 
-    # Handle special cases where parameters might be combined
+    # Handle values with embedded parameters
     if "--" in value:
         value = _process_value_with_dashes(value, params)
 
-    expanded_name = _expand_param_name(name)
+    # Expand parameter name
+    name = _expand_param_name(name)
 
-    # Basic parameter name expansion, no semantic validation
-    if expanded_name == "niji" and value.isdigit():
-        return "version", f"niji {value}"
-
-    if expanded_name in ("personalization", "p"):
-        if "--" in value:
-            value = value.split("--")[0].strip()
-        return "personalization", value
-
-    return expanded_name, value
+    return name, value
 
 
 def _split_into_chunks(param_str: str) -> list[str]:
@@ -332,6 +326,18 @@ def _process_current_param(
 
     # Validate that required parameters have values
     expanded_name, is_flag = expand_shorthand_param(current_param)
+
+    # Special handling for personalization parameter
+    if expanded_name == "personalization":
+        if not current_values:
+            params[expanded_name] = None  # None for flag usage
+            return
+        value = process_param_value(current_values)
+        validate_param_value(expanded_name, value)
+        params[expanded_name] = value
+        return
+
+    # Regular parameter handling
     if not is_flag and not current_values:
         msg = f"Missing value for parameter: {current_param}"
         raise ValueError(msg)

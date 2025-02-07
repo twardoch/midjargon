@@ -102,7 +102,6 @@ class MidjargonCLI:
         self,
         prompt: str,
         *,
-        permute: bool = False,
         json_output: bool = True,
         no_color: bool = False,
     ) -> None:
@@ -111,7 +110,6 @@ class MidjargonCLI:
 
         Args:
             prompt: The prompt string to parse.
-            permute: If True, expand permutation markers before parsing.
             json_output: If True, output in JSON format (alias: -j).
             no_color: If True, disable colored output.
 
@@ -122,7 +120,12 @@ class MidjargonCLI:
         console = Console(force_terminal=not no_color)
 
         try:
-            results = parse_prompt(prompt, permute=permute)
+            # Always expand permutations to ensure consistent behavior with other commands
+            results = parse_prompt(prompt, permute=True)
+
+            # If there are no permutations (result is a single-item list), return just the dict
+            if isinstance(results, list) and len(results) == 1:
+                results = results[0]
 
             if json_output:
                 _output_json(results)

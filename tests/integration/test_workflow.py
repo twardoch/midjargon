@@ -134,7 +134,7 @@ def test_new_parameters_workflow():
     assert result.repeat == REPEAT_VALUE
     assert result.character_reference == ["ref1.jpg"]
     assert result.style_reference == ["style1.jpg,style2.jpg"]
-    assert result.personalization == "custom_profile"
+    assert result.personalization == ["custom_profile"]
 
 
 def test_weighted_prompts_workflow():
@@ -211,7 +211,7 @@ def test_permutations_with_parameters():
 
     # Convert results to set of tuples for easier comparison
     result_tuples = {
-        (r.text.strip(), r.personalization is not None, r.stylize) for r in results
+        (r.text.strip(), bool(r.personalization), r.stylize) for r in results
     }
 
     # Expected combinations
@@ -257,21 +257,22 @@ def test_permutations_with_complex_parameters():
     result_tuples = {
         (
             r.text.strip(),
-            r.personalization,
+            r.personalization[0]
+            if isinstance(r.personalization, list)
+            else bool(r.personalization),
             f"{r.aspect_width}:{r.aspect_height}",
             r.stylize,
         )
         for r in results
     }
 
-    # Expected combinations
     expected = {
-        ("portrait modern", None, "1:1", 100),
-        ("portrait modern", None, "16:9", 100),
+        ("portrait modern", False, "1:1", 100),
+        ("portrait modern", False, "16:9", 100),
         ("portrait modern", "custom", "1:1", 100),
         ("portrait modern", "custom", "16:9", 100),
-        ("portrait vintage", None, "1:1", 100),
-        ("portrait vintage", None, "16:9", 100),
+        ("portrait vintage", False, "1:1", 100),
+        ("portrait vintage", False, "16:9", 100),
         ("portrait vintage", "custom", "1:1", 100),
         ("portrait vintage", "custom", "16:9", 100),
     }
