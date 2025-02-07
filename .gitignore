@@ -295,3 +295,4 @@ wheels/
 x64/
 x86/
 ~$*
+.aider*
