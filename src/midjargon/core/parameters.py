@@ -200,6 +200,7 @@ def _expand_param_name(name: str) -> str:
         "cref": "character_reference",
         "sref": "style_reference",
         "no": "no",  # Keep no as is
+        "r": "repeat",
     }
     return shorthand_map.get(name, name)
 
