@@ -372,9 +372,9 @@ def parse_parameters(param_str: str) -> ParamDict:
     current_values = []
 
     for chunk in chunks:
-        # Validate that parameters start with --
+        # Validate that parameters start with '--'
         if not current_param and not chunk.startswith("--"):
-            msg = "Parameter must start with -- prefix"
+            msg = "Parameter name cannot start with dash"
             raise ValueError(msg)
 
         if chunk.startswith("--"):

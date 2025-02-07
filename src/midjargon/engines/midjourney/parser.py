@@ -65,9 +65,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         if name in ranges:
             min_val, max_val = ranges[name]
             if not min_val <= value <= max_val:
-                msg = (
-                    f"Value {value} for {name} must be between {min_val} and {max_val}"
-                )
+                msg = f"Invalid numeric value for {name}: {value}"
                 raise ValueError(msg)
 
     def _get_normalized_name(self, name: str) -> str:
