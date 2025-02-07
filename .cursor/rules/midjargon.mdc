@@ -6,6 +6,8 @@ globs:
 
 `midjargon` is a hatch-managed Python library for parsing and manipulating Midjourney prompts using a specialized syntax. This tool helps you work with Midjourney prompts in a structured way, handling complex features like permutations, parameter validation, and image URL extraction.
 
+Assistant: WHENEVER YOU MAKE EDITS AND YOU REPORT ON YOUR WORK — USE EMOJI!
+
 ## Folder structure
 
 ### Root

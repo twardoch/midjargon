@@ -138,7 +138,7 @@ def test_new_parameters_workflow():
     assert result.style_version == STYLE_VERSION_VALUE
     assert result.repeat == REPEAT_VALUE
     assert result.character_reference == ["ref1.jpg"]
-    assert result.style_reference == ["style1.jpg", "style2.jpg"]
+    assert result.style_reference == ["style1.jpg,style2.jpg"]
     assert result.personalization == "custom_profile"
 
 

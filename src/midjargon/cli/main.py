@@ -115,7 +115,7 @@ def _handle_error(console: Console, error: Exception) -> NoReturn:
 
 
 def _output_json(data: Any) -> None:
-    """Output data as formatted JSON."""
+    """Output data as formatted JSON without any Rich formatting."""
     print(json.dumps(data, indent=2), flush=True)
 
 

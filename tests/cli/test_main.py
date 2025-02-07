@@ -6,6 +6,7 @@
 """Tests for CLI functionality."""
 
 import json
+import re
 import sys
 from io import StringIO
 from typing import Any
@@ -22,6 +23,8 @@ STYLIZE_VALUE = 100
 CHAOS_VALUE = 50
 IMAGE_PROMPTS_COUNT = 2
 PERMUTATION_COUNT_2X2 = 4  # 2 options x 2 options
+
+ANSI_ESCAPE = re.compile(r"\x1B[@-_][0-?]*[ -/]*[@-~]")
 
 
 @pytest.fixture
@@ -48,17 +51,16 @@ def capture_stderr():
 
 
 def parse_json_output(output: str) -> Any:
-    """Parse JSON output from the CLI."""
+    """Parse JSON output from the CLI, removing ANSI escape sequences if any."""
+    # Remove ANSI escape sequences
+    output = ANSI_ESCAPE.sub("", output)
+    output = output.strip()
+    if not output:
+        raise ValueError("No JSON found in output")
     try:
-        # Strip any leading/trailing whitespace
-        output = output.strip()
-        if not output:
-            msg = "No JSON found in output"
-            raise ValueError(msg)
         return json.loads(output)
     except json.JSONDecodeError:
-        msg = "No JSON found in output"
-        raise ValueError(msg)
+        raise ValueError("No JSON found in output")
 
 
 def test_basic_prompt(capture_stdout):
