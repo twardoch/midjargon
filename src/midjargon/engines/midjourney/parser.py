@@ -318,6 +318,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             "extra_params": {},
             "version": None,
             "personalization": None,
+            "style": None,
         }
 
         # Process each parameter
@@ -343,7 +344,13 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             if name in ("v", "version", "niji"):
                 param_name, param_value = self._handle_version_param(name, value)
                 if param_name:
-                    prompt_data[param_name] = param_value
+                    # Only update version if not already set by --v
+                    if not (
+                        name == "niji"
+                        and prompt_data["version"]
+                        and prompt_data["version"].startswith("v")
+                    ):
+                        prompt_data[param_name] = param_value
                 continue
 
             # Handle style parameter
@@ -376,9 +383,13 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
                     prompt_data[name] = True
                 else:
                     norm_value = self._normalize_value(value)
-                    prompt_data[name] = (
-                        norm_value.lower() == "true" if norm_value else False
-                    )
+                    if isinstance(norm_value, list):
+                        norm_value = norm_value[0] if norm_value else None
+                    if norm_value is not None:
+                        norm_str = str(norm_value).lower()
+                        prompt_data[name] = norm_str == "true"
+                    else:
+                        prompt_data[name] = False
                 continue
 
             # Store unknown parameters

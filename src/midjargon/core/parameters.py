@@ -123,7 +123,7 @@ def expand_shorthand_param(name: str) -> tuple[str, bool]:
         Tuple of (expanded_name, is_flag_param).
     """
     # Handle special case for niji versions
-    if name.startswith("niji"):
+    if name == "niji":
         return "version", True
 
     # Handle special case for version parameter
@@ -273,7 +273,7 @@ def _process_param_chunk(
 
 def parse_parameters(param_str: str) -> ParamDict:
     """
-    Parse parameter string into a dictionary.
+    Parse a parameter string into a dictionary.
 
     Args:
         param_str: String containing parameters (e.g., "--ar 16:9 --stylize 100").
@@ -284,54 +284,80 @@ def parse_parameters(param_str: str) -> ParamDict:
     Raises:
         ValueError: If parameter format is invalid.
     """
+    if not param_str:
+        return {}
+
+    # Initialize parameters dictionary
     params: ParamDict = {}
 
-    # Split into chunks and process each
-    chunks = param_str.split("--")
-    for chunk in chunks[1:]:  # Skip first empty chunk
-        if not chunk.strip():
-            msg = "Empty parameter"
-            raise ValueError(msg)
+    # Split into chunks (handling quoted values)
+    chunks = []
+    current_chunk = []
+    in_quotes = False
+    quote_char = None
 
-        # Split at first space to separate name and value
-        parts = chunk.strip().split(maxsplit=1)
-        name = parts[0]
-        value = parts[1] if len(parts) > 1 else None
-
-        # Validate and expand parameter name
-        validate_param_name(name)
-        expanded_name, is_flag = expand_shorthand_param(name)
-
-        # If the parameter requires a value (not a flag) but none was provided, raise an error
-        if not is_flag and value is None:
-            raise ValueError(f"Missing required value for parameter: {name}")
-
-        # Process value
-        if is_flag:
-            if value is None:
-                if expanded_name == "version":
-                    params[expanded_name] = "niji"  # Default for --niji
-                elif expanded_name == "personalization":
-                    params[expanded_name] = ""  # Default for --p
-                else:
-                    params[expanded_name] = None
-            else:
-                params[expanded_name] = value
-        elif value is not None:
-            processed_value = process_param_value([value])
-            validate_param_value(expanded_name, processed_value)
-
-            # Handle reference parameters specially
-            if (
-                expanded_name in {"character_reference", "style_reference"}
-                and processed_value
-            ):
-                # Convert comma-separated list to actual list
-                params[expanded_name] = processed_value
-            else:
-                params[expanded_name] = processed_value
+    for char in param_str:
+        if char in ('"', "'"):
+            if not in_quotes:
+                in_quotes = True
+                quote_char = char
+            elif char == quote_char:
+                in_quotes = False
+                quote_char = None
+            current_chunk.append(char)
+        elif char.isspace() and not in_quotes:
+            if current_chunk:
+                chunks.append("".join(current_chunk))
+                current_chunk = []
         else:
-            msg = f"Missing value for parameter: {name}"
+            current_chunk.append(char)
+
+    if current_chunk:
+        chunks.append("".join(current_chunk))
+
+    if in_quotes:
+        msg = "Unclosed quotes in parameters"
+        raise ValueError(msg)
+
+    # Process chunks
+    current_param = None
+    current_values = []
+
+    for chunk in chunks:
+        if chunk.startswith("--"):
+            # If we have a previous parameter, process it
+            if current_param is not None:
+                # Validate that required parameters have values
+                expanded_name, is_flag = expand_shorthand_param(current_param)
+                if not is_flag and not current_values:
+                    msg = f"Missing value for parameter: {current_param}"
+                    raise ValueError(msg)
+
+                # Process and store the parameter
+                value = process_param_value(current_values)
+                validate_param_value(expanded_name, value)
+                params[expanded_name] = value
+
+            # Start new parameter
+            param_name = chunk[2:]  # Strip --
+            validate_param_name(param_name)
+            current_param = param_name
+            current_values = []
+        else:
+            if current_param is None:
+                msg = f"Value without parameter: {chunk}"
+                raise ValueError(msg)
+            current_values.append(chunk)
+
+    # Process the last parameter
+    if current_param is not None:
+        expanded_name, is_flag = expand_shorthand_param(current_param)
+        if not is_flag and not current_values:
+            msg = f"Missing value for parameter: {current_param}"
             raise ValueError(msg)
+
+        value = process_param_value(current_values)
+        validate_param_value(expanded_name, value)
+        params[expanded_name] = value
 
     return params

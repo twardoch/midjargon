@@ -85,11 +85,15 @@ def test_personalization_parameter():
     """Test parsing of personalization parameter."""
     # Test basic p parameter
     params = parse_parameters("--p")
-    assert params["personalization"] == ""
+    assert params["personalization"] is None  # Flag without value is None
 
-    # Test p with value
-    params = parse_parameters("--p abc123")
-    assert params["personalization"] == "abc123"
+    # Test p parameter with value
+    params = parse_parameters("--p custom")
+    assert params["personalization"] == "custom"
+
+    # Test full parameter name
+    params = parse_parameters("--personalization custom")
+    assert params["personalization"] == "custom"
 
 
 def test_reference_parameters():

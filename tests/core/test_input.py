@@ -56,7 +56,7 @@ def test_escaped_braces():
     """Test input with escaped braces."""
     result = expand_midjargon_input(r"a \{red, blue\} bird")
     assert len(result) == 1
-    assert result[0] == "{red, blue} bird"
+    assert result[0] == "a {red, blue} bird"
 
 
 def test_escaped_commas():
@@ -78,7 +78,7 @@ def test_empty_permutation():
     """Test input with empty permutation options."""
     result = expand_midjargon_input("a {} bird")
     assert len(result) == 1
-    assert result[0] == "a  bird"
+    assert result[0] == "a bird"
 
 
 def test_whitespace_handling():

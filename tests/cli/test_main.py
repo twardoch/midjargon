@@ -30,8 +30,11 @@ def capture_stdout():
     stdout = StringIO()
     old_stdout = sys.stdout
     sys.stdout = stdout
-    yield stdout
-    sys.stdout = old_stdout
+    try:
+        yield stdout
+    finally:
+        sys.stdout = old_stdout
+        stdout.seek(0)  # Reset buffer position
 
 
 @pytest.fixture
@@ -47,6 +50,11 @@ def capture_stderr():
 def parse_json_output(output: str) -> Any:
     """Parse JSON output from the CLI."""
     try:
+        # Strip any leading/trailing whitespace
+        output = output.strip()
+        if not output:
+            msg = "No JSON found in output"
+            raise ValueError(msg)
         return json.loads(output)
     except json.JSONDecodeError:
         msg = "No JSON found in output"
