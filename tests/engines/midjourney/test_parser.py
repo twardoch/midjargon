@@ -396,3 +396,44 @@ def test_new_parameter_validation():
     # Test invalid repeat value
     with pytest.raises(ValueError, match=r"Invalid numeric value for repeat: 200"):
         parser.parse_dict({"text": "a photo", "repeat": "200"})
+
+
+def test_edge_cases():
+    """Test handling of edge cases in Midjourney parser."""
+    parser = MidjourneyParser()
+
+    # Test empty prompt
+    with pytest.raises(ValueError, match="Empty prompt"):
+        parser.parse_dict({"text": ""})
+
+    # Test prompt with only spaces
+    with pytest.raises(ValueError, match="Empty prompt"):
+        parser.parse_dict({"text": "   "})
+
+    # Test prompt with special characters
+    prompt = parser.parse_dict({"text": "a photo with special characters !@#$%^&*()"})
+    assert prompt.text == "a photo with special characters !@#$%^&*()"
+
+    # Test prompt with long text
+    long_text = "a" * 1000
+    prompt = parser.parse_dict({"text": long_text})
+    assert prompt.text == long_text
+
+    # Test prompt with mixed types in extra parameters
+    prompt = parser.parse_dict(
+        {
+            "text": "a photo",
+            "extra1": 123,
+            "extra2": 45.67,
+            "extra3": True,
+            "extra4": None,
+            "extra5": ["item1", "item2"],
+        }
+    )
+    assert prompt.extra_params == {
+        "extra1": "123",
+        "extra2": "45.67",
+        "extra3": "True",
+        "extra4": None,
+        "extra5": ["item1", "item2"],
+    }

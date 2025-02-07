@@ -273,3 +273,48 @@ def test_nested_parameter_permutations(cli):
     for prompt in data:
         assert prompt["text"] == "smooth edges"
         assert (prompt.get("personalization"), prompt["stylize"]) in variants
+
+
+def test_mj_command(cli):
+    """Test Midjourney prompt conversion."""
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        cli.mj("a serene landscape --ar 16:9 --stylize 100", json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
+    assert isinstance(data, list)
+    assert len(data) == 1
+    assert data[0]["text"] == "a serene landscape"
+    assert data[0]["aspect"] == "16:9"
+    assert data[0]["stylize"] == 100
+
+
+def test_fal_command(cli):
+    """Test Fal.ai prompt conversion."""
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        cli.fal("a serene landscape --ar 16:9 --stylize 100", json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
+    assert isinstance(data, dict)
+    assert data["prompt"] == "a serene landscape"
+    assert data["aspect_ratio"] == "16:9"
+    assert data["stylize"] == 100
+
+
+def test_perm_command(cli):
+    """Test permutation expansion."""
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        cli.perm("a {red, blue} bird on a {branch, rock}", json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
+    assert isinstance(data, list)
+    assert len(data) == 4
+    expected = [
+        "a red bird on a branch",
+        "a red bird on a rock",
+        "a blue bird on a branch",
+        "a blue bird on a rock",
+    ]
+    assert set(data) == set(expected)
