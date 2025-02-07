@@ -7,9 +7,8 @@
 Main entry point for midjargon CLI.
 """
 
-import fire
 
-from midjargon.cli import main
+from midjargon.cli.main import main
 
 if __name__ == "__main__":
-    fire.Fire(main)
+    main()

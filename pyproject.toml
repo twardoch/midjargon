@@ -14,14 +14,14 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: Implementation :: CPython",
-  "Programming Language :: Python :: Implementation :: PyPy"
+  "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
   "pydantic>=2.0.0",
   "rich>=13.0.0",
   "fire>=0.5.0",
   "python-box>=7.3.2",
-  "fal-client>=0.5.8"
+  "fal-client>=0.5.8",
 ]
 description = ""
 dynamic = ["version"]
@@ -37,7 +37,7 @@ all = [
   "ruff>=0.1.0",
   "mypy>=1.0.0",
   "pytest>=7.0.0",
-  "pytest-cov>=4.0.0"
+  "pytest-cov>=4.0.0",
 ]
 dev = ["pre-commit>=3.6.0", "ruff>=0.1.0", "mypy>=1.0.0"]
 test = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
@@ -96,7 +96,7 @@ dependencies = [
   "pytest>=7.0.0",
   "pytest-cov>=4.0.0",
   "pytest-xdist>=3.0.0",
-  "midjargon[test]"
+  "midjargon[test]",
 ]
 
 [tool.hatch.envs.test.scripts]
@@ -136,9 +136,18 @@ markers = [
   "integration: mark a test as an integration test",
   "permutation: tests for permutation functionality",
   "parameter: tests for parameter parsing",
-  "prompt: tests for prompt parsing"
+  "prompt: tests for prompt parsing",
 ]
-norecursedirs = [".*", "build", "dist", "venv", "__pycache__", "*.egg-info"]
+norecursedirs = [
+  ".*",
+  "build",
+  "dist",
+  "venv",
+  "__pycache__",
+  "*.egg-info",
+  "_private",
+]
+
 python_classes = ["Test*"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
@@ -174,7 +183,7 @@ extend-select = [
   "TID",
   "UP",
   "W",
-  "YTT"
+  "YTT",
 ]
 ignore = ["ARG001", "E501", "I001", "RUF001", "PLR2004", "EXE003", "ISC001"]
 
