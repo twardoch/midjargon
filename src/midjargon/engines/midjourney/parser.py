@@ -466,9 +466,11 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
         for name, value in midjargon_dict.items():
             if name not in excluded_fields and not name.startswith("_"):
-                if isinstance(value, (str, int, float, bool, list)):
+                if value is None or isinstance(value, str | int | float | bool | list):
                     prompt_data["extra_params"][name] = (
-                        str(value) if not isinstance(value, list) else value
+                        str(value)
+                        if not isinstance(value, list | type(None))
+                        else value
                     )
 
     def _parse_dict(self, midjargon_dict: MidjargonDict) -> MidjourneyPrompt:
