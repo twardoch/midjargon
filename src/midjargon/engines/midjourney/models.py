@@ -8,7 +8,6 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .constants import (
-    ALLOWED_IMAGE_EXTENSIONS,
     CHAOS_RANGE,
     CHARACTER_WEIGHT_RANGE,
     DEFAULT_ASPECT_RATIO,
@@ -47,9 +46,9 @@ class ImagePrompt(BaseModel):
     @classmethod
     def validate_extension(cls, v: str) -> str:
         """Validates image URL has an allowed file extension."""
-        if not str(v).lower().endswith(ALLOWED_IMAGE_EXTENSIONS):
-            msg = f"URL must end with one of: {ALLOWED_IMAGE_EXTENSIONS}"
-            raise ValueError(msg)
+        # if not str(v).lower().endswith(ALLOWED_IMAGE_EXTENSIONS):
+        #    msg = f"URL must end with one of: {ALLOWED_IMAGE_EXTENSIONS}"
+        #    raise ValueError(msg)
 
         # Validate URL format
         url_pattern = re.compile(

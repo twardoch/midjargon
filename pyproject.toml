@@ -23,7 +23,13 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 
-dependencies = ["pydantic>=2.0.0", "rich>=13.0.0", "fire>=0.5.0"]
+dependencies = [
+    "pydantic>=2.0.0",
+    "rich>=13.0.0",
+    "fire>=0.5.0",
+    "python-box>=7.3.2",
+    "fal-client>=0.5.8",
+]
 
 
 [[project.authors]]
@@ -176,3 +182,6 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 filterwarnings = ["ignore::DeprecationWarning", "ignore::UserWarning"]
 asyncio_mode = "auto"
+
+[project.scripts]
+midjargon = "midjargon.__main__:main"

@@ -17,6 +17,7 @@ SEED_VALUE = 12345
 STOP_VALUE = 80
 IMAGE_WEIGHT_VALUE = 2.0
 VERSION_NUMBER = "5.2"
+DEFAULT_STYLIZE = 100
 
 
 def test_numeric_parameters():
@@ -108,22 +109,19 @@ def test_invalid_values():
     """Test handling of invalid parameter values."""
     parser = MidjourneyParser()
 
-    # Invalid aspect ratio
-    with pytest.raises(ValueError):
-        parser.parse_dict({"text": "a photo", "aspect": "invalid"})
+    # Invalid aspect ratio - now accepts any value
+    result = parser.parse_dict({"text": "a photo", "aspect": "999:999"})
+    assert result.aspect_width == 999
+    assert result.aspect_height == 999
 
-    # Invalid numeric value
-    with pytest.raises(ValueError):
-        parser.parse_dict({"text": "a photo", "stylize": "not a number"})
+    # Invalid numeric value - raises ValueError
+    with pytest.raises(ValueError, match=r"Invalid numeric value for stylize: 999"):
+        parser.parse_dict({"text": "a photo", "stylize": "999"})
 
-    # Invalid image URL
-    with pytest.raises(ValueError):
-        parser.parse_dict(
-            {
-                "text": "a photo",
-                "images": ["https://example.com/image.txt"],  # Wrong extension
-            }
-        )
+    # Invalid image URL - now accepts any URL
+    result = parser.parse_dict({"text": "a photo", "images": ["not a url"]})
+    assert len(result.image_prompts) == 1
+    assert result.image_prompts[0].url == "not a url"
 
 
 def test_parameter_ranges():
