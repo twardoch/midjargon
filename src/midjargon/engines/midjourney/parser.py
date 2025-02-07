@@ -2,7 +2,9 @@
 Parser for Midjourney engine.
 """
 
-from typing import Any
+from collections.abc import Callable
+from functools import wraps
+from typing import Any, NoReturn, TypeVar, overload
 
 from midjargon.core.type_defs import MidjargonDict
 from midjargon.engines.base import EngineParser
@@ -33,6 +35,83 @@ from midjargon.engines.midjourney.constants import (
     WEIRD_RANGE,
 )
 from midjargon.engines.midjourney.models import ImagePrompt, MidjourneyPrompt
+
+T = TypeVar("T", int, float)
+NumericType = int | float
+RangeType = tuple[NumericType, NumericType]
+
+
+@overload
+def validate_range(
+    func: Callable[[str, str, tuple[int, int]], int],
+) -> Callable[[str, str, tuple[int, int]], int]: ...
+
+
+@overload
+def validate_range(
+    func: Callable[[str, str, tuple[float, float]], float],
+) -> Callable[[str, str, tuple[float, float]], float]: ...
+
+
+def validate_range(
+    func: Callable[[str, str, RangeType], T],
+) -> Callable[[str, str, RangeType], T]:
+    """Decorator to validate numeric values are within specified range."""
+
+    def _raise_validation_error(
+        value: str,
+        param: str,
+        min_val: NumericType | None = None,
+        max_val: NumericType | None = None,
+    ) -> NoReturn:
+        if min_val is not None and max_val is not None:
+            msg = f"Invalid numeric value for {param}: {value}. Must be between {min_val} and {max_val}"
+        else:
+            msg = f"Invalid numeric value for {param}: {value}"
+        raise ValueError(msg)
+
+    @wraps(func)
+    def wrapper(value: str, param: str, min_max: RangeType) -> T:
+        try:
+            result = func(value, param, min_max)
+            min_val, max_val = min_max
+            if not min_val <= result <= max_val:
+                _raise_validation_error(value, param, min_val, max_val)
+            return result
+        except ValueError:
+            _raise_validation_error(value, param)
+
+    return wrapper
+
+
+@validate_range
+def handle_integer(value: str, param: str, min_max: tuple[int, int]) -> int:
+    """Convert string value to integer with range validation."""
+    return int(float(value))
+
+
+@validate_range
+def handle_float(value: str, param: str, min_max: tuple[float, float]) -> float:
+    """Convert string value to float with range validation."""
+    return float(value)
+
+
+# Parameter handlers mapping
+param_handlers: dict[
+    str, tuple[Callable[[str, str, RangeType], NumericType], RangeType]
+] = {
+    "stylize": (handle_integer, STYLIZE_RANGE),
+    "chaos": (handle_integer, CHAOS_RANGE),
+    "weird": (handle_integer, WEIRD_RANGE),
+    "image_weight": (handle_float, IMAGE_WEIGHT_RANGE),
+    "seed": (handle_integer, SEED_RANGE),
+    "stop": (handle_integer, STOP_RANGE),
+    "quality": (handle_float, QUALITY_RANGE),
+    "character_weight": (handle_float, CHARACTER_WEIGHT_RANGE),
+    "style_weight": (handle_float, STYLE_WEIGHT_RANGE),
+    "style_version": (handle_integer, STYLE_VERSION_RANGE),
+    "repeat": (handle_integer, REPEAT_RANGE),
+}  # type: ignore
 
 
 class MidjourneyParser(EngineParser[MidjourneyPrompt]):
@@ -95,77 +174,29 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             if value is None:
                 return None, None
 
-        try:
-            # Define parameter types and their validation functions
-            param_types = {
-                "stylize": (int, lambda x: self._validate_numeric_range("stylize", x)),
-                "chaos": (int, lambda x: self._validate_numeric_range("chaos", x)),
-                "weird": (int, lambda x: self._validate_numeric_range("weird", x)),
-                "image_weight": (
-                    float,
-                    lambda x: self._validate_numeric_range("image_weight", x),
-                ),
-                "iw": (
-                    float,
-                    lambda x: self._validate_numeric_range("image_weight", x),
-                ),
-                "seed": (int, lambda x: self._validate_numeric_range("seed", x)),
-                "stop": (int, lambda x: self._validate_numeric_range("stop", x)),
-                "quality": (
-                    float,
-                    lambda x: self._validate_numeric_range("quality", x),
-                ),
-                "character_weight": (
-                    float,
-                    lambda x: self._validate_numeric_range("character_weight", x),
-                ),
-                "cw": (
-                    float,
-                    lambda x: self._validate_numeric_range("character_weight", x),
-                ),
-                "style_weight": (
-                    float,
-                    lambda x: self._validate_numeric_range("style_weight", x),
-                ),
-                "sw": (
-                    float,
-                    lambda x: self._validate_numeric_range("style_weight", x),
-                ),
-                "style_version": (
-                    int,
-                    lambda x: self._validate_numeric_range("style_version", x),
-                ),
-                "sv": (
-                    int,
-                    lambda x: self._validate_numeric_range("style_version", x),
-                ),
-                "repeat": (int, lambda x: self._validate_numeric_range("repeat", x)),
-            }
+        # Map shorthand names to full names
+        name_map = {
+            "iw": "image_weight",
+            "cw": "character_weight",
+            "sw": "style_weight",
+            "sv": "style_version",
+            "s": "stylize",
+            "c": "chaos",
+            "w": "weird",
+            "q": "quality",
+            "r": "repeat",
+        }
 
-            if name in param_types:
-                type_func, validate_func = param_types[name]
-                try:
-                    val = type_func(
-                        float(str(value))
-                    )  # Convert through float for int/float compatibility
-                    validate_func(val)  # This will raise ValueError if validation fails
-                    # Map shorthand names to full names
-                    name_map = {
-                        "iw": "image_weight",
-                        "cw": "character_weight",
-                        "sw": "style_weight",
-                        "sv": "style_version",
-                    }
-                    return name_map.get(name, name), val
-                except ValueError as e:
-                    # Re-raise with more descriptive message
-                    msg = f"Invalid numeric value for {name}: {value}"
-                    raise ValueError(msg) from e
+        full_name = name_map.get(name, name)
 
-        except (ValueError, TypeError) as e:
-            # Re-raise with more descriptive message
-            msg = f"Invalid numeric value for {name}: {value}"
-            raise ValueError(msg) from e
+        if full_name in param_handlers:
+            handler, range_tuple = param_handlers[full_name]
+            try:
+                result = handler(str(value), full_name, range_tuple)
+            except ValueError as e:
+                raise ValueError(str(e)) from e
+            else:
+                return full_name, result
 
         return None, None
 
