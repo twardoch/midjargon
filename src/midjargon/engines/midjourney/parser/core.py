@@ -2,7 +2,6 @@
 Core parser implementation for Midjourney engine.
 """
 
-import ast
 from typing import Any
 
 from midjargon.core.type_defs import MidjargonDict
@@ -148,15 +147,6 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         # If both are present, personalization takes precedence
         value = personalization if personalization is not None else p_value
 
-        # Handle if value is a string that represents a list
-        if isinstance(value, str) and value.startswith("[") and value.endswith("]"):
-            try:
-                evaluated = ast.literal_eval(value)
-                if isinstance(evaluated, list):
-                    value = evaluated
-            except Exception:
-                pass
-
         # Handle flag-only case (when key exists but value is None or empty string)
         if value is None or value == "":
             prompt_data["personalization"] = True
@@ -164,16 +154,37 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
         # Handle list value
         if isinstance(value, list):
-            prompt_data["personalization"] = value if value else False
+            # If it's a list of strings, keep it as is
+            if all(isinstance(item, str) for item in value):
+                # Strip any quotes from the strings
+                cleaned_items = [item.strip("\"'") for item in value]
+                prompt_data["personalization"] = cleaned_items
+                return
+            prompt_data["personalization"] = value
             return
 
-        # Handle string value - convert to list
+        # Handle string value that looks like a list
         if isinstance(value, str):
-            prompt_data["personalization"] = [value]
+            # Strip any surrounding quotes
+            value = value.strip("\"'")
+            if value.startswith("[") and value.endswith("]"):
+                try:
+                    # Remove any extra quotes around the items
+                    clean_value = value.strip("[]").replace("'", "").replace('"', "")
+                    items = [
+                        item.strip() for item in clean_value.split(",") if item.strip()
+                    ]
+                    prompt_data["personalization"] = items
+                    return
+                except Exception:
+                    pass
+            # If the string contains spaces and is not already a list representation,
+            # keep it as a single string
+            prompt_data["personalization"] = value
             return
 
-        # Default case
-        prompt_data["personalization"] = False
+        # Default case - treat as boolean
+        prompt_data["personalization"] = bool(value)
 
     def _process_references(
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict

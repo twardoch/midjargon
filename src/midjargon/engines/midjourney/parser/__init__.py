@@ -14,8 +14,8 @@ from midjargon.engines.midjourney.parser.validation import ValidatorRegistry
 __all__ = [
     "MidjourneyParser",
     "ParameterHandler",
-    "ValidatorRegistry",
+    "ParameterValidationError",
     "ParserError",
     "ValidationError",
-    "ParameterValidationError",
+    "ValidatorRegistry",
 ]

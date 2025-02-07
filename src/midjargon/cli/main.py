@@ -16,8 +16,10 @@ import sys
 from typing import Any, NoReturn
 
 import fire  # type: ignore
-from rich.console import Console
+from rich.ansi import AnsiDecoder
+from rich.console import Console, Group
 from rich.panel import Panel
+from rich.theme import Theme
 from rich.traceback import install
 
 from midjargon.core.converter import (
@@ -27,8 +29,16 @@ from midjargon.core.converter import (
     to_midjourney_prompts,
 )
 
-# Install rich traceback handler
 install(show_locals=True)
+ansi_decoder = AnsiDecoder()
+console = Console(theme=Theme({"prompt": "cyan", "question": "bold cyan"}))
+
+
+def display(lines, out):
+    console.print(Group(*map(ansi_decoder.decode_line, lines)))
+
+
+fire.core.Display = display
 
 
 def _handle_error(console: Console, error: Exception) -> NoReturn:
@@ -94,7 +104,6 @@ class MidjargonCLI:
         ) as error:  # More specific exceptions
             if json_output:
                 _output_json({"error": str(error)})
-                sys.exit(1)
             else:
                 _handle_error(console, error)
 
@@ -146,7 +155,6 @@ class MidjargonCLI:
         ) as error:  # More specific exceptions
             if json_output:
                 _output_json({"error": str(error)})
-                sys.exit(1)
             else:
                 _handle_error(console, error)
 
@@ -176,10 +184,9 @@ class MidjargonCLI:
 
             if json_output:
                 if isinstance(results, list):
-                    json_results = [prompt.model_dump() for prompt in results]
+                    _output_json([prompt.model_dump() for prompt in results])
                 else:
-                    json_results = [results.model_dump()]
-                _output_json(json_results)
+                    _output_json(results.model_dump())
                 return
 
             if isinstance(results, list):
@@ -197,7 +204,6 @@ class MidjargonCLI:
         ) as error:  # More specific exceptions
             if json_output:
                 _output_json({"error": str(error)})
-                sys.exit(1)
             else:
                 _handle_error(console, error)
 
@@ -244,13 +250,11 @@ class MidjargonCLI:
         ) as error:  # More specific exceptions
             if json_output:
                 _output_json({"error": str(error)})
-                sys.exit(1)
             else:
                 _handle_error(console, error)
 
 
 def main() -> None:
-
     fire.Fire(MidjargonCLI())
 
 
