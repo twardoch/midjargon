@@ -168,19 +168,42 @@ all = [
 ]
 
 [tool.hatch.envs.test]
-dependencies = [".[test]"]
+dependencies = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-xdist>=3.0.0",
+    "midjargon[test]"
+]
 
 [tool.hatch.envs.test.scripts]
-test = "python -m pytest -n auto {args:tests}"
-test-cov = "python -m pytest -n auto --cov-report=term-missing --cov-config=pyproject.toml --cov=src/midjargon --cov=tests {args:tests}"
-bench = "python -m pytest -v -p no:briefcase tests/test_benchmark.py --benchmark-only"
-bench-save = "python -m pytest -v -p no:briefcase tests/test_benchmark.py --benchmark-only --benchmark-json=benchmark/results.json"
+test = "pytest --cov=src/midjargon --cov-report=term-missing --cov-branch --no-cov-on-fail {args:tests}"
+test-cov = "pytest --cov=src/midjargon --cov-report=term-missing --cov-branch --no-cov-on-fail {args:tests}"
 
 [tool.pytest.ini_options]
-markers = ["benchmark: marks tests as benchmarks (select with '-m benchmark')"]
-addopts = "-v -p no:briefcase"
+markers = [
+    "benchmark: marks tests as benchmarks (select with '-m benchmark')",
+    "unit: mark a test as a unit test",
+    "integration: mark a test as an integration test",
+    "permutation: tests for permutation functionality",
+    "parameter: tests for parameter parsing",
+    "prompt: tests for prompt parsing"
+]
+addopts = "-v --durations=10 -p no:briefcase"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+norecursedirs = [
+    ".*",
+    "build",
+    "dist",
+    "venv",
+    "__pycache__",
+    "*.egg-info"
+]
+console_output_style = "progress"
+log_cli = true
+log_cli_level = "INFO"
 filterwarnings = ["ignore::DeprecationWarning", "ignore::UserWarning"]
 asyncio_mode = "auto"
 
