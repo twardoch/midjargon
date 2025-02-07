@@ -155,10 +155,10 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
                 }
                 return name_map.get(name, name), val
 
-            return None, None
-
         except (ValueError, TypeError):
             return None, None
+
+        return None, None  # Ensure all paths return a value
 
     def _handle_numeric_param(
         self, name: str, raw_value: str | list[str] | None
@@ -193,6 +193,8 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         except (ValueError, AttributeError) as e:
             msg = f"Invalid aspect ratio format: {value}"
             raise ValueError(msg) from e
+        else:
+            return width, height
 
     def _handle_style_param(
         self, name: str, raw_value: str | list[str] | None
@@ -381,32 +383,36 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
     ) -> None:
         """Process aspect ratio parameters."""
-        if "ar" in midjargon_dict or "aspect" in midjargon_dict:
-            value = midjargon_dict.get("ar") or midjargon_dict.get("aspect")
 
+        def _validate_aspect_ratio(
+            width: int, height: int, value: str | list[str]
+        ) -> None:
+            if width <= 0 or height <= 0:
+                msg = f"Invalid aspect ratio: {value} - values must be positive"
+                raise ValueError(msg)
+
+        # Check both 'ar' and 'aspect' parameters
+        value = midjargon_dict.get("ar") or midjargon_dict.get("aspect")
+        if value is None:
+            return
+
+        if isinstance(value, list):
+            value = value[0] if value else None
             if value is None:
                 return
 
-            if isinstance(value, list):
-                value = value[0] if value else None
-                if value is None:
-                    return
+        try:
+            width_str, height_str = str(value).split(":")
+            width = int(width_str)
+            height = int(height_str)
 
-            try:
-                width_str, height_str = str(value).split(":")
-                width = int(width_str)
-                height = int(height_str)
+            _validate_aspect_ratio(width, height, value)
+            prompt_data["aspect_width"] = width
+            prompt_data["aspect_height"] = height
 
-                if width <= 0 or height <= 0:
-                    msg = f"Invalid aspect ratio: {value} - values must be positive"
-                    raise ValueError(msg)
-
-                prompt_data["aspect_width"] = width
-                prompt_data["aspect_height"] = height
-
-            except (ValueError, AttributeError) as e:
-                msg = f"Invalid aspect ratio format: {value} - must be width:height"
-                raise ValueError(msg) from e
+        except (ValueError, AttributeError) as e:
+            msg = f"Invalid aspect ratio format: {value} - must be width:height"
+            raise ValueError(msg) from e
 
     def _process_reference_params(
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
@@ -481,13 +487,16 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         }
 
         for name, value in midjargon_dict.items():
-            if name not in excluded_fields and not name.startswith("_"):
-                if value is None or isinstance(value, str | int | float | bool | list):
-                    prompt_data["extra_params"][name] = (
-                        str(value)
-                        if not isinstance(value, list | type(None))
-                        else value
-                    )
+            if (
+                name not in excluded_fields
+                and not name.startswith("_")
+                and (
+                    value is None or isinstance(value, str | int | float | bool | list)
+                )
+            ):
+                prompt_data["extra_params"][name] = (
+                    str(value) if not isinstance(value, list | type(None)) else value
+                )
 
     def _parse_dict(self, midjargon_dict: MidjargonDict) -> MidjourneyPrompt:
         """Parse a dictionary into a MidjourneyPrompt."""

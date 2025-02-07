@@ -304,13 +304,8 @@ def _handle_permutation(
     try:
         end = _find_matching_brace(text, pos)
         prefix = result[:]
-        new_result = []
         options = split_permutation_options(text[pos + 1 : end])
-
-        for p in prefix:
-            for opt in options:
-                new_result.append(p + opt)
-
+        new_result = [p + opt for p in prefix for opt in options]
         return new_result, end + 1
     except ValueError:
         # If no matching brace is found, treat as literal text
