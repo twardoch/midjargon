@@ -115,13 +115,13 @@ def test_invalid_values():
     assert result.aspect_height == 999
 
     # Invalid numeric value - raises ValueError
-    with pytest.raises(ValueError, match=r"Invalid numeric value for stylize: 999"):
-        parser.parse_dict({"text": "a photo", "stylize": "999"})
+    with pytest.raises(ValueError, match=r"Invalid numeric value for stylize: 1001"):
+        parser.parse_dict({"text": "a photo", "stylize": "1001"})
 
-    # Invalid image URL - now accepts any URL
-    result = parser.parse_dict({"text": "a photo", "images": ["not a url"]})
-    assert len(result.image_prompts) == 1
-    assert result.image_prompts[0].url == "not a url"
+    # Invalid image URL - treated as extra parameter
+    result = parser.parse_dict({"text": "a photo", "image": "not_a_url"})
+    assert len(result.image_prompts) == 0
+    assert result.extra_params.get("image") == "not_a_url"
 
 
 def test_parameter_ranges():

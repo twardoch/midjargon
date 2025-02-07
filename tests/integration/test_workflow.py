@@ -166,11 +166,11 @@ def test_error_workflow():
     with pytest.raises(ValueError, match=r"Invalid numeric value for stylize: 2000"):
         process_prompt(f"photo --stylize {STYLIZE_VALUE * 20}")
 
-    # Test invalid image URL - now accepts any URL
+    # Test invalid image URL - treated as extra parameter
     results = process_prompt("photo --image not_a_url")
     assert len(results) == 1
-    assert len(results[0].image_prompts) == 1
-    assert results[0].image_prompts[0].url == "not_a_url"
+    assert len(results[0].image_prompts) == 0
+    assert results[0].extra_params.get("image") == "not_a_url"
 
 
 def test_complex_workflow():
