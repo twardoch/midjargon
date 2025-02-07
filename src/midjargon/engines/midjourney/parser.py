@@ -218,17 +218,21 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         self, name: str, raw_value: str | list[str] | None
     ) -> tuple[str | None, Any]:
         """Handle personalization parameter conversion."""
-        value = self._normalize_value(raw_value)
-        if value is None:
+        if name not in ("p", "personalization"):
             return None, None
 
-        # Convert value to string if it's a list
-        if isinstance(value, list):
-            value = value[0] if value else None
-            if value is None:
-                return None, None
+        value = self._normalize_value(raw_value)
+        if value is None:
+            return "personalization", None
 
-        return "personalization", value
+        if isinstance(value, list):
+            new_value = value[0] if value else None
+            if new_value is None:
+                return "personalization", None
+        else:
+            new_value = value
+
+        return "personalization", str(new_value)
 
     def _handle_negative_prompt(
         self, name: str, raw_value: str | list[str] | None
@@ -289,8 +293,17 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             ValueError: If the prompt text is empty or if validation fails.
         """
         # Validate text is not empty
-        text = midjargon_dict.get("text", "").strip()
-        if not text:
+        text_value = midjargon_dict.get("text")
+        if text_value is None:
+            msg = "Missing prompt text"
+            raise ValueError(msg)
+
+        if isinstance(text_value, list):
+            text = text_value[0] if text_value else ""
+        else:
+            text = str(text_value)
+
+        if not text.strip():
             msg = "Empty prompt text"
             raise ValueError(msg)
 
