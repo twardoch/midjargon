@@ -36,17 +36,24 @@ class EngineParser(ABC, Generic[T]):
     @abstractmethod
     def parse_dict(self, midjargon_dict: MidjargonDict) -> T:
         """
-        Parse a MidjargonDict into an engine-specific prompt model.
+        Parse a MidjargonDict into a validated BasePrompt.
 
         Args:
-            midjargon_dict: Dictionary from basic parser.
+            midjargon_dict: Dictionary from basic parser or a raw prompt string.
 
         Returns:
-            Engine-specific prompt model.
+            Validated BasePrompt.
 
         Raises:
-            ValueError: If the prompt is empty or validation fails.
+            ValueError: If the prompt text is empty or if validation fails.
         """
+        if not isinstance(midjargon_dict, dict):
+            midjargon_dict = {"text": str(midjargon_dict)}
+
+        if not midjargon_dict:
+            msg = "Empty prompt"
+            raise ValueError(msg)
+
         text_value = midjargon_dict.get("text")
         if text_value is None:
             msg = "Empty prompt"

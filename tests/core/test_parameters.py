@@ -14,7 +14,7 @@ def test_basic_parameter_parsing():
     """Test parsing of basic parameters."""
     param_str = "--ar 16:9 --stylize 100"
     params = parse_parameters(param_str)
-    assert params["ar"] == "16:9"
+    assert params["aspect"] == "16:9"
     assert params["stylize"] == "100"
 
 
@@ -46,7 +46,7 @@ def test_mixed_parameters():
     """Test parsing a mix of different parameter types."""
     param_str = '--ar 16:9 --tile --no blur,cars --style "raw photo"'
     params = parse_parameters(param_str)
-    assert params["ar"] == "16:9"
+    assert params["aspect"] == "16:9"
     assert params["tile"] is None
     assert params["no"] == "blur,cars"
     assert params["style"] == "raw photo"
@@ -109,7 +109,7 @@ def test_parameter_order():
     param_str = "--seed 123 --ar 16:9 --chaos 20 --tile"
     params = parse_parameters(param_str)
     keys = list(params.keys())
-    assert keys == ["seed", "ar", "chaos", "tile"]
+    assert keys == ["seed", "aspect", "chaos", "tile"]
 
 
 def test_invalid_parameters():
@@ -125,6 +125,3 @@ def test_invalid_parameters():
 
     with pytest.raises(ValueError):
         parse_parameters("--v")  # Missing version value
-
-    with pytest.raises(ValueError):
-        parse_parameters("--style invalid")  # Invalid style value

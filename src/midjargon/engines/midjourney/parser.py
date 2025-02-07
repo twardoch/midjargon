@@ -2,7 +2,7 @@
 Parser for Midjourney engine.
 """
 
-from typing import Any, cast
+from typing import Any
 
 from midjargon.core.type_defs import MidjargonDict
 from midjargon.engines.base import EngineParser
@@ -186,18 +186,10 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
     def _handle_version_param(
         self, name: str, raw_value: str | list[str] | None
     ) -> tuple[str | None, Any]:
-        """Handle version parameter conversion. Enforces that the first version parameter wins by using a _version_found flag."""
-        # Reset version_found flag if we see a --v parameter
-        if name in ("v", "version"):
-            self._version_found = False
-
-        if getattr(self, "_version_found", False):
-            return None, None
-
+        """Handle version parameter conversion."""
         value = self._normalize_value(raw_value)
         if value is None:
             if name == "niji":
-                self._version_found = True
                 return "version", "niji"
             return None, None
         if isinstance(value, list):
@@ -212,7 +204,6 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             if len(parts) > 1 and parts[1] not in VALID_NIJI_VERSIONS:
                 msg = f"Invalid niji version: {parts[1]}"
                 raise ValueError(msg)
-            self._version_found = True
             return "version", new_value
 
         if name == "niji":
@@ -220,16 +211,18 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             if new_value and str(new_value) not in VALID_NIJI_VERSIONS:
                 msg = f"Invalid niji version: {new_value}"
                 raise ValueError(msg)
-            self._version_found = True
             return "version", f"niji {new_value}" if new_value else "niji"
 
         if name in ("v", "version"):
+            # Strip 'v' prefix if present for validation
+            version_str = str(new_value)
+            if version_str.startswith("v"):
+                version_str = version_str[1:]
             # Validate version number
-            if not new_value or str(new_value) not in VALID_VERSIONS:
+            if not version_str or version_str not in VALID_VERSIONS:
                 msg = f"Invalid version: {new_value}"
                 raise ValueError(msg)
-            self._version_found = True
-            return "version", f"v{new_value}"
+            return "version", f"v{version_str}"
 
         return None, None
 
@@ -302,77 +295,85 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
         return None, None
 
-    def parse_dict(self, midjargon_dict: "MidjargonDict") -> "MidjourneyPrompt":
-        """
-        Parse a MidjargonDict into a validated MidjourneyPrompt.
-
-        Args:
-            midjargon_dict: Dictionary from basic parser or a raw prompt string.
-
-        Returns:
-            Validated MidjourneyPrompt.
-
-        Raises:
-            ValueError: If the prompt text is empty or if validation fails.
-        """
-        # Call super() to validate empty prompt
-        super().parse_dict(midjargon_dict)
-
-        if not isinstance(midjargon_dict, dict):
-            midjargon_dict = {"text": str(midjargon_dict)}
-
-        # Validate text
-        text_value = midjargon_dict.get("text")
-        if text_value is None:
-            raise ValueError("Missing prompt text")
-        text = str(text_value).strip()
-        if not text:
-            raise ValueError("Empty prompt text")
-
-        # Initialize with core components
-        images = midjargon_dict.get("images", [])
-        if images is None:
-            images = []
-
+    def _parse_dict(self, midjargon_dict: MidjargonDict) -> MidjourneyPrompt:
+        """Parse a dictionary into a MidjourneyPrompt."""
         prompt_data: dict[str, Any] = {
-            "text": text,
-            "image_prompts": [ImagePrompt(url=url) for url in images],
-            "extra_params": {},
+            "text": "",
+            "image_prompts": [],
+            "negative_prompt": None,
+            "stylize": None,
+            "chaos": None,
+            "weird": None,
+            "image_weight": None,
+            "seed": None,
+            "stop": None,
+            "quality": None,
+            "character_weight": None,
+            "style_weight": None,
+            "style_version": None,
+            "repeat": None,
+            "aspect_width": None,
+            "aspect_height": None,
+            "style": None,
             "version": None,
             "personalization": None,
-            "style": None,
+            "character_reference": [],
+            "style_reference": [],
+            "turbo": False,
+            "relax": False,
+            "tile": False,
+            "extra_params": {},
         }
 
-        # Process each parameter
+        # Extract text and image prompts
+        text = midjargon_dict.get("text", "")
+        if not text:
+            msg = "Prompt text cannot be empty"
+            raise ValueError(msg)
+        prompt_data["text"] = text
+
+        # Handle image prompts
+        image_prompts = []
+        images = midjargon_dict.get("images", [])
+        if images is not None:
+            for image_url in images:
+                image_prompts.append(ImagePrompt(url=image_url))
+        prompt_data["image_prompts"] = image_prompts
+
+        # First pass: handle version parameters to ensure correct precedence
         for name, value in midjargon_dict.items():
-            if name in ("text", "images", "extra_params"):
+            if name in ("v", "version"):
+                param_name, param_value = self._handle_version_param(name, value)
+                if param_name:
+                    prompt_data[param_name] = param_value
+                    break  # Stop after finding a --v parameter
+
+        # Second pass: handle all other parameters
+        for name, value in midjargon_dict.items():
+            if name in ("text", "images", "v", "version"):
                 continue
 
-            # Try numeric parameters first
+            # Handle numeric parameters
             param_name, param_value = self._handle_numeric_param(name, value)
             if param_name:
                 prompt_data[param_name] = param_value
                 continue
 
             # Handle aspect ratio
-            if name in ("ar", "aspect"):
-                w, h = self._handle_aspect_ratio(value)
-                if w is not None and h is not None:
-                    prompt_data["aspect_width"] = w
-                    prompt_data["aspect_height"] = h
+            if name == "aspect":
+                width, height = self._handle_aspect_ratio(value)
+                if width is not None and height is not None:
+                    prompt_data["aspect_width"] = width
+                    prompt_data["aspect_height"] = height
                 continue
 
-            # Handle version parameter for keys 'v', 'version', and 'niji'
-            if name in ("v", "version", "niji"):
+            # Handle niji version parameter only if no --v was found
+            if name == "niji" and not (
+                prompt_data["version"] and prompt_data["version"].startswith("v")
+            ):
                 param_name, param_value = self._handle_version_param(name, value)
                 if param_name:
-                    # Only update version if not already set by --v
-                    if not (
-                        name == "niji"
-                        and prompt_data["version"]
-                        and prompt_data["version"].startswith("v")
-                    ):
-                        prompt_data[param_name] = param_value
+                    prompt_data[param_name] = param_value
                 continue
 
             # Handle style parameter
@@ -436,6 +437,54 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
         # Create and validate prompt
         return MidjourneyPrompt(**prompt_data)
+
+    def parse_dict(self, midjargon_dict: MidjargonDict) -> MidjourneyPrompt:
+        """
+        Parse a MidjargonDict into a validated MidjourneyPrompt.
+
+        Args:
+            midjargon_dict: Dictionary from basic parser or a raw prompt string.
+
+        Returns:
+            Validated MidjourneyPrompt.
+
+        Raises:
+            ValueError: If the prompt text is empty or if validation fails.
+        """
+        # Call super() to validate empty prompt
+        super().parse_dict(midjargon_dict)
+
+        # Handle version parameters in order of precedence
+        if "v" in midjargon_dict:
+            value = midjargon_dict["v"]
+            if value and str(value) not in VALID_VERSIONS:
+                msg = f"Invalid version: {value}"
+                raise ValueError(msg)
+            midjargon_dict["version"] = f"v{value}"
+            del midjargon_dict["v"]
+            # Remove niji if present since --v takes precedence
+            if "niji" in midjargon_dict:
+                del midjargon_dict["niji"]
+        elif "niji" in midjargon_dict:
+            value = midjargon_dict["niji"]
+            if value and str(value) not in VALID_NIJI_VERSIONS:
+                msg = f"Invalid niji version: {value}"
+                raise ValueError(msg)
+            midjargon_dict["version"] = f"niji {value}" if value else "niji"
+            del midjargon_dict["niji"]
+
+        # Parse the dictionary
+        prompt = self._parse_dict(midjargon_dict)
+
+        # Ensure version precedence
+        if "v" in midjargon_dict:
+            prompt.version = f"v{midjargon_dict['v']}"
+        elif "niji" in midjargon_dict:
+            prompt.version = (
+                f"niji {midjargon_dict['niji']}" if midjargon_dict["niji"] else "niji"
+            )
+
+        return prompt
 
     def _format_numeric_params(self, prompt: MidjourneyPrompt) -> dict[str, str]:
         """Format numeric parameters for dictionary output."""
@@ -515,7 +564,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
     ) -> dict[str, str]:
         """Format aspect ratio for dictionary output."""
         if width is not None and height is not None:
-            return {"ar": f"{width}:{height}"}
+            return {"aspect": f"{width}:{height}"}
         return {}
 
     def to_dict(self, prompt: MidjourneyPrompt) -> dict[str, Any]:
@@ -575,10 +624,12 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         # Validate text
         text_value = data.get("text")
         if text_value is None:
-            raise ValueError("Missing prompt text")
+            msg = "Missing prompt text"
+            raise ValueError(msg)
         text = str(text_value).strip()
         if not text:
-            raise ValueError("Empty prompt text")
+            msg = "Empty prompt text"
+            raise ValueError(msg)
 
         # Convert image prompts
         raw_image_prompts = data.get("images", [])
@@ -670,10 +721,10 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             negative_prompt = str(negative_prompt)
 
         # Updated logic: if '--v' (version) is provided, it takes precedence over '--niji'
-        if "version" in data and data["version"]:
+        if data.get("version"):
             version_value = data["version"]
             final_version = f"v{version_value}"  # version from --v
-        elif "niji" in data and data["niji"]:
+        elif data.get("niji"):
             niji_value = data["niji"]
             final_version = f"niji {niji_value}"
         else:

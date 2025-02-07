@@ -50,7 +50,7 @@ def test_style_parameters():
 def test_aspect_ratio():
     """Test parsing of aspect ratio."""
     parser = MidjourneyParser()
-    prompt = parser.parse_dict({"text": "a photo", "ar": "16:9"})
+    prompt = parser.parse_dict({"text": "a photo", "aspect": "16:9"})
 
     assert prompt.text == "a photo"
     assert prompt.aspect_width == 16
@@ -110,7 +110,7 @@ def test_invalid_values():
 
     # Invalid aspect ratio
     with pytest.raises(ValueError):
-        parser.parse_dict({"text": "a photo", "ar": "invalid"})
+        parser.parse_dict({"text": "a photo", "aspect": "invalid"})
 
     # Invalid numeric value
     with pytest.raises(ValueError):

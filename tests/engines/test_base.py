@@ -23,20 +23,30 @@ class TestPrompt(BaseModel):
 
 
 class TestEngine(EngineParser[TestPrompt]):
-    """Test implementation of EngineParser."""
+    """Test implementation of engine parser."""
 
-    def parse_dict(self, midjargon_dict: dict) -> TestPrompt:
+    def _parse_dict(self, midjargon_dict: dict) -> TestPrompt:
         """Parse dictionary into test prompt."""
         # Extract text and parameters
         text = midjargon_dict.get("text", "")
         parameters = {
-            k: v for k, v in midjargon_dict.items() if k not in ["text", "images"]
+            k: str(v) if v is not None else None
+            for k, v in midjargon_dict.items()
+            if k not in ["text", "images"]
         }
         return TestPrompt(text=text, parameters=parameters)
 
+    def parse_dict(self, midjargon_dict: dict) -> TestPrompt:
+        """Parse a dictionary into a TestPrompt object."""
+        # Call super() to validate empty prompt
+        super().parse_dict(midjargon_dict)
+        return self._parse_dict(midjargon_dict)
+
     def to_dict(self, prompt: TestPrompt) -> dict:
-        """Convert test prompt to dictionary."""
-        return {"text": prompt.text, **prompt.parameters}
+        """Convert a TestPrompt back to a dictionary."""
+        result = {"text": prompt.text}
+        result.update(prompt.parameters)
+        return result
 
 
 def test_engine_parsing():

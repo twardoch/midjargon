@@ -25,7 +25,7 @@ PARAM_SHORTCUTS = {
     "c": "chaos",
     "w": "weird",
     "iw": "image_weight",
-    "ar": "ar",  # Keep ar as is to match test expectations
+    "ar": "aspect",  # Keep ar as is to match test expectations
     "no": None,  # Flag parameter
     "tile": None,  # Flag parameter
     # Quality parameters
@@ -199,7 +199,7 @@ def _expand_param_name(name: str) -> str:
         "sv": "style_version",
         "p": "personalization",
         "v": "version",
-        "ar": "ar",  # Keep ar as is
+        "ar": "aspect",  # Keep ar as is
         "cref": "character_reference",
         "sref": "style_reference",
         "no": "no",  # Keep no as is

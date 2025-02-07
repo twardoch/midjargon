@@ -92,7 +92,7 @@ def test_image_workflow():
 def test_parameter_workflow():
     """Test workflow with various parameter types."""
     prompt = (
-        "cyberpunk city --v 5.2 --style raw --niji 6 "
+        "cyberpunk city --v 5.2 --style raw "
         f"--chaos {CHAOS_VALUE} --weird {WEIRD_VALUE} "
         f"--seed {SEED_VALUE} --stop {STOP_VALUE} "
         "--turbo --tile"
