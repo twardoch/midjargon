@@ -82,3 +82,39 @@ def test_whitespace_handling():
     assert len(result) == PERMUTATION_COUNT_2
     assert "a red bird" in result
     assert "a blue bird" in result
+
+
+def test_expand_midjargon_input():
+    """Test expand_midjargon_input function to verify prompt expansion."""
+    result = expand_midjargon_input("a {red, blue} bird")
+    assert len(result) == 2
+    assert "a red bird" in result
+    assert "a blue bird" in result
+
+    result = expand_midjargon_input("a {red, blue, green} bird")
+    assert len(result) == 3
+    assert "a red bird" in result
+    assert "a blue bird" in result
+    assert "a green bird" in result
+
+    result = expand_midjargon_input("a {red {cat, dog}, blue bird}")
+    assert len(result) == 3
+    assert "a red cat" in result
+    assert "a red dog" in result
+    assert "a blue bird" in result
+
+
+def test_handling_escaped_characters():
+    """Test handling of escaped characters in expand_midjargon_input."""
+    result = expand_midjargon_input(r"a \{red, blue\} bird")
+    assert len(result) == 1
+    assert result[0] == "a {red, blue} bird"
+
+    result = expand_midjargon_input(r"a {red\, blue, green} bird")
+    assert len(result) == 2
+    assert "a red, blue bird" in result
+    assert "a green bird" in result
+
+    result = expand_midjargon_input(r"a {red, blue\} bird")
+    assert len(result) == 1
+    assert result[0] == "a {red, blue} bird"

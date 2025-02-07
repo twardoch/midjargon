@@ -4,6 +4,7 @@ import pytest
 
 from midjargon import expand_midjargon_input, parse_midjargon_prompt_to_dict
 from midjargon.engines.midjourney import MidjourneyPrompt, parse_midjourney_dict
+from midjargon.cli.main import MidjargonCLI
 
 # Test constants
 ASPECT_WIDTH = 16
@@ -278,3 +279,42 @@ def test_permutations_with_complex_parameters():
     }
 
     assert result_tuples == expected
+
+
+def test_cli_mj_command():
+    """Test Midjourney prompt conversion using CLI."""
+    cli = MidjargonCLI()
+    prompt = "a serene landscape --ar 16:9 --stylize 100"
+    results = cli.mj(prompt, json_output=True)
+    assert isinstance(results, list)
+    assert len(results) == 1
+    assert results[0]["text"] == "a serene landscape"
+    assert results[0]["aspect"] == "16:9"
+    assert results[0]["stylize"] == 100
+
+
+def test_cli_fal_command():
+    """Test Fal.ai prompt conversion using CLI."""
+    cli = MidjargonCLI()
+    prompt = "a serene landscape --ar 16:9 --stylize 100"
+    results = cli.fal(prompt, json_output=True)
+    assert isinstance(results, dict)
+    assert results["prompt"] == "a serene landscape"
+    assert results["aspect_ratio"] == "16:9"
+    assert results["stylize"] == 100
+
+
+def test_cli_perm_command():
+    """Test permutation expansion using CLI."""
+    cli = MidjargonCLI()
+    prompt = "a {red, blue} bird on a {branch, rock}"
+    results = cli.perm(prompt, json_output=True)
+    assert isinstance(results, list)
+    assert len(results) == 4
+    expected = [
+        "a red bird on a branch",
+        "a red bird on a rock",
+        "a blue bird on a branch",
+        "a blue bird on a rock",
+    ]
+    assert set(results) == set(expected)
