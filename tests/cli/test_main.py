@@ -37,7 +37,6 @@ def capture_stdout():
         yield stdout
     finally:
         sys.stdout = old_stdout
-        stdout.seek(0)  # Reset buffer position
 
 
 @pytest.fixture
