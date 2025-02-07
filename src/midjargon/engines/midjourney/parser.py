@@ -290,7 +290,10 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         """Handle personalization parameter."""
         if "p" in midjargon_dict or "personalization" in midjargon_dict:
             raw_value = midjargon_dict.get("p") or midjargon_dict.get("personalization")
-            if raw_value is not None:
+            # If raw_value is None, it means --p was used as a flag
+            if raw_value is None:
+                prompt_data["personalization"] = ""  # Empty string for flag
+            else:
                 processed_value = (
                     raw_value[0]
                     if isinstance(raw_value, list) and raw_value
@@ -439,6 +442,13 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         if "relax" in midjargon_dict:
             prompt_data["relax"] = True
 
+    def _handle_flag_params(self, prompt_data: dict[str, Any], name: str) -> bool:
+        """Handle flag parameters."""
+        if name in ("tile", "turbo", "relax"):
+            prompt_data[name] = True
+            return True
+        return False
+
     def _process_extra_params(
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
     ) -> None:
@@ -518,53 +528,132 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
         return MidjourneyPrompt(**prompt_data)
 
+    def _init_prompt_data(self) -> dict[str, Any]:
+        """Initialize default prompt data."""
+        return {
+            "text": "",
+            "image_prompts": [],
+            "stylize": 100,  # Default value
+            "chaos": 0,
+            "weird": 0,
+            "image_weight": 1.0,
+            "seed": None,
+            "stop": 100,
+            "aspect_width": 1,
+            "aspect_height": 1,
+            "style": None,
+            "version": None,
+            "personalization": None,
+            "quality": 1.0,
+            "character_reference": [],
+            "character_weight": 100,
+            "style_reference": [],
+            "style_weight": None,
+            "style_version": 2,
+            "repeat": None,
+            "turbo": False,
+            "relax": False,
+            "tile": False,
+            "negative_prompt": None,
+            "extra_params": {},
+        }
+
+    def _handle_basic_params(
+        self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
+    ) -> None:
+        """Handle basic text and image parameters."""
+        prompt_data["text"] = midjargon_dict.get("text", "")
+        prompt_data["image_prompts"] = midjargon_dict.get("images", [])
+
+    def _handle_special_params(
+        self, prompt_data: dict[str, Any], name: str, raw_value: Any
+    ) -> bool:
+        """Handle special parameters like aspect ratio and version."""
+        if name == "aspect":
+            width, height = self._handle_aspect_ratio(raw_value)
+            if width is not None:
+                prompt_data["aspect_width"] = width
+            if height is not None:
+                prompt_data["aspect_height"] = height
+            return True
+
+        if name in ("v", "version", "niji"):
+            param_name, value = self._handle_version_param(name, raw_value)
+            if param_name:
+                prompt_data[param_name] = value
+            return True
+
+        return False
+
+    def _handle_standard_params(
+        self, prompt_data: dict[str, Any], name: str, raw_value: Any
+    ) -> bool:
+        """Handle standard parameters like numeric and style."""
+        # Handle numeric parameters
+        param_name, value = self._handle_numeric_param(name, raw_value)
+        if param_name:
+            prompt_data[param_name] = value
+            return True
+
+        # Handle style parameter
+        param_name, value = self._handle_style_param(name, raw_value)
+        if param_name:
+            prompt_data[param_name] = value
+            return True
+
+        return False
+
+    def _handle_reference_params(
+        self, prompt_data: dict[str, Any], name: str, raw_value: Any
+    ) -> bool:
+        """Handle reference parameters."""
+        if name in ("character_reference", "style_reference"):
+            if raw_value:
+                prompt_data[name] = (
+                    raw_value if isinstance(raw_value, list) else [raw_value]
+                )
+            return True
+        return False
+
     def parse_dict(self, midjargon_dict: MidjargonDict) -> MidjourneyPrompt:
         """
-        Parse a MidjargonDict into a validated MidjourneyPrompt.
+        Parse a MidjargonDict into a MidjourneyPrompt.
 
         Args:
-            midjargon_dict: Dictionary from basic parser or a raw prompt string.
+            midjargon_dict: Dictionary to parse.
 
         Returns:
-            Validated MidjourneyPrompt.
-
-        Raises:
-            ValueError: If the prompt text is empty or if validation fails.
+            MidjourneyPrompt instance.
         """
-        # Call super() to validate empty prompt
-        super().parse_dict(midjargon_dict)
+        prompt_data = self._init_prompt_data()
+        self._handle_basic_params(prompt_data, midjargon_dict)
 
-        # Handle version parameters in order of precedence
-        if "v" in midjargon_dict:
-            value = midjargon_dict["v"]
-            if value and str(value) not in VALID_VERSIONS:
-                msg = f"Invalid version: {value}"
-                raise ValueError(msg)
-            midjargon_dict["version"] = f"v{value}"
-            del midjargon_dict["v"]
-            # Remove niji if present since --v takes precedence
-            if "niji" in midjargon_dict:
-                del midjargon_dict["niji"]
-        elif "niji" in midjargon_dict:
-            value = midjargon_dict["niji"]
-            if value and str(value) not in VALID_NIJI_VERSIONS:
-                msg = f"Invalid niji version: {value}"
-                raise ValueError(msg)
-            midjargon_dict["version"] = f"niji {value}" if value else "niji"
-            del midjargon_dict["niji"]
+        # Handle each parameter type
+        for name, raw_value in midjargon_dict.items():
+            if name in ("text", "images"):
+                continue  # Already handled
 
-        # Parse the dictionary
-        prompt = self._parse_dict(midjargon_dict)
+            # Try each parameter handler in sequence
+            if self._handle_special_params(prompt_data, name, raw_value):
+                continue
 
-        # Ensure version precedence
-        if "v" in midjargon_dict:
-            prompt.version = f"v{midjargon_dict['v']}"
-        elif "niji" in midjargon_dict:
-            prompt.version = (
-                f"niji {midjargon_dict['niji']}" if midjargon_dict["niji"] else "niji"
-            )
+            if name in ("p", "personalization"):
+                self._handle_personalization(prompt_data, midjargon_dict)
+                continue
 
-        return prompt
+            if self._handle_standard_params(prompt_data, name, raw_value):
+                continue
+
+            if self._handle_flag_params(prompt_data, name):
+                continue
+
+            if self._handle_reference_params(prompt_data, name, raw_value):
+                continue
+
+            # Store any unhandled parameters
+            prompt_data["extra_params"][name] = raw_value
+
+        return MidjourneyPrompt(**prompt_data)
 
     def _format_style_params(self, prompt: MidjourneyPrompt) -> dict[str, str]:
         """Format style parameters for output."""

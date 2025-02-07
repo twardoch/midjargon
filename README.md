@@ -1,6 +1,12 @@
 # Midjargon
 
-`midjargon` is a Python library for parsing and manipulating Midjourney prompts using a specialized syntax. This tool helps you work with Midjourney prompts in a structured way, handling complex features like permutations, parameter validation, and image URL extraction.
+`midjargon` is a powerful Python library designed to simplify the parsing and manipulation of Midjourney-style prompts. 
+
+Midjourney uses a specialized syntax for prompts, which we call “midjargon”. It allows for `{}` permutation and for specifying of parameters using an `--` prefix. This syntax is useful for other applications, such as constructing prompts for Flux models. 
+
+The `midjargon` package reads midjargon prompts, deconstructs them into manageable components, ensuring type-safe operations and comprehensive validation. It also converts midjargon prompts into other formats, such as Fal.ai, and serializes them back into the Midjourney format.
+
+_It’s work in progress, but already pretty usable._
 
 ## Features
 
@@ -60,11 +66,21 @@ validated = parse_midjourney_dict(result)
 Midjargon exposes a single CLI interface with multiple commands. Here are some examples:
 
 ```bash
-# Running the default CLI interface using Python module
-python -m midjargon
+# You can run the tool with uv without installing dependencies: 
+uv run midjargon
 
+# You can also run it directly: 
+midjargon
+
+# Or using your Python interpreter:
+python -m midjargon
+```
+
+To get help on the commands: 
+
+```bash
 # Help for Fal.ai conversion (convert prompt to Fal.ai format)
-uv run midjargon fal --help
+midjargon fal --help
 
 # Help for Midjourney conversion
 midjargon mj --help
@@ -170,11 +186,11 @@ Contributions are welcome! Please submit a pull request with your changes.
    ```
 3. Run tests:
    ```bash
-   pytest
+   hatch test
    ```
 4. Format code:
    ```bash
-   ruff check --fix --unsafe-fixes . && ruff format --respect-gitignore --target-version py312 .
+   hatch fmt
    ```
 
 ## License

@@ -102,3 +102,64 @@ def test_engine_roundtrip():
     assert output_dict["text"] == input_dict["text"]
     assert output_dict["param1"] == input_dict["param1"]
     assert output_dict["flag"] == input_dict["flag"]
+
+
+def test_engine_with_permutations():
+    """Test engine handling of permutations."""
+    engine = TestEngine()
+
+    # Test with parameter permutations
+    input_dicts = [
+        {"text": "smooth edges", "stylize": "75"},
+        {"text": "smooth edges", "stylize": "300"},
+        {"text": "smooth edges", "stylize": "75", "personalization": None},
+        {"text": "smooth edges", "stylize": "300", "personalization": None},
+    ]
+
+    results = [engine.parse_dict(d) for d in input_dicts]
+    assert len(results) == 4
+
+    # Verify each permutation is handled correctly
+    result_tuples = {
+        (
+            r.text.strip(),
+            r.parameters.get("stylize"),
+            r.parameters.get("personalization"),
+        )
+        for r in results
+    }
+
+    expected = {
+        ("smooth edges", "75", None),
+        ("smooth edges", "300", None),
+        ("smooth edges", "75", None),
+        ("smooth edges", "300", None),
+    }
+
+    assert result_tuples == expected
+
+    # Test with flag permutations
+    input_dicts = [
+        {"text": "photo"},
+        {"text": "photo", "tile": None},
+        {"text": "photo", "turbo": None},
+        {"text": "photo", "tile": None, "turbo": None},
+    ]
+
+    results = [engine.parse_dict(d) for d in input_dicts]
+    assert len(results) == 4
+
+    # Verify each permutation is handled correctly
+    result_tuples = {
+        (r.text.strip(), "tile" in r.parameters, "turbo" in r.parameters)
+        for r in results
+    }
+
+    expected = {
+        ("photo", False, False),
+        ("photo", True, False),
+        ("photo", False, True),
+        ("photo", True, True),
+    }
+
+    assert result_tuples == expected

@@ -46,7 +46,7 @@ def parse_prompt(
     """
     Parse the input prompt into:
     - a single dict (if permute is False)
-    - or either a single dict or a list of dicts (if permute is True). What we do is we permute and then we check the number of results. If there is only one result, we return a single dict. If there are multiple results, we return a list of dicts.
+    - or a list of dicts (if permute is True). When permute is True, we always return a list, even if there's only one result.
 
     Also, in our CLI, expose this as `json` command. In CLI.
 
@@ -55,17 +55,16 @@ def parse_prompt(
         permute: If True, we pass the prompt to permute_prompt first and then parse all prompts.
 
     Returns:
-        A single dict or a list of dicts.
+        A single dict (if permute is False) or a list of dicts (if permute is True).
     """
     if not permute:
         return parse_midjargon_prompt_to_dict(text)
 
     expanded = permute_prompt(text)
     if not expanded:
-        return parse_midjargon_prompt_to_dict(text)
+        return [parse_midjargon_prompt_to_dict(text)]
 
-    results = [parse_midjargon_prompt_to_dict(prompt) for prompt in expanded]
-    return results[0] if len(results) == 1 else results
+    return [parse_midjargon_prompt_to_dict(prompt) for prompt in expanded]
 
 
 def _prep_conversion(
@@ -83,17 +82,27 @@ def _prep_conversion(
         - a list of MidJargonDict
     """
     if isinstance(prompt, str):
-        expanded = permute_prompt(prompt)
-        return _prep_conversion(expanded)
+        # Always expand permutations for strings
+        expanded = permute_prompt(str(prompt))
+        if not expanded:
+            # If no permutations, parse as a single prompt
+            return [parse_prompt(prompt, permute=False)]  # type: ignore
+        # Parse each expanded permutation
+        return [parse_prompt(p, permute=False) for p in expanded]  # type: ignore
 
     if isinstance(prompt, list):
         if not prompt:
             return []
         if all(isinstance(p, str) for p in prompt):
-            dicts = [parse_prompt(str(p), permute=False) for p in prompt]
-            if isinstance(dicts[0], list):
-                return dicts[0]  # type: ignore
-            return [dicts[0]]  # type: ignore
+            # For list of strings, parse each one with permutations
+            dicts = []
+            for p in prompt:
+                expanded = permute_prompt(str(p))
+                if expanded:
+                    dicts.extend(parse_prompt(exp, permute=False) for exp in expanded)  # type: ignore
+                else:
+                    dicts.append(parse_prompt(p, permute=False))  # type: ignore
+            return dicts
         if all(isinstance(p, dict) for p in prompt):
             return list(prompt)  # type: ignore
         msg = f"Unsupported list item type: {type(prompt[0])}"
@@ -118,8 +127,8 @@ def to_midjourney_prompts(
     Also, in our CLI, expose this as `midjourney` command.
 
     Return:
-        - a single MidjourneyPrompt if we only have one result
-        - a list of MidjourneyPrompt if we have multiple results
+        - a single MidjourneyPrompt if input is a single dict or non-permuted string
+        - a list of MidjourneyPrompt if input contains permutations or is a list
     """
     dicts = _prep_conversion(prompt)
     if not dicts:
@@ -127,6 +136,11 @@ def to_midjourney_prompts(
         raise ValueError(msg)
 
     results = [parse_midjourney_dict(d) for d in dicts]
+    # Return a list if input was a string with permutations or a list
+    if isinstance(prompt, str) and "{" in prompt:
+        return results
+    if isinstance(prompt, list):
+        return results
     return results[0] if len(results) == 1 else results
 
 
@@ -137,13 +151,13 @@ def to_fal_dicts(
     ],
 ) -> Doc[FalDict | list[FalDict], "Fal prompt(s)"]:
     """
-    Convert the input prompt(s) into a Midjourney prompt(s). Pass the inputs to _prep_conversion and then take the resulting list of dicts and perform the actual conversion, calling to_fal_dict on each, and prepare a list of FalDict results.
+    Convert the input prompt(s) into Fal.ai prompt(s). Pass the inputs to _prep_conversion and then take the resulting list of dicts and perform the actual conversion, calling to_fal_dict on each, and prepare a list of FalDict results.
 
     Also, in our CLI, expose this as `fal` command.
 
     Return:
-        - a single FalDict if we only have one result
-        - a list of FalDict if we have multiple results
+        - a single FalDict if input is a single dict or non-permuted string
+        - a list of FalDict if input contains permutations or is a list
     """
     dicts = _prep_conversion(prompt)
     if not dicts:
@@ -151,4 +165,10 @@ def to_fal_dicts(
         raise ValueError(msg)
 
     results = [to_fal_dict(d) for d in dicts]
+    # Always return a list if input was a string with permutations
+    if isinstance(prompt, str) and "{" in prompt:
+        return results
+    if isinstance(prompt, list):
+        return results
+    # For single inputs without permutations, return just the first result
     return results[0] if len(results) == 1 else results

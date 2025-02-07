@@ -200,3 +200,80 @@ def test_complex_workflow():
     # Check text variations
     texts = {r.text for r in results}
     assert len(texts) == PERMUTATION_COUNT_2X2X2  # All combinations are unique
+
+
+def test_permutations_with_parameters():
+    """Test permutations with parameters are handled correctly."""
+    prompt = "smooth edges {, --p} --s {75, 300}"
+    results = process_prompt(prompt)
+
+    assert len(results) == 4  # Should have 4 permutations
+
+    # Convert results to set of tuples for easier comparison
+    result_tuples = {
+        (r.text.strip(), r.personalization is not None, r.stylize) for r in results
+    }
+
+    # Expected combinations
+    expected = {
+        ("smooth edges", False, 75),
+        ("smooth edges", False, 300),
+        ("smooth edges", True, 75),
+        ("smooth edges", True, 300),
+    }
+
+    assert result_tuples == expected
+
+
+def test_permutations_with_flag_parameters():
+    """Test permutations with flag parameters (no value) are handled correctly."""
+    prompt = "photo {, --tile} {, --turbo}"
+    results = process_prompt(prompt)
+
+    assert len(results) == 4  # Should have 4 permutations
+
+    # Convert results to set of tuples for easier comparison
+    result_tuples = {(r.text.strip(), r.tile is True, r.turbo is True) for r in results}
+
+    # Expected combinations
+    expected = {
+        ("photo", False, False),
+        ("photo", False, True),
+        ("photo", True, False),
+        ("photo", True, True),
+    }
+
+    assert result_tuples == expected
+
+
+def test_permutations_with_complex_parameters():
+    """Test permutations with complex parameter combinations."""
+    prompt = "portrait {modern, vintage} {, --p custom} --ar {1:1, 16:9} --s 100"
+    results = process_prompt(prompt)
+
+    assert len(results) == 8  # Should have 8 permutations (2 x 2 x 2)
+
+    # Convert results to set of tuples for easier comparison
+    result_tuples = {
+        (
+            r.text.strip(),
+            r.personalization,
+            f"{r.aspect_width}:{r.aspect_height}",
+            r.stylize,
+        )
+        for r in results
+    }
+
+    # Expected combinations
+    expected = {
+        ("portrait modern", None, "1:1", 100),
+        ("portrait modern", None, "16:9", 100),
+        ("portrait modern", "custom", "1:1", 100),
+        ("portrait modern", "custom", "16:9", 100),
+        ("portrait vintage", None, "1:1", 100),
+        ("portrait vintage", None, "16:9", 100),
+        ("portrait vintage", "custom", "1:1", 100),
+        ("portrait vintage", "custom", "16:9", 100),
+    }
+
+    assert result_tuples == expected

@@ -163,3 +163,134 @@ def test_niji_parameter():
 
     assert prompt.text == "a photo"
     assert prompt.version == "niji 6"
+
+
+def test_multiple_permutations():
+    """Test handling of multiple permutations."""
+    parser = MidjourneyParser()
+
+    # Test with parameter permutations
+    input_dicts = [
+        {"text": "smooth edges", "stylize": "75"},
+        {"text": "smooth edges", "stylize": "300"},
+        {"text": "smooth edges", "stylize": "75", "personalization": None},
+        {"text": "smooth edges", "stylize": "300", "personalization": None},
+    ]
+
+    results = [parser.parse_dict(d) for d in input_dicts]
+    assert len(results) == 4
+
+    # Verify each permutation is handled correctly
+    result_tuples = {(r.text.strip(), r.stylize, r.personalization) for r in results}
+
+    expected = {
+        ("smooth edges", 75, None),
+        ("smooth edges", 300, None),
+        ("smooth edges", 75, None),
+        ("smooth edges", 300, None),
+    }
+
+    assert result_tuples == expected
+
+    # Test with flag permutations
+    input_dicts = [
+        {"text": "photo"},
+        {"text": "photo", "tile": None},
+        {"text": "photo", "turbo": None},
+        {"text": "photo", "tile": None, "turbo": None},
+    ]
+
+    results = [parser.parse_dict(d) for d in input_dicts]
+    assert len(results) == 4
+
+    # Verify each permutation is handled correctly
+    result_tuples = {(r.text.strip(), r.tile is True, r.turbo is True) for r in results}
+
+    expected = {
+        ("photo", False, False),
+        ("photo", True, False),
+        ("photo", False, True),
+        ("photo", True, True),
+    }
+
+    assert result_tuples == expected
+
+
+def test_complex_permutations():
+    """Test handling of complex parameter permutations."""
+    parser = MidjourneyParser()
+
+    # Test with multiple parameter types
+    input_dicts = [
+        {
+            "text": "portrait modern",
+            "aspect": "1:1",
+            "stylize": "100",
+        },
+        {
+            "text": "portrait modern",
+            "aspect": "16:9",
+            "stylize": "100",
+        },
+        {
+            "text": "portrait modern",
+            "aspect": "1:1",
+            "stylize": "100",
+            "personalization": "custom",
+        },
+        {
+            "text": "portrait modern",
+            "aspect": "16:9",
+            "stylize": "100",
+            "personalization": "custom",
+        },
+        {
+            "text": "portrait vintage",
+            "aspect": "1:1",
+            "stylize": "100",
+        },
+        {
+            "text": "portrait vintage",
+            "aspect": "16:9",
+            "stylize": "100",
+        },
+        {
+            "text": "portrait vintage",
+            "aspect": "1:1",
+            "stylize": "100",
+            "personalization": "custom",
+        },
+        {
+            "text": "portrait vintage",
+            "aspect": "16:9",
+            "stylize": "100",
+            "personalization": "custom",
+        },
+    ]
+
+    results = [parser.parse_dict(d) for d in input_dicts]
+    assert len(results) == 8
+
+    # Verify each permutation is handled correctly
+    result_tuples = {
+        (
+            r.text.strip(),
+            r.personalization,
+            f"{r.aspect_width}:{r.aspect_height}",
+            r.stylize,
+        )
+        for r in results
+    }
+
+    expected = {
+        ("portrait modern", None, "1:1", 100),
+        ("portrait modern", None, "16:9", 100),
+        ("portrait modern", "custom", "1:1", 100),
+        ("portrait modern", "custom", "16:9", 100),
+        ("portrait vintage", None, "1:1", 100),
+        ("portrait vintage", None, "16:9", 100),
+        ("portrait vintage", "custom", "1:1", 100),
+        ("portrait vintage", "custom", "16:9", 100),
+    }
+
+    assert result_tuples == expected

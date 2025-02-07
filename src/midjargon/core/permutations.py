@@ -126,7 +126,10 @@ def _format_part(before: str, option: str, after: str) -> str:
     """
     # Handle empty option
     if not option:
-        # Ensure we keep one space between words
+        # If after starts with a parameter (--), return before + after without space
+        if after.lstrip().startswith("--"):
+            return before.rstrip() + after.lstrip()
+        # Otherwise ensure we keep one space between words
         if before.rstrip() and after.lstrip():
             return before.rstrip() + " " + after.lstrip()
         return before.rstrip() + after.lstrip()
