@@ -1,4 +1,3 @@
-
 # **Midjourney Prompt Format Specification**
 
 _2025-02-06 by Adam Twardoch, not affiliated with Midjourney_
