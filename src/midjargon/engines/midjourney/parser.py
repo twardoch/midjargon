@@ -2,7 +2,7 @@
 Parser for Midjourney engine.
 """
 
-from typing import Any
+from typing import Any, cast
 
 from midjargon.core.type_defs import MidjargonDict
 from midjargon.engines.base import EngineParser
@@ -165,17 +165,25 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         self, name: str, raw_value: str | list[str] | None
     ) -> tuple[str | None, Any]:
         """Handle style parameter conversion."""
+        # If parameter name is 'niji', do not process here so that version handler can take over
+        if name == "niji":
+            return None, None
+
         value = self._normalize_value(raw_value)
         if value is None:
             return None, None
 
-        # Convert value to string if it's a list
         if isinstance(value, list):
-            value = value[0] if value else None
-            if value is None:
+            new_value = value[0] if value else None
+            if new_value is None or not isinstance(new_value, str):
                 return None, None
+        else:
+            if not isinstance(value, str):
+                return None, None
+            new_value = value
 
-        return "style", value
+        # new_value is now guaranteed to be a string
+        return "style", new_value
 
     def _handle_version_param(
         self, name: str, raw_value: str | list[str] | None
@@ -183,24 +191,28 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         """Handle version parameter conversion."""
         value = self._normalize_value(raw_value)
         if value is None:
+            if name == "niji":
+                return "version", "niji"
             return None, None
 
-        # Convert value to string if it's a list
         if isinstance(value, list):
-            value = value[0] if value else None
-            if value is None:
+            new_value = value[0] if value else None
+            if new_value is None or not isinstance(new_value, str):
                 return None, None
+        else:
+            if not isinstance(value, str):
+                return None, None
+            new_value = value
 
         # Handle niji version
         if name == "niji":
-            if value:
-                return "version", f"niji {value}"
-            return "version", "niji"
+            return "version", f"niji {new_value}" if new_value else "niji"
 
         # Handle regular version
-        if not value.startswith("v"):
-            value = f"v{value}"
-        return "version", value
+        if name in ("v", "version"):
+            return "version", f"v{new_value}"
+
+        return None, None
 
     def _handle_personalization_param(
         self, name: str, raw_value: str | list[str] | None
@@ -272,14 +284,23 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
         Returns:
             Validated MidjourneyPrompt.
+
+        Raises:
+            ValueError: If the prompt text is empty or if validation fails.
         """
+        # Validate text is not empty
+        text = midjargon_dict.get("text", "").strip()
+        if not text:
+            msg = "Empty prompt text"
+            raise ValueError(msg)
+
         # Initialize with core components
         images = midjargon_dict.get("images", [])
         if images is None:
             images = []
 
         prompt_data: dict[str, Any] = {
-            "text": midjargon_dict["text"],
+            "text": text,
             "image_prompts": [ImagePrompt(url=url) for url in images],
             "extra_params": {},
             "version": None,
@@ -305,14 +326,15 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
                     prompt_data["aspect_height"] = h
                 continue
 
-            # Handle style parameter
-            param_name, param_value = self._handle_style_param(name, value)
-            if param_name:
-                prompt_data[param_name] = param_value
+            # Handle version parameter for keys 'v', 'version', and 'niji'
+            if name in ("v", "version", "niji"):
+                param_name, param_value = self._handle_version_param(name, value)
+                if param_name:
+                    prompt_data[param_name] = param_value
                 continue
 
-            # Handle version parameter
-            param_name, param_value = self._handle_version_param(name, value)
+            # Handle style parameter
+            param_name, param_value = self._handle_style_param(name, value)
             if param_name:
                 prompt_data[param_name] = param_value
                 continue

@@ -1,0 +1,215 @@
+# `midjargon`
+
+`midjargon` is a hatch-managed Python library for parsing and manipulating Midjourney prompts using a specialized syntax. This tool helps you work with Midjourney prompts in a structured way, handling complex features like permutations, parameter validation, and image URL extraction.
+
+## Folder structure
+
+### Root
+
+├── LICENSE # MIT license
+├── README.md # Project intro, should be updated after you make changes
+├── SPEC.md # Compact specification of the Midjourney prompt syntax
+├── TODO.md # Read it, actually TEST and CHECK if the problem is real, perform some changes, then UPDATE the TODO.md, remove problems/issues, add newly discovered problems. Work until you CLEAR the TODO.md!     
+├── dist # Distribution files
+├── package.toml # Hatch project files
+├── pyproject.toml # Python project files
+├── pytest.ini # pytest configuration
+
+### Original documentation of Midjourney (large file)
+├── docs
+│   └── midjourney-docs.md
+
+### Hatch project files
+├── package.toml
+├── pyproject.toml
+├── pytest.ini
+
+### Source code
+├── src
+│   └── midjargon
+│       ├── __init__.py
+│       ├── __main__.py
+│       ├── cli
+│       │   ├── __init__.py
+│       │   └── main.py
+│       ├── core
+│       │   ├── __init__.py
+│       │   ├── input.py
+│       │   ├── parameters.py
+│       │   ├── parser.py
+│       │   ├── permutations.py
+│       │   └── type_defs.py
+│       └── engines
+│           ├── __init__.py
+│           ├── base.py
+│           └── midjourney
+│               ├── __init__.py
+│               ├── constants.py
+│               ├── models.py
+│               └── parser.py
+
+### Tests
+└── tests
+    ├── cli
+    │   ├── __init__.py
+    │   └── test_main.py
+    ├── conftest.py
+    ├── core
+    │   ├── __init__.py
+    │   ├── test_input.py
+    │   ├── test_parameters.py
+    │   └── test_permutations.py
+    ├── engines
+    │   ├── __init__.py
+    │   ├── midjourney
+    │   │   ├── __init__.py
+    │   │   └── test_parser.py
+    │   └── test_base.py
+    ├── integration
+    │   └── test_workflow.py
+    ├── test_package.py
+    └── tests
+```
+
+### Maintenance
+
+After you make changes, run:
+
+```bash
+ruff check --output-format=github --fix --unsafe-fixes . && ruff format --respect-gitignore --target-version py312 .
+```
+
+and then consider running tests: 
+
+```bash
+pytest
+```
+
+## Source code overview
+
+### 1. Core Layer (`core/`)
+
+The core layer provides functionality that’s not tied to any particular AI engine. The `core` layer of our code should be semantically-neutral: it should expand the permutations, and isolate the parameters into key-value pairs, where the value are typically strings, sometimes lists of strings, and sometimes ints or floats. However, the `core` section should be PYDANTIC-FREE, and should NOT perform any validation, like bounds-checking. 
+
+- **Type Definitions (`type_defs.py`)**:
+  - Defines basic type aliases for the package
+  - Provides foundational types for parameters and prompts
+
+- **Input Processing (`input.py`)**:
+  - Handles initial prompt string preprocessing
+  - Manages whitespace and basic text normalization
+  - Provides string manipulation utilities
+
+- **Parameter Handling (`parameters.py`)**:
+  - Processes command-line style parameters (e.g., `--ar 16:9`)
+  - Handles parameter shortcuts and aliases
+  - Supports special cases like niji versions and personalization
+  - Validates parameter format and basic structure
+  - Implements robust parameter string parsing
+
+- **Basic Parsing (`parser.py`)**:
+  - Implements core prompt parsing logic
+  - Separates text, parameters, and image URLs
+  - Handles basic validation of prompt structure
+
+- **Permutations (`permutations.py`)**:
+  - Processes permutation syntax `{option1, option2}`
+  - Handles nested permutations
+  - Supports escaped commas in options
+  - Manages expansion of multiple permutation groups
+
+### 2\. Engines Layer (`engines/`)
+
+The engines layer contains engine-specific implementations. 
+
+The `engines/midjourney` section of our code should use pydantic, should perform semantic parsing of parameters into "known" and "unknown" parameters, and do all sorts of validation. 
+
+- **Midjourney Engine (`midjourney/`)**:
+  - `constants.py`: 
+    - Defines parameter ranges and constraints
+    - Specifies allowed file extensions
+    - Lists valid styles and versions
+    - Provides extensible configuration
+  
+  - `models.py`: 
+    - Implements `ImagePrompt` for URL validation
+    - Defines `MidjourneyPrompt` with comprehensive validation
+    - Handles all parameter types from the spec
+    - Validates parameter ranges and combinations
+    - Supports mode flags and their constraints
+  
+  - `parser.py`: 
+    - Implements Midjourney-specific parsing
+    - Handles weight syntax (::)
+    - Processes image references
+    - Manages parameter conversion and validation
+
+### 3\. CLI Layer (`cli/`)
+
+The command-line interface implementation:
+
+- **Main CLI (`main.py`)**:
+
+  - Implements the command-line interface using Fire
+  - Provides rich console output with syntax highlighting
+  - Handles command parsing and execution
+  - Supports raw parsing and Midjourney validation
+  - Offers JSON output option
+  - Uses uv for dependency management
+
+## Data Flow
+
+1. **Input → Core Processing**:
+
+  - Raw input string → Input processing via `expand_midjargon_input`
+  - Permutation expansion using `expand_text`
+  - Basic parameter parsing with `parse_parameters`
+
+2. **Core → Engine Processing**:
+
+  - Parsed dictionary → Engine-specific parsing
+  - Validation and normalization through Pydantic models
+  - Engine-specific output generation (e.g., `MidjourneyPrompt`)
+
+3. **Engine → Output**:
+
+  - Final processed prompt
+  - Validation results
+  - Formatted output (via CLI or API)
+  - Rich console output with syntax highlighting
+
+## Usage Patterns
+
+1. **Basic Usage**:
+
+```python
+from midjargon import expand_midjargon_input, parse_midjargon_prompt_to_dict
+
+# Expand permutations
+expanded = expand_midjargon_input("a {red, blue} bird")
+
+# Parse into dictionary
+parsed = parse_midjargon_prompt_to_dict(expanded[0])
+```
+
+2. **Engine-Specific Usage**:
+
+```python
+from midjargon.engines.midjourney import parse_midjourney_dict
+
+# Parse for Midjourney
+midjourney_prompt = parse_midjourney_dict(parsed)
+```
+
+3. **CLI Usage**:
+
+```bash
+# Basic parsing
+python -m midjargon "a photo of a cat --ar 16:9"
+
+# JSON output
+python -m midjargon --json-output "a photo of a cat --ar 16:9"
+
+# Raw parsing without validation
+python -m midjargon --raw "any text with parameters"
+```

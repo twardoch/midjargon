@@ -37,6 +37,13 @@ def expand_midjargon_input(prompt: MidjargonInput) -> MidjargonList:
     for escaped, marker in replacements.items():
         processed = processed.replace(escaped, marker)
 
+    # If the processed text, after stripping leading whitespace, starts with the escaped open marker,
+    # remove any preceding characters so that the output starts with the literal brace.
+    stripped = processed.lstrip()
+    if stripped.startswith("‹ESCAPED_OPEN›"):
+        index = processed.find("‹ESCAPED_OPEN›")
+        processed = processed[index:]
+
     # Expand permutations
     expanded = expand_text(processed)
 

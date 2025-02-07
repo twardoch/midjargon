@@ -116,7 +116,7 @@ def _handle_error(console: Console, error: Exception) -> NoReturn:
 
 def _output_json(data: Any) -> None:
     """Output data as formatted JSON."""
-    print(json.dumps(data, indent=2))
+    print(json.dumps(data, indent=2), flush=True)
 
 
 def process_prompt(prompt: str) -> list[MidjourneyPrompt]:
@@ -199,38 +199,20 @@ def main(
             return
 
         # Display results
-        for result in results:
+        for i, result in enumerate(results, 1):
+            if len(results) > 1:
+                console.print(f"\nVariant {i}:", style="bold blue")
             if raw:
-                # Show raw parsed structure
-                console.print(
-                    Panel(
-                        Syntax(
-                            json.dumps(result, indent=2),
-                            "json",
-                            background_color="default",
-                        ),
-                        title="Raw Parsed",
-                    )
-                )
+                console.print(Panel(str(result)))
             else:
-                # Show formatted prompt
-                console.print(Panel(format_prompt(result), title="Formatted"))
-                console.print(
-                    Panel(
-                        Syntax(
-                            json.dumps(result.model_dump(), indent=2),
-                            "json",
-                            background_color="default",
-                        ),
-                        title="Structured",
-                    )
-                )
+                console.print(Panel(format_prompt(result)))
 
-    except Exception as e:
+    except Exception as error:
         if json_output:
-            _output_json({"error": str(e)})
+            _output_json({"error": str(error)})
             sys.exit(1)
-        _handle_error(console, e)
+        else:
+            _handle_error(console, error)
 
 
 class MidjargonCLI:

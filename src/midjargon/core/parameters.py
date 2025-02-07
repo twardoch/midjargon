@@ -70,32 +70,28 @@ def validate_param_name(name: str) -> None:
 
 def validate_param_value(name: str, value: ParamValue) -> None:
     """
-    Validate a parameter value.
+    Basic syntactic validation of a parameter value.
+    Semantic validation is handled by the engine layer.
 
     Args:
         name: Parameter name.
         value: Parameter value to validate.
 
     Raises:
-        ValueError: If value is invalid for the parameter type.
+        ValueError: If value has invalid syntax.
     """
     if value is None:
         return
 
-    # Handle list values for reference parameters
+    # Handle list values
     if isinstance(value, list):
-        if name not in {"character_reference", "style_reference"}:
-            msg = f"List values only allowed for reference parameters, got: {name}"
-            raise ValueError(msg)
         for item in value:
-            if not any(
-                item.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".gif")
-            ):
-                msg = f"Invalid reference file extension for {name}: {item}"
+            if not isinstance(item, str):
+                msg = f"List values must be strings, got: {type(item)}"
                 raise ValueError(msg)
         return
 
-    # Validate numeric parameters
+    # Validate numeric parameters can be converted to float
     if name in {
         "stylize",
         "chaos",
@@ -110,47 +106,10 @@ def validate_param_value(name: str, value: ParamValue) -> None:
         "stop",
     }:
         try:
-            num_value = float(value)
-            if num_value < 0:
-                msg = f"Negative value not allowed for {name}: {value}"
-                raise ValueError(msg)
-            if name == "stylize" and num_value > 1000:
-                msg = f"Stylize value too high: {value}"
-                raise ValueError(msg)
-            if name == "chaos" and num_value > 100:
-                msg = f"Chaos value too high: {value}"
-                raise ValueError(msg)
-            if name == "weird" and num_value > 3000:
-                msg = f"Weird value too high: {value}"
-                raise ValueError(msg)
-            if name == "image_weight" and num_value > 2:
-                msg = f"Image weight value too high: {value}"
-                raise ValueError(msg)
+            float(value)
         except ValueError as e:
             msg = f"Invalid numeric value for {name}: {value}"
             raise ValueError(msg) from e
-
-    # Validate version string
-    if name == "version":
-        # Handle numeric version (add v prefix)
-        if value.replace(".", "").isdigit():
-            return
-        # Handle niji version
-        if value.startswith("niji"):
-            return
-        # Handle v prefix
-        if value.startswith("v") and value[1:].replace(".", "").isdigit():
-            return
-        msg = f"Invalid version format: {value}"
-        raise ValueError(msg)
-
-    # Validate reference parameters
-    if name in {"character_reference", "style_reference"}:
-        if not any(
-            value.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".gif")
-        ):
-            msg = f"Invalid reference file extension for {name}: {value}"
-            raise ValueError(msg)
 
 
 def expand_shorthand_param(name: str) -> tuple[str, bool]:
@@ -253,6 +212,7 @@ def _process_param_chunk(
 ) -> tuple[str, str | None]:
     """
     Process a parameter chunk into name and value.
+    Basic syntactic processing only - semantic validation is handled by the engine layer.
 
     Args:
         chunk: Parameter chunk to process.
@@ -262,7 +222,7 @@ def _process_param_chunk(
         Tuple of (parameter name, parameter value).
 
     Raises:
-        ValueError: If chunk is invalid.
+        ValueError: If chunk has invalid syntax.
     """
     if not chunk:
         msg = "Empty parameter chunk"
@@ -274,14 +234,13 @@ def _process_param_chunk(
 
     # Handle flag parameters (no value)
     if len(parts) == 1:
-        if name in {"tile", "turbo", "relax"}:
-            return name, None
+        # Basic parameter name expansion, no semantic validation
         if name == "niji":
             return "version", "niji"
         if name == "p":
             return "personalization", ""
         if name.startswith("no"):
-            return "no", name[2:]  # Remove no prefix
+            return "no", name[2:]
         return name, None
 
     # Handle value parameters
@@ -291,37 +250,23 @@ def _process_param_chunk(
 
     # Handle special cases where parameters might be combined
     if "--" in value:
-        # Split on -- and process each part
         value_parts = value.split("--")
-        # Only take the first part as the value for this parameter
         value = value_parts[0].strip()
-        # Process remaining parts as new parameters
         for part in value_parts[1:]:
-            # Add the -- prefix back and process recursively
             name_part, value_part = _process_param_chunk(f"--{part.strip()}", params)
             if name_part:
                 params[name_part] = value_part
 
     expanded_name = _expand_param_name(name)
 
-    # Special handling for niji parameter
+    # Basic parameter name expansion, no semantic validation
     if expanded_name == "niji" and value.isdigit():
         return "version", f"niji {value}"
 
-    # Special handling for personalization parameter
     if expanded_name in ("personalization", "p"):
-        # Remove any trailing parameters if present
         if "--" in value:
             value = value.split("--")[0].strip()
         return "personalization", value
-
-    # Special handling for version parameter
-    if expanded_name in ("version", "v"):
-        if not value:
-            return "version", None
-        if value.startswith("niji"):
-            return "version", value
-        return "version", value if value.startswith("v") else f"v{value}"
 
     return expanded_name, value
 
@@ -356,6 +301,10 @@ def parse_parameters(param_str: str) -> ParamDict:
         # Validate and expand parameter name
         validate_param_name(name)
         expanded_name, is_flag = expand_shorthand_param(name)
+
+        # If the parameter requires a value (not a flag) but none was provided, raise an error
+        if not is_flag and value is None:
+            raise ValueError(f"Missing required value for parameter: {name}")
 
         # Process value
         if is_flag:
