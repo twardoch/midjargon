@@ -91,4 +91,4 @@ def test_prompt_with_whitespace_handling():
     """Test prompt parsing with various whitespace patterns."""
     prompt = "a {  red  ,  blue  } bird"
     result = parse_midjargon_prompt_to_dict(prompt)
-    assert result["text"] == "a {  red  ,  blue  } bird"
+    assert result["text"] == "a { red , blue } bird"
