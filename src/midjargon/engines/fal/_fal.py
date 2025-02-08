@@ -45,12 +45,12 @@ def to_fal_dict(midjargon_dict: MidjargonDict) -> dict[str, Any]:
     # Handle other parameters
     if "chaos" in midjargon_dict:
         chaos = midjargon_dict["chaos"]
-        if isinstance(chaos, (int, float)):
+        if isinstance(chaos, int | float):
             result["guidance_scale"] = max(1.0, 15.0 - (chaos / 10))
 
     if "stop" in midjargon_dict:
         stop = midjargon_dict["stop"]
-        if isinstance(stop, (int, float)):
+        if isinstance(stop, int | float):
             result["num_inference_steps"] = min(100, max(10, int(stop / 2)))
 
     return result
