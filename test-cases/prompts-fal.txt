@@ -1,0 +1,1583 @@
+======
+"Do not enter" sign in Elvish script, overgrown with vines --v 6 --stylize 250 --seed {12345, 67890}
+[
+  {
+    "images": [],
+    "version": 6,
+    "stylize": 250,
+    "seed": 12345,
+    "prompt": "\"Do not enter\" sign in Elvish script, overgrown with vines"
+  },
+  {
+    "images": [],
+    "version": 6,
+    "stylize": 250,
+    "seed": 67890,
+    "prompt": "\"Do not enter\" sign in Elvish script, overgrown with vines"
+  }
+]======
+"Lost in translation" neon sign in a Tokyo alleyway --v 6.1 --stylize 750 --weird 250
+{
+  "images": [],
+  "version": 6.1,
+  "stylize": 750,
+  "weird": 250,
+  "prompt": "\"Lost in translation\" neon sign in a Tokyo alleyway"
+}======
+"Made in Midjourney" stamp on a vintage postage stamp --v 6.1 --stylize 1000 --zoom 1.5 --ar 1:2
+{
+  "images": [],
+  "version": 6.1,
+  "stylize": 1000,
+  "zoom": 1.5,
+  "aspect_ratio": "1:2",
+  "prompt": "\"Made in Midjourney\" stamp on a vintage postage stamp"
+}======
+A black and white oak tree icon --style {raw, default} --stylize {0, 1000} --weird {0, 3000}
+[
+  {
+    "images": [],
+    "style": "raw",
+    "stylize": 0,
+    "weird": 0,
+    "prompt": "A black and white oak tree icon"
+  },
+  {
+    "images": [],
+    "style": "raw",
+    "stylize": 0,
+    "weird": 3000,
+    "prompt": "A black and white oak tree icon"
+  },
+  {
+    "images": [],
+    "style": "raw",
+    "stylize": 1000,
+    "weird": 0,
+    "prompt": "A black and white oak tree icon"
+  },
+  {
+    "images": [],
+    "style": "raw",
+    "stylize": 1000,
+    "weird": 3000,
+    "prompt": "A black and white oak tree icon"
+  },
+  {
+    "images": [],
+    "style": "default",
+    "stylize": 0,
+    "weird": 0,
+    "prompt": "A black and white oak tree icon"
+  },
+  {
+    "images": [],
+    "style": "default",
+    "stylize": 0,
+    "weird": 3000,
+    "prompt": "A black and white oak tree icon"
+  },
+  {
+    "images": [],
+    "style": "default",
+    "stylize": 1000,
+    "weird": 0,
+    "prompt": "A black and white oak tree icon"
+  },
+  {
+    "images": [],
+    "style": "default",
+    "stylize": 1000,
+    "weird": 3000,
+    "prompt": "A black and white oak tree icon"
+  }
+]======
+A botanical sketch of fern fronds --video --version {5.2, 6} --ar {1:1, 16:9} --chaos 30
+[
+  {
+    "images": [],
+    "video": null,
+    "version": 5.2,
+    "chaos": 30,
+    "aspect_ratio": "1:1",
+    "prompt": "A botanical sketch of fern fronds"
+  },
+  {
+    "images": [],
+    "video": null,
+    "version": 5.2,
+    "chaos": 30,
+    "aspect_ratio": "16:9",
+    "prompt": "A botanical sketch of fern fronds"
+  },
+  {
+    "images": [],
+    "video": null,
+    "version": 6,
+    "chaos": 30,
+    "aspect_ratio": "1:1",
+    "prompt": "A botanical sketch of fern fronds"
+  },
+  {
+    "images": [],
+    "video": null,
+    "version": 6,
+    "chaos": 30,
+    "aspect_ratio": "16:9",
+    "prompt": "A botanical sketch of fern fronds"
+  }
+]======
+A cartoon drawing of a manual with the words "read the docs" in big text on the pages --v 6 --stylize 100 --ar 2:3
+{
+  "images": [],
+  "version": 6,
+  "stylize": 100,
+  "aspect_ratio": "2:3",
+  "prompt": "A cartoon drawing of a manual with the words \"read the docs\" in big text on the pages"
+}======
+A cat in a {Tundra, Jungle, City} environment --ar 3:2 --stop 80 --weird 2000
+[
+  {
+    "images": [],
+    "stop": 80,
+    "weird": 2000,
+    "aspect_ratio": "3:2",
+    "prompt": "A cat in a Tundra environment"
+  },
+  {
+    "images": [],
+    "stop": 80,
+    "weird": 2000,
+    "aspect_ratio": "3:2",
+    "prompt": "A cat in a Jungle environment"
+  },
+  {
+    "images": [],
+    "stop": 80,
+    "weird": 2000,
+    "aspect_ratio": "3:2",
+    "prompt": "A cat in a City environment"
+  }
+]======
+A child's crayon drawing of a cat --version {5.2, 6} --style raw --stylize {50, 750} --quality {.25, 1}
+[
+  {
+    "images": [],
+    "version": 5.2,
+    "style": "raw",
+    "stylize": 50,
+    "quality": 0.25,
+    "prompt": "A child's crayon drawing of a cat"
+  },
+  {
+    "images": [],
+    "version": 5.2,
+    "style": "raw",
+    "stylize": 50,
+    "quality": 1.0,
+    "prompt": "A child's crayon drawing of a cat"
+  },
+  {
+    "images": [],
+    "version": 5.2,
+    "style": "raw",
+    "stylize": 750,
+    "quality": 0.25,
+    "prompt": "A child's crayon drawing of a cat"
+  },
+  {
+    "images": [],
+    "version": 5.2,
+    "style": "raw",
+    "stylize": 750,
+    "quality": 1.0,
+    "prompt": "A child's crayon drawing of a cat"
+  },
+  {
+    "images": [],
+    "version": 6,
+    "style": "raw",
+    "stylize": 50,
+    "quality": 0.25,
+    "prompt": "A child's crayon drawing of a cat"
+  },
+  {
+    "images": [],
+    "version": 6,
+    "style": "raw",
+    "stylize": 50,
+    "quality": 1.0,
+    "prompt": "A child's crayon drawing of a cat"
+  },
+  {
+    "images": [],
+    "version": 6,
+    "style": "raw",
+    "stylize": 750,
+    "quality": 0.25,
+    "prompt": "A child's crayon drawing of a cat"
+  },
+  {
+    "images": [],
+    "version": 6,
+    "style": "raw",
+    "stylize": 750,
+    "quality": 1.0,
+    "prompt": "A child's crayon drawing of a cat"
+  }
+]======
+A cyberpunk cat with a neon sign that says "Midjourney" --v 6 --stylize 500 --ar 1:1
+{
+  "images": [],
+  "version": 6,
+  "stylize": 500,
+  "aspect_ratio": "1:1",
+  "prompt": "A cyberpunk cat with a neon sign that says \"Midjourney\""
+}======
+A pastel watercolor landscape with "/imagine" written in the clouds --v 6.1 --stylize 250 --ar 16:9
+{
+  "images": [],
+  "version": 6.1,
+  "stylize": 250,
+  "aspect_ratio": "16:9",
+  "prompt": "A pastel watercolor landscape with \"/imagine\" written in the clouds"
+}======
+A pattern of {pink and blue striped river stones, colorful watercolor fall leaves} --tile --chaos {25, 75}
+[
+  {
+    "images": [],
+    "tile": null,
+    "chaos": 25,
+    "prompt": "A pattern of pink and blue striped river stones"
+  },
+  {
+    "images": [],
+    "tile": null,
+    "chaos": 75,
+    "prompt": "A pattern of pink and blue striped river stones"
+  },
+  {
+    "images": [],
+    "tile": null,
+    "chaos": 25,
+    "prompt": "A pattern of colorful watercolor fall leaves"
+  },
+  {
+    "images": [],
+    "tile": null,
+    "chaos": 75,
+    "prompt": "A pattern of colorful watercolor fall leaves"
+  }
+]======
+A pencil sketch of a dragon made of constellations --ar 2:3 --style random-64 --no color, shading
+{
+  "images": [],
+  "style": "random-64",
+  "no": "color, shading",
+  "aspect_ratio": "2:3",
+  "prompt": "A pencil sketch of a dragon made of constellations"
+}======
+A portrait of a melancholic robot butler --cref <image URL of classic butler> --cw {0, 50, 100} --sref <image URL of sad painting> --sw {100, 800}
+[
+  {
+    "images": [],
+    "character_reference": [
+      "<image URL of classic butler>"
+    ],
+    "character_weight": 0,
+    "style_reference": [
+      "<image URL of sad painting>"
+    ],
+    "style_weight": 100,
+    "prompt": "A portrait of a melancholic robot butler"
+  },
+  {
+    "images": [],
+    "character_reference": [
+      "<image URL of classic butler>"
+    ],
+    "character_weight": 0,
+    "style_reference": [
+      "<image URL of sad painting>"
+    ],
+    "style_weight": 800,
+    "prompt": "A portrait of a melancholic robot butler"
+  },
+  {
+    "images": [],
+    "character_reference": [
+      "<image URL of classic butler>"
+    ],
+    "character_weight": 50,
+    "style_reference": [
+      "<image URL of sad painting>"
+    ],
+    "style_weight": 100,
+    "prompt": "A portrait of a melancholic robot butler"
+  },
+  {
+    "images": [],
+    "character_reference": [
+      "<image URL of classic butler>"
+    ],
+    "character_weight": 50,
+    "style_reference": [
+      "<image URL of sad painting>"
+    ],
+    "style_weight": 800,
+    "prompt": "A portrait of a melancholic robot butler"
+  },
+  {
+    "images": [],
+    "character_reference": [
+      "<image URL of classic butler>"
+    ],
+    "character_weight": 100,
+    "style_reference": [
+      "<image URL of sad painting>"
+    ],
+    "style_weight": 100,
+    "prompt": "A portrait of a melancholic robot butler"
+  },
+  {
+    "images": [],
+    "character_reference": [
+      "<image URL of classic butler>"
+    ],
+    "character_weight": 100,
+    "style_reference": [
+      "<image URL of sad painting>"
+    ],
+    "style_weight": 800,
+    "prompt": "A portrait of a melancholic robot butler"
+  }
+]======
+A surreal sculpture made of clockwork oranges and melting clocks --weird {500, 1500} --chaos 80 --stop {30, 70}
+[
+  {
+    "images": [],
+    "weird": 500,
+    "chaos": 80,
+    "stop": 30,
+    "prompt": "A surreal sculpture made of clockwork oranges and melting clocks"
+  },
+  {
+    "images": [],
+    "weird": 500,
+    "chaos": 80,
+    "stop": 70,
+    "prompt": "A surreal sculpture made of clockwork oranges and melting clocks"
+  },
+  {
+    "images": [],
+    "weird": 1500,
+    "chaos": 80,
+    "stop": 30,
+    "prompt": "A surreal sculpture made of clockwork oranges and melting clocks"
+  },
+  {
+    "images": [],
+    "weird": 1500,
+    "chaos": 80,
+    "stop": 70,
+    "prompt": "A surreal sculpture made of clockwork oranges and melting clocks"
+  }
+]======
+A vibrant California poppies image --aspect {5:4, 7:4} --chaos {10, 50} --quality {.5, 1} --seed {random, 4294967295}
+[
+  {
+    "images": [],
+    "chaos": 10,
+    "quality": 0.5,
+    "seed": "random",
+    "aspect_ratio": "5:4",
+    "prompt": "A vibrant California poppies image"
+  },
+  {
+    "images": [],
+    "chaos": 10,
+    "quality": 0.5,
+    "seed": 4294967295,
+    "aspect_ratio": "5:4",
+    "prompt": "A vibrant California poppies image"
+  },
+  {
+    "images": [],
+    "chaos": 10,
+    "quality": 1.0,
+    "seed": "random",
+    "aspect_ratio": "5:4",
+    "prompt": "A vibrant California poppies image"
+  },
+  {
+    "images": [],
+    "chaos": 10,
+    "quality": 1.0,
+    "seed": 4294967295,
+    "aspect_ratio": "5:4",
+    "prompt": "A vibrant California poppies image"
+  },
+  {
+    "images": [],
+    "chaos": 50,
+    "quality": 0.5,
+    "seed": "random",
+    "aspect_ratio": "5:4",
+    "prompt": "A vibrant California poppies image"
+  },
+  {
+    "images": [],
+    "chaos": 50,
+    "quality": 0.5,
+    "seed": 4294967295,
+    "aspect_ratio": "5:4",
+    "prompt": "A vibrant California poppies image"
+  },
+  {
+    "images": [],
+    "chaos": 50,
+    "quality": 1.0,
+    "seed": "random",
+    "aspect_ratio": "5:4",
+    "prompt": "A vibrant California poppies image"
+  },
+  {
+    "images": [],
+    "chaos": 50,
+    "quality": 1.0,
+    "seed": 4294967295,
+    "aspect_ratio": "5:4",
+    "prompt": "A vibrant California poppies image"
+  },
+  {
+    "images": [],
+    "chaos": 10,
+    "quality": 0.5,
+    "seed": "random",
+    "aspect_ratio": "7:4",
+    "prompt": "A vibrant California poppies image"
+  },
+  {
+    "images": [],
+    "chaos": 10,
+    "quality": 0.5,
+    "seed": 4294967295,
+    "aspect_ratio": "7:4",
+    "prompt": "A vibrant California poppies image"
+  },
+  {
+    "images": [],
+    "chaos": 10,
+    "quality": 1.0,
+    "seed": "random",
+    "aspect_ratio": "7:4",
+    "prompt": "A vibrant California poppies image"
+  },
+  {
+    "images": [],
+    "chaos": 10,
+    "quality": 1.0,
+    "seed": 4294967295,
+    "aspect_ratio": "7:4",
+    "prompt": "A vibrant California poppies image"
+  },
+  {
+    "images": [],
+    "chaos": 50,
+    "quality": 0.5,
+    "seed": "random",
+    "aspect_ratio": "7:4",
+    "prompt": "A vibrant California poppies image"
+  },
+  {
+    "images": [],
+    "chaos": 50,
+    "quality": 0.5,
+    "seed": 4294967295,
+    "aspect_ratio": "7:4",
+    "prompt": "A vibrant California poppies image"
+  },
+  {
+    "images": [],
+    "chaos": 50,
+    "quality": 1.0,
+    "seed": "random",
+    "aspect_ratio": "7:4",
+    "prompt": "A vibrant California poppies image"
+  },
+  {
+    "images": [],
+    "chaos": 50,
+    "quality": 1.0,
+    "seed": 4294967295,
+    "aspect_ratio": "7:4",
+    "prompt": "A vibrant California poppies image"
+  }
+]======
+A {continuous line, loose gestural} charcoal drawing of a value study of a cyborg geisha --stop 50 --q 0.5
+[
+  {
+    "images": [],
+    "stop": 50,
+    "quality": 0.5,
+    "prompt": "A continuous line charcoal drawing of a value study of a cyborg geisha"
+  },
+  {
+    "images": [],
+    "stop": 50,
+    "quality": 0.5,
+    "prompt": "A loose gestural charcoal drawing of a value study of a cyborg geisha"
+  }
+]======
+A {dreary, vibrant} cyberpunk cityscape --ar {16:9, 1:1} --style {raw, random} --chaos {0, 100}
+[
+  {
+    "images": [],
+    "style": "raw",
+    "chaos": 0,
+    "aspect_ratio": "16:9",
+    "prompt": "A dreary cyberpunk cityscape"
+  },
+  {
+    "images": [],
+    "style": "raw",
+    "chaos": 100,
+    "aspect_ratio": "16:9",
+    "prompt": "A dreary cyberpunk cityscape"
+  },
+  {
+    "images": [],
+    "style": "random",
+    "chaos": 0,
+    "aspect_ratio": "16:9",
+    "prompt": "A dreary cyberpunk cityscape"
+  },
+  {
+    "images": [],
+    "style": "random",
+    "chaos": 100,
+    "aspect_ratio": "16:9",
+    "prompt": "A dreary cyberpunk cityscape"
+  },
+  {
+    "images": [],
+    "style": "raw",
+    "chaos": 0,
+    "aspect_ratio": "1:1",
+    "prompt": "A dreary cyberpunk cityscape"
+  },
+  {
+    "images": [],
+    "style": "raw",
+    "chaos": 100,
+    "aspect_ratio": "1:1",
+    "prompt": "A dreary cyberpunk cityscape"
+  },
+  {
+    "images": [],
+    "style": "random",
+    "chaos": 0,
+    "aspect_ratio": "1:1",
+    "prompt": "A dreary cyberpunk cityscape"
+  },
+  {
+    "images": [],
+    "style": "random",
+    "chaos": 100,
+    "aspect_ratio": "1:1",
+    "prompt": "A dreary cyberpunk cityscape"
+  },
+  {
+    "images": [],
+    "style": "raw",
+    "chaos": 0,
+    "aspect_ratio": "16:9",
+    "prompt": "A vibrant cyberpunk cityscape"
+  },
+  {
+    "images": [],
+    "style": "raw",
+    "chaos": 100,
+    "aspect_ratio": "16:9",
+    "prompt": "A vibrant cyberpunk cityscape"
+  },
+  {
+    "images": [],
+    "style": "random",
+    "chaos": 0,
+    "aspect_ratio": "16:9",
+    "prompt": "A vibrant cyberpunk cityscape"
+  },
+  {
+    "images": [],
+    "style": "random",
+    "chaos": 100,
+    "aspect_ratio": "16:9",
+    "prompt": "A vibrant cyberpunk cityscape"
+  },
+  {
+    "images": [],
+    "style": "raw",
+    "chaos": 0,
+    "aspect_ratio": "1:1",
+    "prompt": "A vibrant cyberpunk cityscape"
+  },
+  {
+    "images": [],
+    "style": "raw",
+    "chaos": 100,
+    "aspect_ratio": "1:1",
+    "prompt": "A vibrant cyberpunk cityscape"
+  },
+  {
+    "images": [],
+    "style": "random",
+    "chaos": 0,
+    "aspect_ratio": "1:1",
+    "prompt": "A vibrant cyberpunk cityscape"
+  },
+  {
+    "images": [],
+    "style": "random",
+    "chaos": 100,
+    "aspect_ratio": "1:1",
+    "prompt": "A vibrant cyberpunk cityscape"
+  }
+]======
+A {Millennial Pink, Acid Green, Ebony} colored cat --s 250 --style random-16 --no monochrome
+[
+  {
+    "images": [],
+    "stylize": 250,
+    "style": "random-16",
+    "no": "monochrome",
+    "prompt": "A Millennial Pink colored cat"
+  },
+  {
+    "images": [],
+    "stylize": 250,
+    "style": "random-16",
+    "no": "monochrome",
+    "prompt": "A Acid Green colored cat"
+  },
+  {
+    "images": [],
+    "stylize": 250,
+    "style": "random-16",
+    "no": "monochrome",
+    "prompt": "A Ebony colored cat"
+  }
+]======
+A {pastel, blacklight} painting of a {determined, sleepy} sloth riding a unicorn through a {crystal forest, salt flat} --chaos 25
+[
+  {
+    "images": [],
+    "chaos": 25,
+    "prompt": "A pastel painting of a determined sloth riding a unicorn through a crystal forest"
+  },
+  {
+    "images": [],
+    "chaos": 25,
+    "prompt": "A pastel painting of a determined sloth riding a unicorn through a salt flat"
+  },
+  {
+    "images": [],
+    "chaos": 25,
+    "prompt": "A pastel painting of a sleepy sloth riding a unicorn through a crystal forest"
+  },
+  {
+    "images": [],
+    "chaos": 25,
+    "prompt": "A pastel painting of a sleepy sloth riding a unicorn through a salt flat"
+  },
+  {
+    "images": [],
+    "chaos": 25,
+    "prompt": "A blacklight painting of a determined sloth riding a unicorn through a crystal forest"
+  },
+  {
+    "images": [],
+    "chaos": 25,
+    "prompt": "A blacklight painting of a determined sloth riding a unicorn through a salt flat"
+  },
+  {
+    "images": [],
+    "chaos": 25,
+    "prompt": "A blacklight painting of a sleepy sloth riding a unicorn through a crystal forest"
+  },
+  {
+    "images": [],
+    "chaos": 25,
+    "prompt": "A blacklight painting of a sleepy sloth riding a unicorn through a salt flat"
+  }
+]======
+A {pixel art, acrylic pour} style cat --style random-128 --weird 1000 --no fur, whiskers
+[
+  {
+    "images": [],
+    "style": "random-128",
+    "weird": 1000,
+    "no": "fur, whiskers",
+    "prompt": "A pixel art style cat"
+  },
+  {
+    "images": [],
+    "style": "random-128",
+    "weird": 1000,
+    "no": "fur, whiskers",
+    "prompt": "A acrylic pour style cat"
+  }
+]======
+An impressionistic watercolor of a cat playing chess with a dog --ar 4:3 --s 50 --no board, pieces --style raw
+{
+  "images": [],
+  "stylize": 50,
+  "no": "board, pieces",
+  "style": "raw",
+  "aspect_ratio": "4:3",
+  "prompt": "An impressionistic watercolor of a cat playing chess with a dog"
+}======
+cheese:: cake:: painting multi-prompt --negative weight fruit::-.5 --version 4 --chaos 60
+{
+  "images": [],
+  "negative": "weight fruit::-.5",
+  "version": 4,
+  "chaos": 60,
+  "prompt": "cheese:: cake:: painting multi-prompt"
+}======
+Clockwork chicken --weird {750, 1750, 2750} --stylize {200, 600, 900} --ar {2:3, 3:2}
+[
+  {
+    "images": [],
+    "weird": 750,
+    "stylize": 200,
+    "aspect_ratio": "2:3",
+    "prompt": "Clockwork chicken"
+  },
+  {
+    "images": [],
+    "weird": 750,
+    "stylize": 200,
+    "aspect_ratio": "3:2",
+    "prompt": "Clockwork chicken"
+  },
+  {
+    "images": [],
+    "weird": 750,
+    "stylize": 600,
+    "aspect_ratio": "2:3",
+    "prompt": "Clockwork chicken"
+  },
+  {
+    "images": [],
+    "weird": 750,
+    "stylize": 600,
+    "aspect_ratio": "3:2",
+    "prompt": "Clockwork chicken"
+  },
+  {
+    "images": [],
+    "weird": 750,
+    "stylize": 900,
+    "aspect_ratio": "2:3",
+    "prompt": "Clockwork chicken"
+  },
+  {
+    "images": [],
+    "weird": 750,
+    "stylize": 900,
+    "aspect_ratio": "3:2",
+    "prompt": "Clockwork chicken"
+  },
+  {
+    "images": [],
+    "weird": 1750,
+    "stylize": 200,
+    "aspect_ratio": "2:3",
+    "prompt": "Clockwork chicken"
+  },
+  {
+    "images": [],
+    "weird": 1750,
+    "stylize": 200,
+    "aspect_ratio": "3:2",
+    "prompt": "Clockwork chicken"
+  },
+  {
+    "images": [],
+    "weird": 1750,
+    "stylize": 600,
+    "aspect_ratio": "2:3",
+    "prompt": "Clockwork chicken"
+  },
+  {
+    "images": [],
+    "weird": 1750,
+    "stylize": 600,
+    "aspect_ratio": "3:2",
+    "prompt": "Clockwork chicken"
+  },
+  {
+    "images": [],
+    "weird": 1750,
+    "stylize": 900,
+    "aspect_ratio": "2:3",
+    "prompt": "Clockwork chicken"
+  },
+  {
+    "images": [],
+    "weird": 1750,
+    "stylize": 900,
+    "aspect_ratio": "3:2",
+    "prompt": "Clockwork chicken"
+  },
+  {
+    "images": [],
+    "weird": 2750,
+    "stylize": 200,
+    "aspect_ratio": "2:3",
+    "prompt": "Clockwork chicken"
+  },
+  {
+    "images": [],
+    "weird": 2750,
+    "stylize": 200,
+    "aspect_ratio": "3:2",
+    "prompt": "Clockwork chicken"
+  },
+  {
+    "images": [],
+    "weird": 2750,
+    "stylize": 600,
+    "aspect_ratio": "2:3",
+    "prompt": "Clockwork chicken"
+  },
+  {
+    "images": [],
+    "weird": 2750,
+    "stylize": 600,
+    "aspect_ratio": "3:2",
+    "prompt": "Clockwork chicken"
+  },
+  {
+    "images": [],
+    "weird": 2750,
+    "stylize": 900,
+    "aspect_ratio": "2:3",
+    "prompt": "Clockwork chicken"
+  },
+  {
+    "images": [],
+    "weird": 2750,
+    "stylize": 900,
+    "aspect_ratio": "3:2",
+    "prompt": "Clockwork chicken"
+  }
+]======
+Cyanotype cat --weird {250, 1000, 2000} --stylize {100, 500, 1000} --chaos {10, 50, 90}
+[
+  {
+    "images": [],
+    "weird": 250,
+    "stylize": 100,
+    "chaos": 10,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 250,
+    "stylize": 100,
+    "chaos": 50,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 250,
+    "stylize": 100,
+    "chaos": 90,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 250,
+    "stylize": 500,
+    "chaos": 10,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 250,
+    "stylize": 500,
+    "chaos": 50,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 250,
+    "stylize": 500,
+    "chaos": 90,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 250,
+    "stylize": 1000,
+    "chaos": 10,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 250,
+    "stylize": 1000,
+    "chaos": 50,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 250,
+    "stylize": 1000,
+    "chaos": 90,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 1000,
+    "stylize": 100,
+    "chaos": 10,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 1000,
+    "stylize": 100,
+    "chaos": 50,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 1000,
+    "stylize": 100,
+    "chaos": 90,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 1000,
+    "stylize": 500,
+    "chaos": 10,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 1000,
+    "stylize": 500,
+    "chaos": 50,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 1000,
+    "stylize": 500,
+    "chaos": 90,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 1000,
+    "stylize": 1000,
+    "chaos": 10,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 1000,
+    "stylize": 1000,
+    "chaos": 50,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 1000,
+    "stylize": 1000,
+    "chaos": 90,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 2000,
+    "stylize": 100,
+    "chaos": 10,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 2000,
+    "stylize": 100,
+    "chaos": 50,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 2000,
+    "stylize": 100,
+    "chaos": 90,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 2000,
+    "stylize": 500,
+    "chaos": 10,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 2000,
+    "stylize": 500,
+    "chaos": 50,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 2000,
+    "stylize": 500,
+    "chaos": 90,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 2000,
+    "stylize": 1000,
+    "chaos": 10,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 2000,
+    "stylize": 1000,
+    "chaos": 50,
+    "prompt": "Cyanotype cat"
+  },
+  {
+    "images": [],
+    "weird": 2000,
+    "stylize": 1000,
+    "chaos": 90,
+    "prompt": "Cyanotype cat"
+  }
+]======
+Ice cream icon --niji {5, 6} --style {cute, expressive} --weird {250, 1000} --ar {1:1, 2:3}
+[
+  {
+    "images": [],
+    "version": "niji 5",
+    "style": "cute",
+    "weird": 250,
+    "aspect_ratio": "1:1",
+    "prompt": "Ice cream icon"
+  },
+  {
+    "images": [],
+    "version": "niji 5",
+    "style": "cute",
+    "weird": 250,
+    "aspect_ratio": "2:3",
+    "prompt": "Ice cream icon"
+  },
+  {
+    "images": [],
+    "version": "niji 5",
+    "style": "cute",
+    "weird": 1000,
+    "aspect_ratio": "1:1",
+    "prompt": "Ice cream icon"
+  },
+  {
+    "images": [],
+    "version": "niji 5",
+    "style": "cute",
+    "weird": 1000,
+    "aspect_ratio": "2:3",
+    "prompt": "Ice cream icon"
+  },
+  {
+    "images": [],
+    "version": "niji 5",
+    "style": "expressive",
+    "weird": 250,
+    "aspect_ratio": "1:1",
+    "prompt": "Ice cream icon"
+  },
+  {
+    "images": [],
+    "version": "niji 5",
+    "style": "expressive",
+    "weird": 250,
+    "aspect_ratio": "2:3",
+    "prompt": "Ice cream icon"
+  },
+  {
+    "images": [],
+    "version": "niji 5",
+    "style": "expressive",
+    "weird": 1000,
+    "aspect_ratio": "1:1",
+    "prompt": "Ice cream icon"
+  },
+  {
+    "images": [],
+    "version": "niji 5",
+    "style": "expressive",
+    "weird": 1000,
+    "aspect_ratio": "2:3",
+    "prompt": "Ice cream icon"
+  },
+  {
+    "images": [],
+    "version": "niji 6",
+    "style": "cute",
+    "weird": 250,
+    "aspect_ratio": "1:1",
+    "prompt": "Ice cream icon"
+  },
+  {
+    "images": [],
+    "version": "niji 6",
+    "style": "cute",
+    "weird": 250,
+    "aspect_ratio": "2:3",
+    "prompt": "Ice cream icon"
+  },
+  {
+    "images": [],
+    "version": "niji 6",
+    "style": "cute",
+    "weird": 1000,
+    "aspect_ratio": "1:1",
+    "prompt": "Ice cream icon"
+  },
+  {
+    "images": [],
+    "version": "niji 6",
+    "style": "cute",
+    "weird": 1000,
+    "aspect_ratio": "2:3",
+    "prompt": "Ice cream icon"
+  },
+  {
+    "images": [],
+    "version": "niji 6",
+    "style": "expressive",
+    "weird": 250,
+    "aspect_ratio": "1:1",
+    "prompt": "Ice cream icon"
+  },
+  {
+    "images": [],
+    "version": "niji 6",
+    "style": "expressive",
+    "weird": 250,
+    "aspect_ratio": "2:3",
+    "prompt": "Ice cream icon"
+  },
+  {
+    "images": [],
+    "version": "niji 6",
+    "style": "expressive",
+    "weird": 1000,
+    "aspect_ratio": "1:1",
+    "prompt": "Ice cream icon"
+  },
+  {
+    "images": [],
+    "version": "niji 6",
+    "style": "expressive",
+    "weird": 1000,
+    "aspect_ratio": "2:3",
+    "prompt": "Ice cream icon"
+  }
+]======
+image of a robot holding flowers --remix --prompt "A cyborg holding cybernetic orchids" --zoom 2x
+{
+  "images": [],
+  "remix": null,
+  "prompt": "image of a robot holding flowers",
+  "zoom": "2x"
+}======
+Imagine a {1400s, 1990s} cat --sref <image URL of medieval tapestry> --sv {1, 4} --ar 5:4
+[
+  {
+    "images": [],
+    "style_reference": [
+      "<image URL of medieval tapestry>"
+    ],
+    "style_version": 1,
+    "aspect_ratio": "5:4",
+    "prompt": "Imagine a 1400s cat"
+  },
+  {
+    "images": [],
+    "style_reference": [
+      "<image URL of medieval tapestry>"
+    ],
+    "style_version": 4,
+    "aspect_ratio": "5:4",
+    "prompt": "Imagine a 1400s cat"
+  },
+  {
+    "images": [],
+    "style_reference": [
+      "<image URL of medieval tapestry>"
+    ],
+    "style_version": 1,
+    "aspect_ratio": "5:4",
+    "prompt": "Imagine a 1990s cat"
+  },
+  {
+    "images": [],
+    "style_reference": [
+      "<image URL of medieval tapestry>"
+    ],
+    "style_version": 4,
+    "aspect_ratio": "5:4",
+    "prompt": "Imagine a 1990s cat"
+  }
+]======
+Lithograph potato --weird {500, 1500, 2500} --chaos {20, 60, 80} --quality {.5, 1}
+[
+  {
+    "images": [],
+    "weird": 500,
+    "chaos": 20,
+    "quality": 0.5,
+    "prompt": "Lithograph potato"
+  },
+  {
+    "images": [],
+    "weird": 500,
+    "chaos": 20,
+    "quality": 1.0,
+    "prompt": "Lithograph potato"
+  },
+  {
+    "images": [],
+    "weird": 500,
+    "chaos": 60,
+    "quality": 0.5,
+    "prompt": "Lithograph potato"
+  },
+  {
+    "images": [],
+    "weird": 500,
+    "chaos": 60,
+    "quality": 1.0,
+    "prompt": "Lithograph potato"
+  },
+  {
+    "images": [],
+    "weird": 500,
+    "chaos": 80,
+    "quality": 0.5,
+    "prompt": "Lithograph potato"
+  },
+  {
+    "images": [],
+    "weird": 500,
+    "chaos": 80,
+    "quality": 1.0,
+    "prompt": "Lithograph potato"
+  },
+  {
+    "images": [],
+    "weird": 1500,
+    "chaos": 20,
+    "quality": 0.5,
+    "prompt": "Lithograph potato"
+  },
+  {
+    "images": [],
+    "weird": 1500,
+    "chaos": 20,
+    "quality": 1.0,
+    "prompt": "Lithograph potato"
+  },
+  {
+    "images": [],
+    "weird": 1500,
+    "chaos": 60,
+    "quality": 0.5,
+    "prompt": "Lithograph potato"
+  },
+  {
+    "images": [],
+    "weird": 1500,
+    "chaos": 60,
+    "quality": 1.0,
+    "prompt": "Lithograph potato"
+  },
+  {
+    "images": [],
+    "weird": 1500,
+    "chaos": 80,
+    "quality": 0.5,
+    "prompt": "Lithograph potato"
+  },
+  {
+    "images": [],
+    "weird": 1500,
+    "chaos": 80,
+    "quality": 1.0,
+    "prompt": "Lithograph potato"
+  },
+  {
+    "images": [],
+    "weird": 2500,
+    "chaos": 20,
+    "quality": 0.5,
+    "prompt": "Lithograph potato"
+  },
+  {
+    "images": [],
+    "weird": 2500,
+    "chaos": 20,
+    "quality": 1.0,
+    "prompt": "Lithograph potato"
+  },
+  {
+    "images": [],
+    "weird": 2500,
+    "chaos": 60,
+    "quality": 0.5,
+    "prompt": "Lithograph potato"
+  },
+  {
+    "images": [],
+    "weird": 2500,
+    "chaos": 60,
+    "quality": 1.0,
+    "prompt": "Lithograph potato"
+  },
+  {
+    "images": [],
+    "weird": 2500,
+    "chaos": 80,
+    "quality": 0.5,
+    "prompt": "Lithograph potato"
+  },
+  {
+    "images": [],
+    "weird": 2500,
+    "chaos": 80,
+    "quality": 1.0,
+    "prompt": "Lithograph potato"
+  }
+]======
+space:: ship multi-prompt --stylize {250, 750} --weird 500
+[
+  {
+    "images": [],
+    "stylize": 250,
+    "weird": 500,
+    "prompt": "space:: ship multi-prompt"
+  },
+  {
+    "images": [],
+    "stylize": 750,
+    "weird": 500,
+    "prompt": "space:: ship multi-prompt"
+  }
+]======
+stream running through a redwood forest --vary region --selection "sky area" --prompt "aurora borealis" --pan up
+{
+  "images": [],
+  "vary": "region",
+  "selection": "sky area",
+  "prompt": "stream running through a redwood forest",
+  "pan": "up"
+}======
+Vibrant California poppies --version {5.2, 6, 6.1} --stylize {100, 500} --quality {1, 2}
+[
+  {
+    "images": [],
+    "version": 5.2,
+    "stylize": 100,
+    "quality": 1.0,
+    "prompt": "Vibrant California poppies"
+  },
+  {
+    "images": [],
+    "version": 5.2,
+    "stylize": 100,
+    "quality": 2.0,
+    "prompt": "Vibrant California poppies"
+  },
+  {
+    "images": [],
+    "version": 5.2,
+    "stylize": 500,
+    "quality": 1.0,
+    "prompt": "Vibrant California poppies"
+  },
+  {
+    "images": [],
+    "version": 5.2,
+    "stylize": 500,
+    "quality": 2.0,
+    "prompt": "Vibrant California poppies"
+  },
+  {
+    "images": [],
+    "version": 6,
+    "stylize": 100,
+    "quality": 1.0,
+    "prompt": "Vibrant California poppies"
+  },
+  {
+    "images": [],
+    "version": 6,
+    "stylize": 100,
+    "quality": 2.0,
+    "prompt": "Vibrant California poppies"
+  },
+  {
+    "images": [],
+    "version": 6,
+    "stylize": 500,
+    "quality": 1.0,
+    "prompt": "Vibrant California poppies"
+  },
+  {
+    "images": [],
+    "version": 6,
+    "stylize": 500,
+    "quality": 2.0,
+    "prompt": "Vibrant California poppies"
+  },
+  {
+    "images": [],
+    "version": 6.1,
+    "stylize": 100,
+    "quality": 1.0,
+    "prompt": "Vibrant California poppies"
+  },
+  {
+    "images": [],
+    "version": 6.1,
+    "stylize": 100,
+    "quality": 2.0,
+    "prompt": "Vibrant California poppies"
+  },
+  {
+    "images": [],
+    "version": 6.1,
+    "stylize": 500,
+    "quality": 1.0,
+    "prompt": "Vibrant California poppies"
+  },
+  {
+    "images": [],
+    "version": 6.1,
+    "stylize": 500,
+    "quality": 2.0,
+    "prompt": "Vibrant California poppies"
+  }
+]======
+{A flock, Three} of iridescent hummingbirds drinking nectar from {gigantic, miniature} orchids --q {0.25, 1} --repeat {2, 5}
+[
+  {
+    "images": [],
+    "quality": 0.25,
+    "repeat": 2,
+    "prompt": "A flock of iridescent hummingbirds drinking nectar from gigantic orchids"
+  },
+  {
+    "images": [],
+    "quality": 0.25,
+    "repeat": 5,
+    "prompt": "A flock of iridescent hummingbirds drinking nectar from gigantic orchids"
+  },
+  {
+    "images": [],
+    "quality": 1.0,
+    "repeat": 2,
+    "prompt": "A flock of iridescent hummingbirds drinking nectar from gigantic orchids"
+  },
+  {
+    "images": [],
+    "quality": 1.0,
+    "repeat": 5,
+    "prompt": "A flock of iridescent hummingbirds drinking nectar from gigantic orchids"
+  },
+  {
+    "images": [],
+    "quality": 0.25,
+    "repeat": 2,
+    "prompt": "A flock of iridescent hummingbirds drinking nectar from miniature orchids"
+  },
+  {
+    "images": [],
+    "quality": 0.25,
+    "repeat": 5,
+    "prompt": "A flock of iridescent hummingbirds drinking nectar from miniature orchids"
+  },
+  {
+    "images": [],
+    "quality": 1.0,
+    "repeat": 2,
+    "prompt": "A flock of iridescent hummingbirds drinking nectar from miniature orchids"
+  },
+  {
+    "images": [],
+    "quality": 1.0,
+    "repeat": 5,
+    "prompt": "A flock of iridescent hummingbirds drinking nectar from miniature orchids"
+  },
+  {
+    "images": [],
+    "quality": 0.25,
+    "repeat": 2,
+    "prompt": "Three of iridescent hummingbirds drinking nectar from gigantic orchids"
+  },
+  {
+    "images": [],
+    "quality": 0.25,
+    "repeat": 5,
+    "prompt": "Three of iridescent hummingbirds drinking nectar from gigantic orchids"
+  },
+  {
+    "images": [],
+    "quality": 1.0,
+    "repeat": 2,
+    "prompt": "Three of iridescent hummingbirds drinking nectar from gigantic orchids"
+  },
+  {
+    "images": [],
+    "quality": 1.0,
+    "repeat": 5,
+    "prompt": "Three of iridescent hummingbirds drinking nectar from gigantic orchids"
+  },
+  {
+    "images": [],
+    "quality": 0.25,
+    "repeat": 2,
+    "prompt": "Three of iridescent hummingbirds drinking nectar from miniature orchids"
+  },
+  {
+    "images": [],
+    "quality": 0.25,
+    "repeat": 5,
+    "prompt": "Three of iridescent hummingbirds drinking nectar from miniature orchids"
+  },
+  {
+    "images": [],
+    "quality": 1.0,
+    "repeat": 2,
+    "prompt": "Three of iridescent hummingbirds drinking nectar from miniature orchids"
+  },
+  {
+    "images": [],
+    "quality": 1.0,
+    "repeat": 5,
+    "prompt": "Three of iridescent hummingbirds drinking nectar from miniature orchids"
+  }
+]

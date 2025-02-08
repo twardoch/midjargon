@@ -1,19 +1,16 @@
-"""
-Midjourney engine for midjargon.
-"""
+#!/usr/bin/env python3
+# this_file: src/midjargon/engines/midjourney/__init__.py
 
-from midjargon.engines.midjourney.models import ImagePrompt, MidjourneyPrompt
-from midjargon.engines.midjourney.parser import MidjourneyParser
+from midjargon.engines.midjourney.midjourney import MidjourneyParser
 
-# Create a default parser instance
-_parser = MidjourneyParser()
 
-# Export the parse_dict function from the default parser
-parse_midjourney_dict = _parser.parse_dict
+class MidjourneyPrompt:
+    """Stub class for Midjourney prompt."""
 
-__all__ = [
-    "ImagePrompt",
-    "MidjourneyParser",
-    "MidjourneyPrompt",
-    "parse_midjourney_dict",
-]
+    def __init__(self, prompt: str = ""):
+        self.prompt = prompt
+
+
+def parse_midjourney_dict(prompt: str) -> dict:
+    """Stub function for converting a prompt to a dictionary."""
+    return {"prompt": prompt}

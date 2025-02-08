@@ -1,139 +1,114 @@
-"""
-parser.py
+#!/usr/bin/env python3
+# this_file: src/midjargon/core/parser.py
 
-Provides a simple, permissive parser that converts an expanded prompt (a MidjargonPrompt string)
-into a flat dictionary (MidjargonDict) with the following keys:
-  - "images": list of image URLs (extracted from the beginning of the prompt)
-  - "text": the main text of the prompt
-  - Additional keys for any parameters found (keys without the '--' prefix)
-
-This parser does not perform strict validation; it only tokenizes and groups values.
-"""
-
-import contextlib
 import re
-from typing import cast
+from typing import Any
+from urllib.parse import urlparse
 
+from pydantic import HttpUrl
+
+from midjargon.core.models import (
+    ImageReference,
+    MidjourneyParameters,
+    MidjourneyPrompt,
+)
 from midjargon.core.parameters import parse_parameters
-from midjargon.core.type_defs import MidjargonDict, MidjargonPrompt
 
 
-def split_text_and_parameters(text: str) -> tuple[str, str]:
-    """
-    Split text into main text and parameters at first non-nested --.
-
-    Args:
-        text: The text to split.
-
-    Returns:
-        Tuple of (main_text, parameter_text).
-        If no parameters are found, parameter_text will be empty.
-    """
-    i = 0
-    depth = 0
-    while i < len(text):
-        if text[i] == "{":
-            depth += 1
-        elif text[i] == "}":
-            depth -= 1
-        elif (
-            text[i : i + 2] == "--" and depth == 0 and (i == 0 or text[i - 1].isspace())
-        ):
-            return text[:i].strip(), text[i:]
-        i += 1
-    return text.strip(), ""
+def is_valid_image_url(url: str) -> bool:
+    """Check if a URL is a valid image URL."""
+    try:
+        result = urlparse(url)
+        return bool(
+            result.scheme
+            and result.netloc
+            and any(
+                result.path.lower().endswith(ext)
+                for ext in [".jpg", ".jpeg", ".png", ".gif", ".webp"]
+            )
+        )
+    except:
+        return False
 
 
-def parse_image_urls(tokens: list[str]) -> tuple[list[str], list[str]]:
-    """
-    Extract image URLs from the start of tokens.
+def extract_image_urls(prompt: str) -> tuple[list[ImageReference], str]:
+    """Extract image URLs from a prompt string.
 
     Args:
-        tokens: List of tokens from prompt text.
+        prompt: Raw prompt string.
 
     Returns:
-        Tuple of (image_urls, remaining_tokens).
-        Image URLs are extracted from the start of tokens until a non-URL token is found.
+        Tuple of (list of ImageReference objects, remaining text).
     """
-    urls = []
-    i = 0
+    if isinstance(prompt, str):
+        matches = re.finditer(r"(https?://\S+)", prompt)
+        images = []
+        last_end = 0
+        remaining_parts = []
 
-    url_pattern = re.compile(
-        r"^https?://[^\s/$.?#].[^\s]*\.(jpg|jpeg|png|gif|webp)$", re.IGNORECASE
-    )
+        for match in matches:
+            start, end = match.span()
+            remaining_parts.append(prompt[last_end:start])
+            url = match.group(1)
+            images.append(ImageReference(url=HttpUrl(url)))
+            last_end = end
 
-    # Extract URLs from start of tokens
-    while i < len(tokens):
-        token = tokens[i]
-        if url_pattern.match(token):
-            urls.append(token)
-            i += 1
-        else:
-            break
-
-    return urls, tokens[i:]
+        remaining_parts.append(prompt[last_end:])
+        remaining_text = " ".join(
+            part.strip() for part in remaining_parts if part.strip()
+        )
+        return images, remaining_text
+    else:
+        return getattr(prompt, "images", []), str(prompt)
 
 
-def parse_midjargon_prompt_to_dict(expanded_prompt: MidjargonPrompt) -> MidjargonDict:
-    """
-    Parse an expanded prompt into a dictionary format.
-    Handles URL extraction and parameter parsing.
+def parse_midjargon_prompt_to_dict(prompt: str) -> dict[str, Any]:
+    """Parse a Midjourney prompt into a dictionary.
 
     Args:
-        expanded_prompt: Expanded prompt string.
+        prompt: The raw prompt string to parse.
 
     Returns:
-        Dictionary containing parsed prompt components.
+        Dictionary representation of the prompt.
     """
-    # Extract URLs and text
-    urls = []
-    text_parts = []
+    parsed = parse_midjargon_prompt(prompt)
+    return parsed.model_dump()
 
-    parts = expanded_prompt.split()
-    for part in parts:
-        if part.startswith(("http://", "https://")):
-            urls.append(part)
-        else:
-            text_parts.append(part)
 
-    # Join remaining parts as text, preserving original spacing
-    text_part = " ".join(text_parts)
+def parse_midjargon_prompt(prompt: str) -> MidjourneyPrompt:
+    """Parse a Midjourney prompt into a validated MidjourneyPrompt object.
 
-    # Find where parameters start (if any)
-    param_part = ""
-    if "--" in text_part:
-        text_split = text_part.split("--", 1)
-        text_part = text_split[0].strip()
-        param_part = "--" + text_split[1]
+    Args:
+        prompt: The raw prompt string to parse.
 
-    # Parse parameters using the consolidated parameter parsing logic
-    params = parse_parameters(param_part) if param_part.startswith("--") else {}
+    Returns:
+        A validated MidjourneyPrompt object.
 
-    # Convert numeric values
-    numeric_params = {
-        "stylize": int,
-        "chaos": int,
-        "weird": int,
-        "image_weight": float,
-        "seed": int,
-        "stop": int,
-        "quality": float,
-        "repeat": int,
-        "character_weight": int,
-        "style_weight": int,
-        "style_version": int,
-    }
+    Raises:
+        ValueError: If the prompt is invalid or missing required components.
+    """
+    # Extract image URLs
+    images, remaining_text = extract_image_urls(prompt)
 
-    for param, converter in numeric_params.items():
-        if param in params and params[param] is not None:
-            with contextlib.suppress(ValueError, TypeError):
-                params[param] = converter(params[param])
+    # Split into text and parameters
+    if " --" in remaining_text:
+        text_part, param_part = remaining_text.split(" --", 1)
+        text_part = text_part.strip()
+        param_str = "--" + param_part.strip()
+        try:
+            parameters = parse_parameters(param_str)
+        except Exception as e:
+            msg = f"Failed to parse parameters: {e!s}"
+            raise ValueError(msg)
+    else:
+        text_part = remaining_text.strip()
+        parameters = {}
 
-    # Build the dictionary according to the specification
-    result = {
-        "images": urls,
-        "text": text_part,
-        **params,  # Merge additional parameters directly into the dict
-    }
-
-    return cast(MidjargonDict, result)
+    # Create and validate the prompt object
+    try:
+        return MidjourneyPrompt(
+            text=text_part, images=images, parameters=MidjourneyParameters(**parameters)
+        )
+    except Exception as e:
+        msg = f"Failed to create prompt object: {e!s}"
+        raise ValueError(msg)

@@ -1,3 +1,4 @@
+# this_file: tests/core/test_parser.py
 """Tests for prompt parsing functionality."""
 
 from midjargon.core.parser import parse_midjargon_prompt_to_dict

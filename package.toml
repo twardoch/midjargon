@@ -1,4 +1,5 @@
 # Package configuration
+# this_file: package.toml
 [package]
 include_cli = true      # Include CLI boilerplate
 include_logging = true  # Include logging setup

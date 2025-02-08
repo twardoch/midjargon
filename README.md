@@ -1,3 +1,7 @@
+---
+this_file: README.md
+---
+
 # Midjargon
 
 `midjargon` is a powerful Python library designed to simplify the parsing and manipulation of Midjourney-style prompts. 
@@ -110,68 +114,7 @@ midjargon perm "a {red, blue} bird on a tree"
 
 ## Project Structure
 
-```
-.
-├── LICENSE                    # MIT license
-├── README.md                  # Project introduction and documentation
-├── TODO.md                    # Task list to clear before release
-├── TODO2.md                   # Additional tasks and feature proposals
-├── dist                       # Distribution files
-├── docs                       # Project documentation
-│   ├── midjourney-docs.md      # Original Midjourney documentation
-│   ├── refactoring-ideas.md    # Ideas for refactoring and improvements
-│   └── specification.md        # Detailed prompt syntax specification
-├── package.toml               # Hatch project configuration
-├── pyproject.toml             # Python project configuration
-├── pytest.ini                 # Pytest configuration
-├── uv.lock                    # UV dependency lock file
-├── src                        # Source code
-│   └── midjargon
-│       ├── __init__.py
-│       ├── __main__.py        # CLI entry point (Fire-based)
-│       ├── cli
-│       │   ├── __init__.py
-│       │   └── main.py        # CLI command definitions
-│       ├── core
-│       │   ├── __init__.py
-│       │   ├── converter.py     # Conversion utilities for prompts
-│       │   ├── input.py         # Input processing and permutation expansion
-│       │   ├── parameters.py    # Parsing and validation of parameters
-│       │   ├── parser.py        # Basic prompt parsing into dictionaries
-│       │   ├── permutations.py  # Permutation expansion logic
-│       │   └── type_defs.py     # Type definitions for midjargon
-│       └── engines
-│           ├── __init__.py
-│           ├── base.py          # Abstract base for engine-specific converters
-│           ├── fal            # Fal.ai engine implementation
-│           │   ├── __init__.py
-│           │   └── converter.py   # Conversion of Midjargon dict to Fal.ai format
-│           └── midjourney     # Midjourney engine implementation
-│               ├── __init__.py
-│               ├── constants.py   # Parameter constraints and defaults
-│               ├── models.py      # Pydantic models for Midjourney prompts
-│               └── parser.py      # Engine-specific parsing logic
-└── tests                      # Test suite for midjargon
-    ├── cli
-    │   ├── __init__.py
-    │   └── test_main.py       # CLI tests
-    ├── conftest.py
-    ├── core
-    │   ├── __init__.py
-    │   ├── test_input.py      # Tests for input handling
-    │   ├── test_parameters.py # Tests for parameter parsing
-    │   └── test_permutations.py # Tests for permutation expansion
-    ├── engines
-    │   ├── __init__.py
-    │   ├── midjourney
-    │   │   ├── __init__.py
-    │   │   └── test_parser.py  # Tests for Midjourney parser
-    │   └── test_base.py       # Tests for engine base functionality
-    ├── integration
-    │   └── test_workflow.py   # Integration tests for full prompt processing
-    ├── test_package.py        # Package interface tests
-    └── tests                # Additional tests
-```
+TODO: Add a file tree
 
 ## Contributing
 

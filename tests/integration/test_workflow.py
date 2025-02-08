@@ -1,3 +1,4 @@
+# this_file: tests/integration/test_workflow.py
 """Integration tests for complete midjargon workflow."""
 
 import sys
