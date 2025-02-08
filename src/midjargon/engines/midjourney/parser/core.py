@@ -31,6 +31,7 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             "stop": 100,
             "aspect_width": 1,
             "aspect_height": 1,
+            "aspect_ratio": "1:1",
             "style": None,
             "version": None,
             "personalization": False,
@@ -103,14 +104,16 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             msg = f"Invalid aspect ratio: {aspect_value} - values must be positive"
             raise ValueError(msg)
 
+        # Store both formats
         prompt_data["aspect_width"] = width
         prompt_data["aspect_height"] = height
-        prompt_data["aspect"] = f"{width}:{height}"
+        prompt_data["aspect_ratio"] = f"{width}:{height}"
 
-        # Also set the aspect ratio in the original dict for consistency
-        midjargon_dict["aspect"] = f"{width}:{height}"
-        midjargon_dict["aspect_width"] = width
-        midjargon_dict["aspect_height"] = height
+        # Store decomposed values in extra_params for reference
+        if "extra_params" not in prompt_data:
+            prompt_data["extra_params"] = {}
+        prompt_data["extra_params"]["aspect_width"] = str(width)
+        prompt_data["extra_params"]["aspect_height"] = str(height)
 
     def _process_version(
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
@@ -442,61 +445,52 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         return result
 
     def _format_aspect_ratio(self, width: int, height: int) -> dict[str, str]:
-        """Format aspect ratio for dictionary output.
-
-        Args:
-            width: Aspect ratio width.
-            height: Aspect ratio height.
-
-        Returns:
-            Dictionary with aspect ratio.
-        """
-        # Always include aspect ratio in output
-        return {"aspect": f"{width}:{height}"}
-
-    def to_dict(self, prompt: MidjourneyPrompt) -> dict[str, Any]:
-        """Convert a MidjourneyPrompt back to a dictionary.
-
-        Args:
-            prompt: MidjourneyPrompt instance.
-
-        Returns:
-            Dictionary representation.
-        """
-        result: dict[str, Any] = {
-            "text": prompt.text,
-            "images": [p.url for p in prompt.image_prompts],
+        """Format aspect ratio parameter."""
+        if width == 1 and height == 1:
+            return {}
+        return {
+            "--ar": f"{width}:{height}",
+            "--aspect_width": str(width),
+            "--aspect_height": str(height),
         }
 
-        # Add numeric parameters
-        result.update(self._format_numeric_params(prompt))
+    def to_dict(self, prompt: MidjourneyPrompt) -> dict[str, Any]:
+        """Convert prompt to dictionary format."""
+        result = {
+            "text": prompt.text,
+            "image_prompts": [ip.url for ip in prompt.image_prompts],
+            "stylize": prompt.stylize,
+            "chaos": prompt.chaos,
+            "weird": prompt.weird,
+            "image_weight": prompt.image_weight,
+            "seed": prompt.seed,
+            "stop": prompt.stop,
+            "aspect_width": prompt.aspect_width,
+            "aspect_height": prompt.aspect_height,
+            "aspect_ratio": f"{prompt.aspect_width}:{prompt.aspect_height}",
+            "style": prompt.style,
+            "version": prompt.version,
+            "personalization": prompt.personalization,
+            "quality": prompt.quality,
+            "character_reference": prompt.character_reference,
+            "character_weight": prompt.character_weight,
+            "style_reference": prompt.style_reference,
+            "style_weight": prompt.style_weight,
+            "style_version": prompt.style_version,
+            "repeat": prompt.repeat,
+            "turbo": prompt.turbo,
+            "relax": prompt.relax,
+            "tile": prompt.tile,
+            "negative_prompt": prompt.negative_prompt,
+            "extra_params": {
+                "aspect_width": str(prompt.aspect_width),
+                "aspect_height": str(prompt.aspect_height),
+                **prompt.extra_params,
+            },
+        }
 
-        # Add aspect ratio
-        result.update(
-            self._format_aspect_ratio(prompt.aspect_width, prompt.aspect_height)
-        )
-
-        # Add style
-        if prompt.style:
-            result["style"] = prompt.style
-
-        # Add version
-        result.update(self._format_version(prompt.version))
-
-        # Add references
-        result.update(self._format_references(prompt))
-
-        # Add flags
-        result.update(self._format_flags(prompt))
-
-        # Add negative prompt
-        if prompt.negative_prompt is not None:
-            result["no"] = prompt.negative_prompt
-
-        # Add extra parameters
-        result.update(prompt.extra_params)
-
-        return result
+        # Remove None values
+        return {k: v for k, v in result.items() if v is not None}
 
     def _parse_dict(self, midjargon_dict: MidjargonDict) -> MidjourneyPrompt:
         """Parse a dictionary into a MidjourneyPrompt object.

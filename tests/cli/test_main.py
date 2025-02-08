@@ -198,7 +198,7 @@ def test_personalization_parameter(cli):
         sys.stdout = sys.__stdout__
         data = parse_json_output(capture_stdout)
     assert isinstance(data, dict)
-    assert data["personalization"] == '"CODE1 CODE2"'
+    assert data["personalization"] == "CODE1 CODE2"
 
 
 def test_numeric_range_permutations(cli):

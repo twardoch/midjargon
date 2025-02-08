@@ -94,9 +94,10 @@ class MidjourneyPrompt(BaseModel):
     seed: int | None = Field(default=None, ge=SEED_RANGE[0], le=SEED_RANGE[1])
     stop: int | None = Field(default=DEFAULT_STOP, ge=STOP_RANGE[0], le=STOP_RANGE[1])
 
-    # Aspect ratio as separate width/height, initialized from DEFAULT_ASPECT_RATIO
+    # Aspect ratio parameters
     aspect_width: int = Field(default=1, gt=0)
     aspect_height: int = Field(default=1, gt=0)
+    aspect_ratio: str = Field(default=DEFAULT_ASPECT_RATIO)
 
     # Style parameters
     style: str | None = Field(default=None)  # raw, cute, expressive, etc.
@@ -187,12 +188,21 @@ class MidjourneyPrompt(BaseModel):
 
     @model_validator(mode="after")
     def parse_aspect_ratio(self) -> Any:
-        """Parse default aspect ratio if not set."""
-        if self.aspect_width == 1 and self.aspect_height == 1:
+        """Parse and validate aspect ratio."""
+        # If aspect_ratio is provided, parse it and update width/height
+        if ":" in self.aspect_ratio:
             try:
-                width, height = DEFAULT_ASPECT_RATIO.split(":")
+                width, height = self.aspect_ratio.split(":")
                 self.aspect_width = int(width)
                 self.aspect_height = int(height)
             except (ValueError, AttributeError):
-                pass  # Keep defaults if parsing fails
+                # If parsing fails, use the default
+                width, height = DEFAULT_ASPECT_RATIO.split(":")
+                self.aspect_width = int(width)
+                self.aspect_height = int(height)
+                self.aspect_ratio = DEFAULT_ASPECT_RATIO
+        else:
+            # If no valid aspect_ratio, construct it from width/height
+            self.aspect_ratio = f"{self.aspect_width}:{self.aspect_height}"
+
         return self
