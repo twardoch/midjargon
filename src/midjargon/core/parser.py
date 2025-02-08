@@ -12,10 +12,34 @@ This parser does not perform strict validation; it only tokenizes and groups val
 
 import contextlib
 import re
+from dataclasses import dataclass
 from typing import cast
 
 from midjargon.core.parameters import parse_parameters
 from midjargon.core.type_defs import MidjargonDict, MidjargonPrompt
+
+
+@dataclass
+class TextPart:
+    """Represents a part of text with its whitespace."""
+
+    text: str
+    leading_space: str = ""
+    trailing_space: str = ""
+
+
+def unescape_text(text: str) -> str:
+    """Remove escape characters while preserving intended characters."""
+    # Replace escaped braces and commas with temporary markers
+    text = text.replace(r"\{", "\x00").replace(r"\}", "\x01").replace(r"\,", "\x02")
+
+    # Remove other escape characters
+    text = re.sub(r"\\(.)", r"\1", text)
+
+    # Restore escaped characters
+    text = text.replace("\x00", "{").replace("\x01", "}").replace("\x02", ",")
+
+    return text
 
 
 def split_text_and_parameters(text: str) -> tuple[str, str]:
@@ -39,9 +63,9 @@ def split_text_and_parameters(text: str) -> tuple[str, str]:
         elif (
             text[i : i + 2] == "--" and depth == 0 and (i == 0 or text[i - 1].isspace())
         ):
-            return text[:i].strip(), text[i:]
+            return text[:i].rstrip(), text[i:]
         i += 1
-    return text.strip(), ""
+    return text.rstrip(), ""
 
 
 def parse_image_urls(tokens: list[str]) -> tuple[list[str], list[str]]:
@@ -74,6 +98,78 @@ def parse_image_urls(tokens: list[str]) -> tuple[list[str], list[str]]:
     return urls, tokens[i:]
 
 
+def parse_text_parts(text: str) -> list[TextPart]:
+    """Parse text into parts while preserving whitespace."""
+    parts = []
+    current = ""
+    leading_space = ""
+    i = 0
+
+    while i < len(text):
+        # Handle whitespace
+        if text[i].isspace():
+            if not current:
+                leading_space += text[i]
+            else:
+                current += text[i]
+            i += 1
+            continue
+
+        # Handle regular characters
+        if text[i] not in "{}":
+            current += text[i]
+            i += 1
+            continue
+
+        # Handle braces
+        if text[i] == "{":
+            # Add current part if any
+            if current:
+                trailing_space = ""
+                while current and current[-1].isspace():
+                    trailing_space = current[-1] + trailing_space
+                    current = current[:-1]
+                if current:
+                    parts.append(TextPart(current, leading_space, trailing_space))
+                leading_space = trailing_space
+                current = ""
+
+            # Find matching closing brace
+            depth = 1
+            j = i + 1
+            while j < len(text) and depth > 0:
+                if text[j] == "{":
+                    depth += 1
+                elif text[j] == "}":
+                    depth -= 1
+                j += 1
+
+            if depth == 0:  # Found matching brace
+                brace_content = text[i:j]
+                if brace_content == "{}":  # Empty permutation
+                    i = j
+                    continue
+                current = brace_content
+                i = j
+            else:  # No matching brace
+                current += text[i]
+                i += 1
+        else:  # Closing brace without matching open
+            current += text[i]
+            i += 1
+
+    # Add final part
+    if current:
+        trailing_space = ""
+        while current and current[-1].isspace():
+            trailing_space = current[-1] + trailing_space
+            current = current[:-1]
+        if current:
+            parts.append(TextPart(current, leading_space, trailing_space))
+
+    return parts
+
+
 def parse_midjargon_prompt_to_dict(expanded_prompt: MidjargonPrompt) -> MidjargonDict:
     """
     Parse an expanded prompt into a dictionary format.
@@ -89,22 +185,26 @@ def parse_midjargon_prompt_to_dict(expanded_prompt: MidjargonPrompt) -> Midjargo
     urls = []
     text_parts = []
 
+    # First pass: extract URLs
     parts = expanded_prompt.split()
+    url_pattern = re.compile(
+        r"^https?://[^\s/$.?#].[^\s]*\.(jpg|jpeg|png|gif|webp)$", re.IGNORECASE
+    )
+
     for part in parts:
-        if part.startswith(("http://", "https://")):
+        if url_pattern.match(part):
             urls.append(part)
         else:
             text_parts.append(part)
 
-    # Join remaining parts as text, preserving original spacing
+    # Rejoin text parts and split into text and parameters
     text_part = " ".join(text_parts)
+    main_text, param_part = split_text_and_parameters(text_part)
 
-    # Find where parameters start (if any)
-    param_part = ""
-    if "--" in text_part:
-        text_split = text_part.split("--", 1)
-        text_part = text_split[0].strip()
-        param_part = "--" + text_split[1]
+    # Handle escaped characters and empty permutations
+    main_text = unescape_text(main_text)
+    main_text = re.sub(r"\{\s*\}", "", main_text)  # Remove empty permutations
+    main_text = re.sub(r"\s+", " ", main_text).strip()  # Normalize whitespace
 
     # Parse parameters using the consolidated parameter parsing logic
     params = parse_parameters(param_part) if param_part.startswith("--") else {}
@@ -132,7 +232,7 @@ def parse_midjargon_prompt_to_dict(expanded_prompt: MidjargonPrompt) -> Midjargo
     # Build the dictionary according to the specification
     result = {
         "images": urls,
-        "text": text_part,
+        "text": main_text,
         **params,  # Merge additional parameters directly into the dict
     }
 
