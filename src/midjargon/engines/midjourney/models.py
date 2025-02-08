@@ -101,7 +101,7 @@ class MidjourneyPrompt(BaseModel):
     # Style parameters
     style: str | None = Field(default=None)  # raw, cute, expressive, etc.
     version: str | None = Field(default=None)  # v5, v6, niji, etc.
-    personalization: bool | list[str] = Field(
+    personalization: bool | list[str] | None = Field(
         default=False
     )  # Profile IDs or codes for --p parameter
 
@@ -135,7 +135,7 @@ class MidjourneyPrompt(BaseModel):
     negative_prompt: str | None = Field(default=None)
 
     # Store any unknown parameters
-    extra_params: dict[str, Any] = Field(default_factory=dict)
+    extra_params: dict[str, str | None] = Field(default_factory=dict)
 
     @field_validator("text")
     @classmethod
@@ -176,58 +176,6 @@ class MidjourneyPrompt(BaseModel):
             msg = f"Invalid version value. Must be one of: {VALID_VERSIONS}"
             raise ValueError(msg)
         return v  # Return original value to preserve 'v' prefix
-
-    @field_validator("personalization", mode="before")
-    @classmethod
-    def validate_personalization(cls, v: Any) -> bool | list[str]:
-        """Validate personalization field."""
-        if v is None or v == "":
-            return True
-        if isinstance(v, bool):
-            return v
-        if isinstance(v, list):
-            if not v:
-                return False
-            # Convert all items to strings and handle potential string representations
-            cleaned = []
-            for item in v:
-                if isinstance(item, str):
-                    # Remove quotes and extra whitespace
-                    item = item.strip().strip("'\"")
-                    if item.startswith("[") and item.endswith("]"):
-                        try:
-                            # Try to parse as a list
-                            import ast
-
-                            parsed = ast.literal_eval(item)
-                            if isinstance(parsed, list):
-                                cleaned.extend(
-                                    str(i).strip().strip("'\"") for i in parsed
-                                )
-                                continue
-                        except (ValueError, SyntaxError):
-                            pass
-                    cleaned.append(item)
-                else:
-                    cleaned.append(str(item))
-            return cleaned
-        # Handle string that might contain multiple codes
-        if isinstance(v, str):
-            v = v.strip().strip("'\"")
-            if v.startswith("[") and v.endswith("]"):
-                try:
-                    import ast
-
-                    parsed = ast.literal_eval(v)
-                    if isinstance(parsed, list):
-                        return [str(item).strip().strip("'\"") for item in parsed]
-                except (ValueError, SyntaxError):
-                    pass
-            # Split on whitespace if not a list representation
-            if " " in v:
-                return v  # Keep the original string with spaces
-            return [v]
-        return [str(v)]
 
     @model_validator(mode="after")
     def validate_mode_flags(self) -> Any:

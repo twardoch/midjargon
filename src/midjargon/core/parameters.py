@@ -6,11 +6,11 @@ This module provides a unified interface for parameter handling,
 supporting both raw string parsing and structured parameter handling.
 """
 
-from typing import TypeAlias, Union
+from typing import TypeAlias
 
 # Type aliases for clarity
 ParamName: TypeAlias = str
-ParamValue: TypeAlias = Union[str, list[str], None, bool, int, float]
+ParamValue: TypeAlias = str | list[str] | None
 ParamDict: TypeAlias = dict[ParamName, ParamValue]
 
 # Common parameter shortcuts
@@ -80,8 +80,6 @@ def validate_param_value(name: str, value: ParamValue) -> None:
     """
     if value is None:
         return
-    if isinstance(value, bool):
-        return
 
     # Handle list values
     if isinstance(value, list):
@@ -106,18 +104,7 @@ def validate_param_value(name: str, value: ParamValue) -> None:
         "stop",
     }:
         try:
-            if isinstance(value, str):
-                if value.strip().isdigit():
-                    int(value)
-                elif "." in value:
-                    float(value)
-                elif "," in value:  # Handle numeric permutations
-                    for v in value.split(","):
-                        v = v.strip()
-                        if v.isdigit():
-                            int(v)
-                        elif "." in v:
-                            float(v)
+            float(value)
         except ValueError as e:
             msg = f"Invalid numeric value for {name}: {value}"
             raise ValueError(msg) from e
@@ -176,10 +163,6 @@ def process_param_value(values: list[str]) -> str | None:
     # Handle version parameter
     elif result.startswith("v") and result[1:].replace(".", "").isdigit():
         result = result[1:]  # Strip 'v' prefix for version numbers
-    # Handle aspect ratio
-    elif ":" in result and all(part.strip().isdigit() for part in result.split(":")):
-        width, height = map(int, result.split(":"))
-        return f"{width}:{height}"
     # Handle reference files
     elif "," in result and any(
         ext in result.lower() for ext in (".jpg", ".jpeg", ".png", ".gif")
@@ -217,7 +200,6 @@ def _expand_param_name(name: str) -> str:
         "cref": "character_reference",
         "sref": "style_reference",
         "no": "no",  # Keep no as is
-        "r": "repeat",
     }
     return shorthand_map.get(name, name)
 
@@ -347,15 +329,12 @@ def _process_current_param(
 
     # Special handling for personalization parameter
     if expanded_name == "personalization":
-        if not current_values or all(
-            v.strip() == "" for v in current_values if isinstance(v, str)
-        ):
-            params[expanded_name] = None
+        if not current_values:
+            params[expanded_name] = None  # None for flag usage
             return
-        if len(current_values) == 1:
-            params[expanded_name] = current_values[0]
-        else:
-            params[expanded_name] = current_values
+        value = process_param_value(current_values)
+        validate_param_value(expanded_name, value)
+        params[expanded_name] = value
         return
 
     # Regular parameter handling

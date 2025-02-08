@@ -449,11 +449,10 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             height: Aspect ratio height.
 
         Returns:
-            Dictionary with aspect ratio if non-default.
+            Dictionary with aspect ratio.
         """
-        if width != 1 or height != 1:
-            return {"aspect": f"{width}:{height}"}
-        return {}
+        # Always include aspect ratio in output
+        return {"aspect": f"{width}:{height}"}
 
     def to_dict(self, prompt: MidjourneyPrompt) -> dict[str, Any]:
         """Convert a MidjourneyPrompt back to a dictionary.

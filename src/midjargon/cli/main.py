@@ -12,15 +12,12 @@ Supports both raw parsing and Midjourney-specific validation.
 """
 
 import json
-import re
 import sys
 from typing import Any, NoReturn
 
-import fire  # type: ignore
-from rich.ansi import AnsiDecoder
-from rich.console import Console, Group
+import fire
+from rich.console import Console
 from rich.panel import Panel
-from rich.theme import Theme
 from rich.traceback import install
 
 from midjargon.core.converter import (
@@ -29,19 +26,9 @@ from midjargon.core.converter import (
     to_fal_dicts,
     to_midjourney_prompts,
 )
-from midjargon.engines.midjourney.models import MidjourneyPrompt
 
+# Install rich traceback handler
 install(show_locals=True)
-ansi_decoder = AnsiDecoder()
-console = Console(theme=Theme({"prompt": "cyan", "question": "bold cyan"}))
-
-
-def display(lines, out):
-    console.print(Group(*map(ansi_decoder.decode_line, lines)))
-
-
-# Monkey patch fire's Display function
-fire.Display = display  # type: ignore
 
 
 def _handle_error(console: Console, error: Exception) -> NoReturn:
@@ -73,7 +60,7 @@ class MidjargonCLI:
         *,
         json_output: bool = False,
         no_color: bool = False,
-    ) -> list[str] | None:
+    ) -> None:
         """
         Permute a prompt string, expanding all permutation markers.
 
@@ -85,9 +72,6 @@ class MidjargonCLI:
         Example prompts:
             "A {red, blue, green} bird on a {branch, rock}"
             "elephant {, --s {200, 300}}"
-
-        Returns:
-            List of permuted prompts if successful, None if error occurs.
         """
         console = Console(force_terminal=not no_color)
 
@@ -96,20 +80,23 @@ class MidjargonCLI:
 
             if json_output:
                 _output_json(results)
-            else:
-                for i, result in enumerate(results, 1):
-                    if len(results) > 1:
-                        console.print(f"\nVariant {i}:", style="bold blue")
-                    console.print(Panel(_format_prompt(result)))
+                return
 
-            return results
+            for i, result in enumerate(results, 1):
+                if len(results) > 1:
+                    console.print(f"\nVariant {i}:", style="bold blue")
+                console.print(Panel(result))
 
-        except (ValueError, TypeError, SyntaxError) as error:
+        except (
+            ValueError,
+            TypeError,
+            SyntaxError,
+        ) as error:  # More specific exceptions
             if json_output:
                 _output_json({"error": str(error)})
+                sys.exit(1)
             else:
                 _handle_error(console, error)
-            return None
 
     def json(
         self,
@@ -117,7 +104,7 @@ class MidjargonCLI:
         *,
         json_output: bool = True,
         no_color: bool = False,
-    ) -> Any | None:
+    ) -> None:
         """
         Parse a prompt into MidjargonDict format.
 
@@ -129,9 +116,6 @@ class MidjargonCLI:
         Example prompts:
             "A portrait of a wise old man --style raw --v 5.1"
             "A {red, blue, green} bird on a {branch, rock} --ar 16:9"
-
-        Returns:
-            Parsed prompt data if successful, None if error occurs.
         """
         console = Console(force_terminal=not no_color)
 
@@ -143,46 +127,28 @@ class MidjargonCLI:
             if isinstance(results, list) and len(results) == 1:
                 results = results[0]
 
-            # Add computed fields for aspect ratio and handle numeric parameters
-            if isinstance(results, list):
-                for result in results:
-                    if "aspect_width" in result and "aspect_height" in result:
-                        result["aspect"] = (
-                            f"{result['aspect_width']}:{result['aspect_height']}"
-                        )
-                    # Ensure numeric parameters are strings and not in text
-                    if "text" in result and isinstance(result["text"], str):
-                        result["text"] = re.sub(
-                            r"\s+\d+\s*$", "", result["text"]
-                        ).strip()
-            elif isinstance(results, dict):
-                if "aspect_width" in results and "aspect_height" in results:
-                    results["aspect"] = (
-                        f"{results['aspect_width']}:{results['aspect_height']}"
-                    )
-                # Ensure numeric parameters are strings and not in text
-                if "text" in results and isinstance(results["text"], str):
-                    results["text"] = re.sub(r"\s+\d+\s*$", "", results["text"]).strip()
-
             if json_output:
                 _output_json(results)
+                return
+
+            if isinstance(results, list):
+                for i, result in enumerate(results, 1):
+                    if len(results) > 1:
+                        console.print(f"\nVariant {i}:", style="bold blue")
+                    console.print(Panel(_format_prompt(result)))
             else:
-                if isinstance(results, list):
-                    for i, result in enumerate(results, 1):
-                        if len(results) > 1:
-                            console.print(f"\nVariant {i}:", style="bold blue")
-                        console.print(Panel(_format_prompt(result)))
-                else:
-                    console.print(Panel(_format_prompt(results)))
+                console.print(Panel(_format_prompt(results)))
 
-            return results
-
-        except (ValueError, TypeError, SyntaxError) as error:
+        except (
+            ValueError,
+            TypeError,
+            SyntaxError,
+        ) as error:  # More specific exceptions
             if json_output:
                 _output_json({"error": str(error)})
+                sys.exit(1)
             else:
                 _handle_error(console, error)
-            return None
 
     def mj(
         self,
@@ -190,7 +156,7 @@ class MidjargonCLI:
         *,
         json_output: bool = False,
         no_color: bool = False,
-    ) -> Any | None:
+    ) -> None:
         """
         Convert a prompt to Midjourney format.
 
@@ -202,49 +168,38 @@ class MidjargonCLI:
         Example prompts:
             "A portrait of a wise old man --style raw --v 5.1"
             "A {red, blue, green} bird on a {branch, rock} --ar 16:9"
-
-        Returns:
-            Converted prompt data if successful, None if error occurs.
         """
         console = Console(force_terminal=not no_color)
 
         try:
             results = to_midjourney_prompts(prompt)
 
-            # Always wrap single results in a list for consistent handling
-            if not isinstance(results, list):
-                results = [results]
-
-            # Convert to dictionaries for output and add computed fields
-            output_data = []
-            for prompt_obj in results:
-                if isinstance(prompt_obj, MidjourneyPrompt):
-                    data = prompt_obj.model_dump()
-                    # Add computed fields
-                    if "aspect_width" in data and "aspect_height" in data:
-                        data["aspect"] = (
-                            f"{data['aspect_width']}:{data['aspect_height']}"
-                        )
-                    output_data.append(data)
-                else:
-                    output_data.append(prompt_obj)
-
             if json_output:
-                _output_json(output_data)
-            else:
+                if isinstance(results, list):
+                    json_results = [prompt.model_dump() for prompt in results]
+                else:
+                    json_results = results.model_dump()
+                _output_json(json_results)
+                return
+
+            if isinstance(results, list):
                 for i, result in enumerate(results, 1):
                     if len(results) > 1:
                         console.print(f"\nVariant {i}:", style="bold blue")
                     console.print(Panel(_format_prompt(result)))
+            else:
+                console.print(Panel(_format_prompt(results)))
 
-            return output_data
-
-        except (ValueError, TypeError, SyntaxError) as error:
+        except (
+            ValueError,
+            TypeError,
+            SyntaxError,
+        ) as error:  # More specific exceptions
             if json_output:
                 _output_json({"error": str(error)})
+                sys.exit(1)
             else:
                 _handle_error(console, error)
-            return None
 
     def fal(
         self,
@@ -252,7 +207,7 @@ class MidjargonCLI:
         *,
         json_output: bool = False,
         no_color: bool = False,
-    ) -> Any | None:
+    ) -> None:
         """
         Convert a prompt to Fal.ai format.
 
@@ -264,9 +219,6 @@ class MidjargonCLI:
         Example prompts:
             "A portrait of a wise old man --style raw --v 5.1"
             "A {red, blue, green} bird on a {branch, rock} --ar 16:9"
-
-        Returns:
-            Converted prompt data if successful, None if error occurs.
         """
         console = Console(force_terminal=not no_color)
 
@@ -275,7 +227,9 @@ class MidjargonCLI:
 
             if json_output:
                 _output_json(results)
-            elif isinstance(results, list):
+                return
+
+            if isinstance(results, list):
                 for i, result in enumerate(results, 1):
                     if len(results) > 1:
                         console.print(f"\nVariant {i}:", style="bold blue")
@@ -283,17 +237,34 @@ class MidjargonCLI:
             else:
                 console.print(Panel(_format_prompt(results)))
 
-            return results
-
-        except (ValueError, TypeError, SyntaxError) as error:
+        except (
+            ValueError,
+            TypeError,
+            SyntaxError,
+        ) as error:  # More specific exceptions
             if json_output:
                 _output_json({"error": str(error)})
+                sys.exit(1)
             else:
                 _handle_error(console, error)
-            return None
 
 
 def main() -> None:
+    from rich.ansi import AnsiDecoder
+    from rich.console import Console, Group
+    from rich.theme import Theme
+    from rich.traceback import install
+
+    install(show_locals=True)
+    ansi_decoder = AnsiDecoder()
+    console = Console(theme=Theme({"prompt": "cyan", "question": "bold cyan"}))
+
+    def display(lines, out):
+        console.print(Group(*map(ansi_decoder.decode_line, lines)))
+
+    fire.core.Display = display
+
+    """Run the CLI application."""
     fire.Fire(MidjargonCLI())
 
 

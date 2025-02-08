@@ -134,14 +134,7 @@ def _format_part(before: str, option: str, after: str) -> str:
             return before.rstrip() + " " + after.lstrip()
         return before.rstrip() + after.lstrip()
 
-    # Handle parameter options
-    if option.lstrip().startswith("--"):
-        # If this is a parameter option, don't add extra spaces
-        if before.rstrip():
-            return before.rstrip() + " " + option.lstrip() + after.lstrip()
-        return option.lstrip() + after.lstrip()
-
-    # Add proper spacing for regular text
+    # Add proper spacing
     before_spaced, after_spaced = _add_spacing(before, after)
     return before_spaced + option + after_spaced
 
@@ -157,11 +150,6 @@ def _add_spacing(before: str, after: str) -> tuple[str, str]:
     Returns:
         Tuple of (before, after) with proper spacing added.
     """
-    # Handle parameters
-    if after.lstrip().startswith("--"):
-        return before.rstrip() + " ", after.lstrip()
-
-    # Handle regular text
     if before and before[-1].isalnum():
         before = before + " "
     if after and after[0].isalnum():
@@ -232,32 +220,7 @@ def expand_single(text: str) -> list[str]:
             expanded_options.append(opt)
 
     # Format each option with proper spacing
-    result = []
-    for opt in expanded_options:
-        # If this is a parameter option, handle it specially
-        if opt.lstrip().startswith("--"):
-            # Find the next parameter in the suffix
-            next_param_start = -1
-            for k, part in enumerate(suffix.split()):
-                if part.startswith("--"):
-                    next_param_start = k
-                    break
-
-            if next_param_start != -1:
-                # Split the suffix at the next parameter
-                suffix_parts = suffix.split()
-                before_param = " ".join(suffix_parts[:next_param_start])
-                after_param = " ".join(suffix_parts[next_param_start:])
-                formatted = _format_part(prefix, opt, before_param)
-                if after_param:
-                    formatted = formatted.rstrip() + " " + after_param
-                result.append(formatted)
-            else:
-                result.append(_format_part(prefix, opt, suffix))
-        else:
-            result.append(_format_part(prefix, opt, suffix))
-
-    return result
+    return [_format_part(prefix, opt, suffix) for opt in expanded_options]
 
 
 def expand_text(text: str) -> MidjargonList:

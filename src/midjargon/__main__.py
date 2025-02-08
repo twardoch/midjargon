@@ -7,8 +7,7 @@
 Main entry point for midjargon CLI.
 """
 
-
-from midjargon.cli.main import main
+from midjargon.cli import main
 
 if __name__ == "__main__":
     main()

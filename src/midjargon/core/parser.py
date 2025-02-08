@@ -12,34 +12,10 @@ This parser does not perform strict validation; it only tokenizes and groups val
 
 import contextlib
 import re
-from dataclasses import dataclass
 from typing import cast
 
 from midjargon.core.parameters import parse_parameters
 from midjargon.core.type_defs import MidjargonDict, MidjargonPrompt
-
-
-@dataclass
-class TextPart:
-    """Represents a part of text with its whitespace."""
-
-    text: str
-    leading_space: str = ""
-    trailing_space: str = ""
-
-
-def unescape_text(text: str) -> str:
-    """Remove escape characters while preserving intended characters."""
-    # Replace escaped braces and commas with temporary markers
-    text = text.replace(r"\{", "\x00").replace(r"\}", "\x01").replace(r"\,", "\x02")
-
-    # Remove other escape characters
-    text = re.sub(r"\\(.)", r"\1", text)
-
-    # Restore escaped characters
-    text = text.replace("\x00", "{").replace("\x01", "}").replace("\x02", ",")
-
-    return text
 
 
 def split_text_and_parameters(text: str) -> tuple[str, str]:
@@ -55,25 +31,17 @@ def split_text_and_parameters(text: str) -> tuple[str, str]:
     """
     i = 0
     depth = 0
-    param_start = -1
     while i < len(text):
         if text[i] == "{":
             depth += 1
         elif text[i] == "}":
             depth -= 1
         elif (
-            text[i : i + 2] == "--"
-            and depth == 0
-            and (i == 0 or text[i - 1].isspace())
-            and (i + 2 >= len(text) or text[i + 2].isspace() or text[i + 2] == "-")
+            text[i : i + 2] == "--" and depth == 0 and (i == 0 or text[i - 1].isspace())
         ):
-            if param_start == -1:
-                param_start = i
+            return text[:i].strip(), text[i:]
         i += 1
-
-    if param_start != -1:
-        return text[:param_start].rstrip(), text[param_start:]
-    return text.rstrip(), ""
+    return text.strip(), ""
 
 
 def parse_image_urls(tokens: list[str]) -> tuple[list[str], list[str]]:
@@ -106,78 +74,6 @@ def parse_image_urls(tokens: list[str]) -> tuple[list[str], list[str]]:
     return urls, tokens[i:]
 
 
-def parse_text_parts(text: str) -> list[TextPart]:
-    """Parse text into parts while preserving whitespace."""
-    parts = []
-    current = ""
-    leading_space = ""
-    i = 0
-
-    while i < len(text):
-        # Handle whitespace
-        if text[i].isspace():
-            if not current:
-                leading_space += text[i]
-            else:
-                current += text[i]
-            i += 1
-            continue
-
-        # Handle regular characters
-        if text[i] not in "{}":
-            current += text[i]
-            i += 1
-            continue
-
-        # Handle braces
-        if text[i] == "{":
-            # Add current part if any
-            if current:
-                trailing_space = ""
-                while current and current[-1].isspace():
-                    trailing_space = current[-1] + trailing_space
-                    current = current[:-1]
-                if current:
-                    parts.append(TextPart(current, leading_space, trailing_space))
-                leading_space = trailing_space
-                current = ""
-
-            # Find matching closing brace
-            depth = 1
-            j = i + 1
-            while j < len(text) and depth > 0:
-                if text[j] == "{":
-                    depth += 1
-                elif text[j] == "}":
-                    depth -= 1
-                j += 1
-
-            if depth == 0:  # Found matching brace
-                brace_content = text[i:j]
-                if brace_content == "{}":  # Empty permutation
-                    i = j
-                    continue
-                current = brace_content
-                i = j
-            else:  # No matching brace
-                current += text[i]
-                i += 1
-        else:  # Closing brace without matching open
-            current += text[i]
-            i += 1
-
-    # Add final part
-    if current:
-        trailing_space = ""
-        while current and current[-1].isspace():
-            trailing_space = current[-1] + trailing_space
-            current = current[:-1]
-        if current:
-            parts.append(TextPart(current, leading_space, trailing_space))
-
-    return parts
-
-
 def parse_midjargon_prompt_to_dict(expanded_prompt: MidjargonPrompt) -> MidjargonDict:
     """
     Parse an expanded prompt into a dictionary format.
@@ -193,119 +89,51 @@ def parse_midjargon_prompt_to_dict(expanded_prompt: MidjargonPrompt) -> Midjargo
     urls = []
     text_parts = []
 
-    # First pass: extract URLs
     parts = expanded_prompt.split()
-    url_pattern = re.compile(
-        r"^https?://[^\s/$.?#].[^\s]*\.(jpg|jpeg|png|gif|webp)$", re.IGNORECASE
-    )
+    for part in parts:
+        if part.startswith(("http://", "https://")):
+            urls.append(part)
+        else:
+            text_parts.append(part)
 
-    # Extract URLs from the beginning
-    i = 0
-    while i < len(parts) and url_pattern.match(parts[i]):
-        urls.append(parts[i])
-        i += 1
+    # Join remaining parts as text, preserving original spacing
+    text_part = " ".join(text_parts)
 
-    # Find the first parameter marker
-    param_start = -1
-    depth = 0
-    for j, part in enumerate(parts[i:], start=i):
-        if part.startswith("{"):
-            depth += 1
-        elif part.endswith("}"):
-            depth -= 1
-        elif part.startswith("--") and depth == 0:
-            # Check if this is a parameter inside a permutation
-            is_in_permutation = False
-            for k in range(j - 1, i - 1, -1):
-                if parts[k].startswith("{"):
-                    is_in_permutation = True
-                    break
-                if parts[k].endswith("}"):
-                    break
-            if not is_in_permutation:
-                param_start = j
-                break
-
-    # Split text and parameters
-    if param_start != -1:
-        text_parts = parts[i:param_start]
-        param_parts = parts[param_start:]
-        main_text = " ".join(text_parts)
-        param_part = " ".join(param_parts)
-    else:
-        main_text = " ".join(parts[i:])
-        param_part = ""
-
-    # Handle escaped characters and empty permutations
-    main_text = unescape_text(main_text)
-    main_text = re.sub(r"\{\s*\}", "", main_text)  # Remove empty permutations
-    main_text = re.sub(r"\s+", " ", main_text).strip()  # Normalize whitespace
-
-    # Clean up any remaining parameter markers in the text
-    main_text = re.sub(r"\s*--\S+\s*", " ", main_text).strip()
-
-    # Remove any numeric values that were incorrectly appended to the text
-    main_text = re.sub(r"\s+\d+(?:\s*:\s*\d+)?\s*$", "", main_text).strip()
+    # Find where parameters start (if any)
+    param_part = ""
+    if "--" in text_part:
+        text_split = text_part.split("--", 1)
+        text_part = text_split[0].strip()
+        param_part = "--" + text_split[1]
 
     # Parse parameters using the consolidated parameter parsing logic
     params = parse_parameters(param_part) if param_part.startswith("--") else {}
 
-    # Handle aspect ratio
-    if "ar" in params or "aspect" in params:
-        aspect_value = params.get("ar") or params.get("aspect")
-        if aspect_value:
-            try:
-                if isinstance(aspect_value, str):
-                    width_str, height_str = aspect_value.split(":")
-                    width = int(width_str.strip())
-                    height = int(height_str.strip())
-                    params["aspect"] = f"{width}:{height}"
-                    params["aspect_width"] = width
-                    params["aspect_height"] = height
-            except (ValueError, AttributeError):
-                pass
-
-    # Convert numeric parameters to numbers
+    # Convert numeric values
     numeric_params = {
-        "stylize",
-        "chaos",
-        "weird",
-        "image_weight",
-        "quality",
-        "character_weight",
-        "style_weight",
-        "style_version",
-        "repeat",
-        "seed",
-        "stop",
+        "stylize": int,
+        "chaos": int,
+        "weird": int,
+        "image_weight": float,
+        "seed": int,
+        "stop": int,
+        "quality": float,
+        "repeat": int,
+        "character_weight": int,
+        "style_weight": int,
+        "style_version": int,
     }
 
-    for key, value in list(params.items()):
-        if key in numeric_params:
-            if isinstance(value, str):
-                try:
-                    if value.strip().isdigit():
-                        params[key] = int(value)
-                    elif "." in value:
-                        params[key] = float(value)
-                except (ValueError, TypeError):
-                    pass
-            elif isinstance(value, list):
-                try:
-                    numeric_values = []
-                    for v in value:
-                        if isinstance(v, str):
-                            if v.strip().isdigit():
-                                numeric_values.append(int(v))
-                            elif "." in v:
-                                numeric_values.append(float(v))
-                    if numeric_values:
-                        params[key] = numeric_values
-                except (ValueError, TypeError):
-                    pass
+    for param, converter in numeric_params.items():
+        if param in params and params[param] is not None:
+            with contextlib.suppress(ValueError, TypeError):
+                params[param] = converter(params[param])
 
-    # Build the result dictionary with proper typing
-    result: MidjargonDict = {"text": main_text, "images": urls}
-    result.update(params)
+    # Build the dictionary according to the specification
+    result = {
+        "images": urls,
+        "text": text_part,
+        **params,  # Merge additional parameters directly into the dict
+    }
 
-    return result
+    return cast(MidjargonDict, result)
