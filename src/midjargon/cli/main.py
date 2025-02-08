@@ -142,6 +142,22 @@ class MidjargonCLI:
             if isinstance(results, list) and len(results) == 1:
                 results = results[0]
 
+            # Add computed fields for aspect ratio
+            if isinstance(results, list):
+                for result in results:
+                    if "aspect_width" in result and "aspect_height" in result:
+                        result["aspect"] = (
+                            f"{result['aspect_width']}:{result['aspect_height']}"
+                        )
+            elif (
+                isinstance(results, dict)
+                and "aspect_width" in results
+                and "aspect_height" in results
+            ):
+                results["aspect"] = (
+                    f"{results['aspect_width']}:{results['aspect_height']}"
+                )
+
             if json_output:
                 _output_json(results)
             else:

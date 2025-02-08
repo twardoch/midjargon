@@ -83,20 +83,25 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             if value is None:
                 return
 
+        # Handle value with additional parameters
+        value_parts = str(value).split("--")
+        aspect_value = value_parts[0].strip()
+
         try:
-            width_str, height_str = str(value).split(":")
+            width_str, height_str = aspect_value.split(":")
             width = int(width_str)
             height = int(height_str)
         except (ValueError, AttributeError) as e:
-            msg = f"Invalid aspect ratio format: {value} - must be width:height"
+            msg = f"Invalid aspect ratio format: {aspect_value} - must be width:height"
             raise ValueError(msg) from e
 
         if width <= 0 or height <= 0:
-            msg = f"Invalid aspect ratio: {value} - values must be positive"
+            msg = f"Invalid aspect ratio: {aspect_value} - values must be positive"
             raise ValueError(msg)
 
         prompt_data["aspect_width"] = width
         prompt_data["aspect_height"] = height
+        prompt_data["aspect"] = f"{width}:{height}"
 
     def _process_version(
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
@@ -147,13 +152,32 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         # If both are present, personalization takes precedence
         value = personalization if personalization is not None else p_value
 
+        # If no personalization parameter is present, set to False
+        if (
+            value is None
+            and "p" not in midjargon_dict
+            and "personalization" not in midjargon_dict
+        ):
+            prompt_data["personalization"] = False
+            return
+
         # Handle flag-only case (when key exists but value is None or empty string)
         if value is None or value == "":
             prompt_data["personalization"] = True
             return
 
-        # Pass the value directly to the model validator
-        prompt_data["personalization"] = value
+        # Handle empty list case
+        if isinstance(value, list) and not value:
+            prompt_data["personalization"] = False
+            return
+
+        # Handle list values
+        if isinstance(value, list):
+            prompt_data["personalization"] = value
+            return
+
+        # Handle string value
+        prompt_data["personalization"] = [str(value)]
 
     def _process_references(
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
@@ -231,16 +255,6 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
                     except ParameterValidationError as e:
                         raise ValueError(str(e)) from e
 
-        # Handle personalization separately
-        for source in ["p", "personalization"]:
-            if source in midjargon_dict:
-                value = midjargon_dict[source]
-                if value is None or value == "":
-                    prompt_data["personalization"] = True
-                else:
-                    prompt_data["personalization"] = [value]
-                break
-
     def _process_negative_prompt(
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
     ) -> None:
@@ -249,87 +263,89 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             value = midjargon_dict["no"]
             if isinstance(value, str):
                 prompt_data["negative_prompt"] = value
+            elif isinstance(value, list):
+                prompt_data["negative_prompt"] = ", ".join(str(v) for v in value)
 
     def _process_extra_params(
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
     ) -> None:
-        """Process extra parameters."""
-        # Get all known parameter keys
+        """Process any extra parameters."""
         known_params = {
             "text",
             "images",
-            "stylize",
-            "s",
-            "chaos",
-            "c",
-            "weird",
-            "w",
-            "image_weight",
-            "iw",
-            "seed",
-            "stop",
-            "aspect",
             "ar",
-            "style",
+            "aspect",
             "version",
             "v",
             "niji",
-            "personalization",
+            "style",
             "p",
-            "quality",
-            "q",
+            "personalization",
             "character_reference",
             "cref",
-            "character_weight",
-            "cw",
             "style_reference",
             "sref",
-            "style_weight",
+            "s",
+            "stylize",
+            "c",
+            "chaos",
+            "w",
+            "weird",
+            "iw",
+            "image_weight",
+            "seed",
+            "stop",
+            "q",
+            "quality",
+            "cw",
+            "character_weight",
             "sw",
-            "style_version",
+            "style_weight",
             "sv",
-            "repeat",
+            "style_version",
             "r",
+            "repeat",
             "turbo",
             "relax",
             "tile",
             "no",
         }
 
-        # Add any unknown parameters to extra_params
+        extra_params = {}
         for key, value in midjargon_dict.items():
             if key not in known_params:
                 if value is None:
-                    prompt_data["extra_params"][key] = None
-                elif isinstance(value, (list, dict)):
-                    prompt_data["extra_params"][key] = value
+                    extra_params[key] = None
+                elif isinstance(value, list):
+                    extra_params[key] = value
                 else:
-                    prompt_data["extra_params"][key] = str(value)
+                    extra_params[key] = str(value)
+        prompt_data["extra_params"] = extra_params
 
     def parse_dict(self, midjargon_dict: MidjargonDict) -> MidjourneyPrompt:
-        """Parse a dictionary into a MidjourneyPrompt object.
+        """Parse a dictionary into a MidjourneyPrompt.
 
         Args:
-            midjargon_dict: Dictionary to parse.
+            midjargon_dict: Dictionary to parse
 
         Returns:
-            MidjourneyPrompt object.
+            MidjourneyPrompt object
 
         Raises:
-            ValueError: If data is invalid.
+            ValueError: If parsing fails
         """
         prompt_data = self._init_prompt_data()
 
         # Process text and images first
         self._process_text_and_images(prompt_data, midjargon_dict)
 
-        # Process parameters in order
+        # Process all other parameters
+        self._process_aspect_ratio(prompt_data, midjargon_dict)
         self._process_version(prompt_data, midjargon_dict)
         self._process_style(prompt_data, midjargon_dict)
         self._process_personalization(prompt_data, midjargon_dict)
-        self._process_numeric_params(prompt_data, midjargon_dict)
-        self._process_aspect_ratio(prompt_data, midjargon_dict)
         self._process_references(prompt_data, midjargon_dict)
+        self._process_numeric_params(prompt_data, midjargon_dict)
         self._process_flag_params(prompt_data, midjargon_dict)
         self._process_negative_prompt(prompt_data, midjargon_dict)
         self._process_extra_params(prompt_data, midjargon_dict)

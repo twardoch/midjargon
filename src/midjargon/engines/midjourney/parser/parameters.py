@@ -265,7 +265,7 @@ class ParameterHandler:
             param_name: Name of the parameter
 
         Returns:
-            Default value
+            Default value for the parameter
         """
         config = self._get_config(param_name)
         return config.default if config else None

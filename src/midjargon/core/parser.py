@@ -55,16 +55,24 @@ def split_text_and_parameters(text: str) -> tuple[str, str]:
     """
     i = 0
     depth = 0
+    param_start = -1
     while i < len(text):
         if text[i] == "{":
             depth += 1
         elif text[i] == "}":
             depth -= 1
         elif (
-            text[i : i + 2] == "--" and depth == 0 and (i == 0 or text[i - 1].isspace())
+            text[i : i + 2] == "--"
+            and depth == 0
+            and (i == 0 or text[i - 1].isspace())
+            and (i + 2 >= len(text) or text[i + 2].isspace() or text[i + 2] == "-")
         ):
-            return text[:i].rstrip(), text[i:]
+            if param_start == -1:
+                param_start = i
         i += 1
+
+    if param_start != -1:
+        return text[:param_start].rstrip(), text[param_start:]
     return text.rstrip(), ""
 
 
@@ -191,49 +199,60 @@ def parse_midjargon_prompt_to_dict(expanded_prompt: MidjargonPrompt) -> Midjargo
         r"^https?://[^\s/$.?#].[^\s]*\.(jpg|jpeg|png|gif|webp)$", re.IGNORECASE
     )
 
-    for part in parts:
-        if url_pattern.match(part):
-            urls.append(part)
-        else:
-            text_parts.append(part)
+    # Extract URLs from the beginning
+    i = 0
+    while i < len(parts) and url_pattern.match(parts[i]):
+        urls.append(parts[i])
+        i += 1
 
-    # Rejoin text parts and split into text and parameters
-    text_part = " ".join(text_parts)
-    main_text, param_part = split_text_and_parameters(text_part)
+    # Find the first parameter marker
+    param_start = -1
+    depth = 0
+    for j, part in enumerate(parts[i:], start=i):
+        if part.startswith("{"):
+            depth += 1
+        elif part.endswith("}"):
+            depth -= 1
+        elif part.startswith("--") and depth == 0:
+            # Check if this is a parameter inside a permutation
+            is_in_permutation = False
+            for k in range(j - 1, i - 1, -1):
+                if parts[k].startswith("{"):
+                    is_in_permutation = True
+                    break
+                if parts[k].endswith("}"):
+                    break
+            if not is_in_permutation:
+                param_start = j
+                break
+
+    # Split text and parameters
+    if param_start != -1:
+        text_parts = parts[i:param_start]
+        param_parts = parts[param_start:]
+        main_text = " ".join(text_parts)
+        param_part = " ".join(param_parts)
+    else:
+        main_text = " ".join(parts[i:])
+        param_part = ""
 
     # Handle escaped characters and empty permutations
     main_text = unescape_text(main_text)
     main_text = re.sub(r"\{\s*\}", "", main_text)  # Remove empty permutations
     main_text = re.sub(r"\s+", " ", main_text).strip()  # Normalize whitespace
 
+    # Clean up any remaining parameter markers in the text
+    main_text = re.sub(r"\s*--\S+\s*", " ", main_text).strip()
+
+    # Remove any numeric values that were incorrectly appended to the text
+    main_text = re.sub(r"\s+\d+\s*$", "", main_text).strip()
+
     # Parse parameters using the consolidated parameter parsing logic
     params = parse_parameters(param_part) if param_part.startswith("--") else {}
 
-    # Convert numeric values
-    numeric_params = {
-        "stylize": int,
-        "chaos": int,
-        "weird": int,
-        "image_weight": float,
-        "seed": int,
-        "stop": int,
-        "quality": float,
-        "repeat": int,
-        "character_weight": int,
-        "style_weight": int,
-        "style_version": int,
-    }
+    # Build the result dictionary
+    result: MidjargonDict = {"text": main_text, "images": urls}
+    for key, value in params.items():
+        result[key] = value
 
-    for param, converter in numeric_params.items():
-        if param in params and params[param] is not None:
-            with contextlib.suppress(ValueError, TypeError):
-                params[param] = converter(params[param])
-
-    # Build the dictionary according to the specification
-    result = {
-        "images": urls,
-        "text": main_text,
-        **params,  # Merge additional parameters directly into the dict
-    }
-
-    return cast(MidjargonDict, result)
+    return result
