@@ -114,7 +114,11 @@ def validate_param_value(name: str, value: ParamValue) -> None:
         return
 
     # Handle special seed values
-    if name == "seed" and value in SPECIAL_SEED_VALUES:
+    if (
+        name == "seed"
+        and isinstance(value, str)
+        and value.lower() in SPECIAL_SEED_VALUES
+    ):
         return
 
     # Validate numeric parameters can be converted to float
@@ -379,7 +383,7 @@ def _process_param_chunk(
         if expanded_name in {"personalization", "p"}:
             return "personalization", None
         if expanded_name == "niji":
-            return "version", "niji"  # Return niji without version number
+            return "version", "niji"
         if expanded_name in flag_params:
             return expanded_name, None
         # For non-flag parameters, raise error if value is missing
@@ -399,26 +403,21 @@ def _process_param_chunk(
             value = value[1:-1]  # Remove quotes
         return "personalization", value.split() if value else None
     elif expanded_name in {"character_reference", "cref"}:
-        # Return list of space-separated values for character references
-        # Handle quoted URLs as a single value
+        if value.startswith("<") and value.endswith(">"):
+            return "character_reference", [value]
         if value.startswith('"') and value.endswith('"'):
-            # Remove quotes and treat as a single value
             return "character_reference", [value[1:-1]]
         if value.startswith("'") and value.endswith("'"):
-            # Remove quotes and treat as a single value
             return "character_reference", [value[1:-1]]
-        # Split on spaces for multiple values
         return "character_reference", value.split()
     elif expanded_name in {"style_reference", "sref"}:
-        # Return list of space-separated values for style references
-        # Handle quoted URLs as a single value
+        # Return list of values for style references; if enclosed in angle brackets, treat as single value
+        if value.startswith("<") and value.endswith(">"):
+            return "style_reference", [value]
         if value.startswith('"') and value.endswith('"'):
-            # Remove quotes and treat as a single value
             return "style_reference", [value[1:-1]]
         if value.startswith("'") and value.endswith("'"):
-            # Remove quotes and treat as a single value
             return "style_reference", [value[1:-1]]
-        # Split on spaces for multiple values
         return "style_reference", value.split()
     elif expanded_name == "version" or name == "v":
         # Handle version parameter
@@ -426,8 +425,10 @@ def _process_param_chunk(
             value = value[1:]  # Strip 'v' prefix
         return "version", value
     elif expanded_name == "niji":
-        # Handle niji version without adding 'v' prefix
-        return "version", f"niji {value}"  # Return niji version directly
+        # Handle niji version without adding 'v' prefix; store under key 'version'
+        if value.startswith("v"):
+            value = value[1:]
+        return "version", f"niji {value}"
     else:
         # Handle quoted values for other parameters
         if value.startswith('"') and value.endswith('"'):

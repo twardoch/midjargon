@@ -119,24 +119,36 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
     ) -> None:
         """Process version parameter."""
-        # Check version parameters in order of precedence
-        for name in ("version", "v", "niji"):
+        for name in ("niji", "version", "v"):
             if name not in midjargon_dict:
                 continue
 
             value = midjargon_dict[name]
-            if value is None and name == "niji":
-                prompt_data["version"] = "niji"
-                return
-
             if value is None:
+                if name == "niji":
+                    prompt_data["version"] = "niji"
+                    return
                 continue
 
+            # If the key is 'niji', process accordingly
+            if name == "niji":
+                if isinstance(value, list):
+                    value = value[0]
+                stripped_value = value.strip()
+                if stripped_value == "niji":
+                    prompt_data["version"] = "niji"
+                else:
+                    prompt_data["version"] = f"niji {stripped_value}"
+                return
+
+            # For other keys, process as usual
             processed_value = self.param_handler.process(name, value)
             if processed_value is not None:
-                # Add appropriate prefix
-                if name == "niji":
-                    prompt_data["version"] = f"niji {processed_value}"
+                # If the processed value starts with 'niji', assign directly, else add 'v' prefix
+                if isinstance(
+                    processed_value, str
+                ) and processed_value.lstrip().lower().startswith("niji"):
+                    prompt_data["version"] = processed_value.strip()
                 else:
                     prompt_data["version"] = f"v{processed_value}"
                 return
