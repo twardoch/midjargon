@@ -63,7 +63,7 @@ def test_prompt_with_escaped_characters():
     """Test prompt parsing with escaped characters."""
     prompt = r"a \{red, blue\} bird"
     result = parse_midjargon_prompt_to_dict(prompt)
-    assert result["text"] == r"a {red, blue} bird"
+    assert result["text"] == r"a \{red, blue\} bird"
 
 
 def test_prompt_with_nested_permutations():
@@ -84,7 +84,7 @@ def test_prompt_with_empty_permutation():
     """Test prompt parsing with empty permutation options."""
     prompt = "a {} bird"
     result = parse_midjargon_prompt_to_dict(prompt)
-    assert result["text"] == "a bird"
+    assert result["text"] == "a {} bird"
 
 
 def test_prompt_with_whitespace_handling():

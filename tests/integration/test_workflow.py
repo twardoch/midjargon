@@ -1,10 +1,14 @@
 """Integration tests for complete midjargon workflow."""
 
+import sys
+from io import StringIO
+
 import pytest
 
 from midjargon import expand_midjargon_input, parse_midjargon_prompt_to_dict
-from midjargon.engines.midjourney import MidjourneyPrompt, parse_midjourney_dict
 from midjargon.cli.main import MidjargonCLI
+from midjargon.engines.midjourney import MidjourneyPrompt, parse_midjourney_dict
+from tests.cli.test_main import parse_json_output  # Added import for JSON parsing
 
 # Test constants
 ASPECT_WIDTH = 16
@@ -118,9 +122,9 @@ def test_new_parameters_workflow():
         f"--sw {STYLE_WEIGHT_VALUE} "
         f"--sv {STYLE_VERSION_VALUE} "
         f"--repeat {REPEAT_VALUE} "
-        "--cref ref1.jpg "
-        "--sref style1.jpg,style2.jpg "
-        "--p custom_profile"
+        "--cref ref1.jpg ref2.jpg "
+        "--sref style1.jpg style2.jpg "
+        "--p custom_profile1 custom_profile2"
     )
     results = process_prompt(prompt)
 
@@ -133,9 +137,9 @@ def test_new_parameters_workflow():
     assert result.style_weight == STYLE_WEIGHT_VALUE
     assert result.style_version == STYLE_VERSION_VALUE
     assert result.repeat == REPEAT_VALUE
-    assert result.character_reference == ["ref1.jpg"]
-    assert result.style_reference == ["style1.jpg,style2.jpg"]
-    assert result.personalization == ["custom_profile"]
+    assert result.character_reference == ["ref1.jpg", "ref2.jpg"]
+    assert result.style_reference == ["style1.jpg", "style2.jpg"]
+    assert result.personalization == ["custom_profile1", "custom_profile2"]
 
 
 def test_weighted_prompts_workflow():
@@ -285,36 +289,44 @@ def test_cli_mj_command():
     """Test Midjourney prompt conversion using CLI."""
     cli = MidjargonCLI()
     prompt = "a serene landscape --ar 16:9 --stylize 100"
-    results = cli.mj(prompt, json_output=True)
-    assert isinstance(results, list)
-    assert len(results) == 1
-    assert results[0]["text"] == "a serene landscape"
-    assert results[0]["aspect"] == "16:9"
-    assert results[0]["stylize"] == 100
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        cli.mj(prompt, json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
+    assert isinstance(data, dict)
+    assert data["text"] == "a serene landscape"
+    assert data["stylize"] == 100
+    assert data["aspect_ratio"] == "16:9"
 
 
 def test_cli_fal_command():
     """Test Fal.ai prompt conversion using CLI."""
     cli = MidjargonCLI()
     prompt = "a serene landscape --ar 16:9 --stylize 100"
-    results = cli.fal(prompt, json_output=True)
-    assert isinstance(results, dict)
-    assert results["prompt"] == "a serene landscape"
-    assert results["aspect_ratio"] == "16:9"
-    assert results["stylize"] == 100
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        cli.fal(prompt, json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
+    assert isinstance(data, dict)
+    assert data["prompt"] == "a serene landscape"
+    assert data["stylize"] == 100
+    assert data["aspect_ratio"] == "16:9"
 
 
 def test_cli_perm_command():
     """Test permutation expansion using CLI."""
     cli = MidjargonCLI()
     prompt = "a {red, blue} bird on a {branch, rock}"
-    results = cli.perm(prompt, json_output=True)
-    assert isinstance(results, list)
-    assert len(results) == 4
-    expected = [
-        "a red bird on a branch",
-        "a red bird on a rock",
-        "a blue bird on a branch",
-        "a blue bird on a rock",
-    ]
-    assert set(results) == set(expected)
+    with StringIO() as capture_stdout:
+        sys.stdout = capture_stdout
+        cli.perm(prompt, json_output=True)
+        sys.stdout = sys.__stdout__
+        data = parse_json_output(capture_stdout)
+    assert isinstance(data, list)
+    assert len(data) == 4
+    assert "a red bird on a branch" in data
+    assert "a red bird on a rock" in data
+    assert "a blue bird on a branch" in data
+    assert "a blue bird on a rock" in data

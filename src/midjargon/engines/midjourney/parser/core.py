@@ -185,11 +185,19 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
         # Handle list values
         if isinstance(value, list):
-            prompt_data["personalization"] = value
+            # If list has one empty string, treat as flag
+            if len(value) == 1 and value[0] == "":
+                prompt_data["personalization"] = True
+                return
+            # Otherwise, keep each code as a separate item
+            prompt_data["personalization"] = [str(v) for v in value]
             return
 
         # Handle string value
-        prompt_data["personalization"] = [str(value)]
+        if value == "":
+            prompt_data["personalization"] = True
+        else:
+            prompt_data["personalization"] = [str(value)]
 
     def _process_references(
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict

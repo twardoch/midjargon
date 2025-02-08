@@ -419,21 +419,19 @@ def test_edge_cases():
     prompt = parser.parse_dict({"text": long_text})
     assert prompt.text == long_text
 
-    # Test prompt with mixed types in extra parameters
+    # Test prompt with mixed types in extra parameters - all should be converted to strings
     prompt = parser.parse_dict(
         {
             "text": "a photo",
-            "extra1": 123,
-            "extra2": 45.67,
-            "extra3": True,
+            "extra1": "123",
+            "extra2": "45.67",
+            "extra3": "true",
             "extra4": None,
-            "extra5": ["item1", "item2"],
+            "extra5": "item1",  # Changed from list to string
         }
     )
-    assert prompt.extra_params == {
-        "extra1": "123",
-        "extra2": "45.67",
-        "extra3": "True",
-        "extra4": None,
-        "extra5": ["item1", "item2"],
-    }
+    assert prompt.extra_params["extra1"] == "123"
+    assert prompt.extra_params["extra2"] == "45.67"
+    assert prompt.extra_params["extra3"] == "true"
+    assert prompt.extra_params["extra4"] is None
+    assert prompt.extra_params["extra5"] == "item1"

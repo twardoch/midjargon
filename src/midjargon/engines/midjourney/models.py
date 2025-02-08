@@ -169,14 +169,14 @@ class MidjourneyPrompt(BaseModel):
             if version not in VALID_NIJI_VERSIONS:
                 msg = f"Invalid niji version. Must be one of: {VALID_NIJI_VERSIONS}"
                 raise ValueError(msg)
-            return v
+            return f"niji {version}"  # Return niji version without 'v' prefix
 
         # Handle Midjourney version
         version = v.lstrip("v")
         if version not in VALID_VERSIONS:
             msg = f"Invalid version value. Must be one of: {VALID_VERSIONS}"
             raise ValueError(msg)
-        return v  # Return original value to preserve 'v' prefix
+        return f"v{version}"  # Always add 'v' prefix for regular versions
 
     @model_validator(mode="after")
     def validate_mode_flags(self) -> Any:

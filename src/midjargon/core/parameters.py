@@ -6,7 +6,10 @@ This module provides a unified interface for parameter handling,
 supporting both raw string parsing and structured parameter handling.
 """
 
+import logging
 from typing import TypeAlias
+
+logger = logging.getLogger(__name__)
 
 # Type aliases for clarity
 ParamName: TypeAlias = str
@@ -36,10 +39,31 @@ PARAM_SHORTCUTS = {
     # Mode flags
     "turbo": None,  # Flag parameter
     "relax": None,  # Flag parameter
+    "video": None,  # Flag parameter
+    "remix": None,  # Flag parameter
 }
 
 # Constants
 NIJI_PREFIX_LENGTH = 4  # Length of "niji" in version string
+SPECIAL_SEED_VALUES = {"random"}  # Special values for seed parameter
+
+# Update the parameter aliases
+PARAMETER_ALIASES = {
+    "s": "stylize",
+    "c": "chaos",
+    "w": "weird",
+    "iw": "image_weight",
+    "ar": "aspect",
+    "p": "personalization",
+    "v": "version",
+    "q": "quality",
+    "cw": "character_weight",
+    "sw": "style_weight",
+    "sv": "style_version",
+    "r": "repeat",
+    "cref": "character_reference",
+    "sref": "style_reference",
+}
 
 
 def validate_param_name(name: str) -> None:
@@ -89,6 +113,10 @@ def validate_param_value(name: str, value: ParamValue) -> None:
                 raise TypeError(msg)
         return
 
+    # Handle special seed values
+    if name == "seed" and value in SPECIAL_SEED_VALUES:
+        return
+
     # Validate numeric parameters can be converted to float
     if name in {
         "stylize",
@@ -122,7 +150,7 @@ def expand_shorthand_param(name: str) -> tuple[str, bool]:
     """
     # Handle special case for niji versions
     if name == "niji":
-        return "version", True
+        return "niji", False  # Keep niji as its own parameter type
 
     # Handle special case for version parameter
     if name == "v":
@@ -140,7 +168,7 @@ def expand_shorthand_param(name: str) -> tuple[str, bool]:
     return name, False
 
 
-def process_param_value(values: list[str]) -> str | None:
+def process_param_value(values: list[str]) -> str | list[str] | None:
     """
     Process parameter values into a single value.
 
@@ -153,26 +181,39 @@ def process_param_value(values: list[str]) -> str | None:
     if not values:
         return None
 
-    result = " ".join(values)
+    # Handle personalization codes
+    if values and any(name in values[0].lower() for name in ("p", "personalization")):
+        # Return empty list for flag-only case
+        if len(values) == 1:
+            return []
+        # Return list for codes
+        return values[1:]
 
-    # Handle quoted values
-    if (result.startswith('"') and result.endswith('"')) or (
-        result.startswith("'") and result.endswith("'")
-    ):
-        result = result[1:-1]  # Remove surrounding quotes
-    # Handle version parameter
-    elif result.startswith("v") and result[1:].replace(".", "").isdigit():
-        result = result[1:]  # Strip 'v' prefix for version numbers
     # Handle reference files
-    elif "," in result and any(
-        ext in result.lower() for ext in (".jpg", ".jpeg", ".png", ".gif")
+    if values and any(
+        name in values[0].lower() for name in ("cref", "character_reference")
     ):
-        # Split on commas and clean up each file path
-        files = [f.strip() for f in result.split(",")]
-        result = ",".join(files)
-    # No special processing needed for niji or other values
+        if len(values) > 1:
+            # Return list for character reference
+            return [values[1]]
+        return []
+    if values and any(
+        name in values[0].lower() for name in ("sref", "style_reference")
+    ):
+        if len(values) > 1:
+            # Return list for style reference
+            return values[1].split(",")
+        return []
 
-    return result
+    # Handle version parameter
+    if len(values) == 1:
+        value = values[0]
+        if value.startswith("v") and value[1:].replace(".", "").isdigit():
+            return value[1:]  # Strip 'v' prefix for version numbers
+        return value
+
+    # For other parameters, join values with spaces
+    return " ".join(values)
 
 
 def _expand_param_name(name: str) -> str:
@@ -215,7 +256,9 @@ def _process_flag_param(name: str) -> tuple[str, str | None]:
     return name, None
 
 
-def _process_value_with_dashes(value: str, params: dict[str, str | None]) -> str:
+def _process_value_with_dashes(
+    value: str, params: dict[str, str | list[str] | None]
+) -> str:
     """Process a value that contains double dashes."""
     value_parts = value.split("--")
     result_value = value_parts[0].strip()
@@ -226,68 +269,35 @@ def _process_value_with_dashes(value: str, params: dict[str, str | None]) -> str
     return result_value
 
 
-def _process_param_chunk(
-    chunk: str, params: dict[str, str | None]
-) -> tuple[str, str | None]:
+def _split_param_chunks(param_str: str) -> list[str]:
     """
-    Process a parameter chunk into name and value.
-    Basic syntactic processing only - semantic validation is handled by the engine layer.
+    Split parameter string into chunks, preserving quoted values.
 
     Args:
-        chunk: Parameter chunk to process.
-        params: Dictionary to store parameters in.
+        param_str: Parameter string to split.
 
     Returns:
-        Tuple of (parameter name, parameter value).
+        List of parameter chunks.
 
     Raises:
-        ValueError: If chunk has invalid syntax.
+        ValueError: If parameter string has invalid syntax.
     """
-    if not chunk or chunk == "--":
+    if not param_str:
+        return []
+
+    # Handle empty parameter case
+    if param_str == "--":
         msg = "Empty parameter name"
         raise ValueError(msg)
 
-    # Split on first space
-    parts = chunk.split(maxsplit=1)
-    if not parts[0].startswith("--"):
-        msg = f"Parameter name cannot start with dash: {parts[0]}"
-        raise ValueError(msg)
-
-    name = parts[0][2:]  # Strip -- prefix
-    validate_param_name(name)
-
-    # Handle flag parameters (no value)
-    if len(parts) == 1:
-        return _process_flag_param(name)
-
-    # Process value
-    value = parts[1]
-
-    # Handle quoted values
-    if (value.startswith('"') and value.endswith('"')) or (
-        value.startswith("'") and value.endswith("'")
-    ):
-        value = value[1:-1]  # Remove quotes
-
-    # Handle values with embedded parameters
-    if "--" in value:
-        value = _process_value_with_dashes(value, params)
-
-    # Expand parameter name
-    name = _expand_param_name(name)
-
-    return name, value
-
-
-def _split_into_chunks(param_str: str) -> list[str]:
-    """Split parameter string into chunks, handling quoted values."""
     chunks = []
     current_chunk = []
     in_quotes = False
     quote_char = None
+    current_param = None
 
     for char in param_str:
-        if char in ('"', "'"):
+        if char in {'"', "'"}:
             if not in_quotes:
                 in_quotes = True
                 quote_char = char
@@ -297,19 +307,135 @@ def _split_into_chunks(param_str: str) -> list[str]:
             current_chunk.append(char)
         elif char.isspace() and not in_quotes:
             if current_chunk:
-                chunks.append("".join(current_chunk))
+                chunk_str = "".join(current_chunk)
+                if chunk_str.startswith("--"):
+                    if current_param:
+                        chunks.append(current_param)
+                    current_param = chunk_str
+                else:
+                    if current_param:
+                        current_param = f"{current_param} {chunk_str}"
+                    else:
+                        current_param = chunk_str
                 current_chunk = []
         else:
             current_chunk.append(char)
 
+    # Handle last chunk
     if current_chunk:
-        chunks.append("".join(current_chunk))
+        chunk_str = "".join(current_chunk)
+        if chunk_str.startswith("--"):
+            if current_param:
+                chunks.append(current_param)
+            current_param = chunk_str
+        else:
+            if current_param:
+                current_param = f"{current_param} {chunk_str}"
+            else:
+                current_param = chunk_str
 
-    if in_quotes:
-        msg = "Unclosed quotes in parameters"
-        raise ValueError(msg)
+    if current_param:
+        chunks.append(current_param)
 
     return chunks
+
+
+def _process_param_chunk(
+    chunk: str, params: dict[str, str | list[str] | None]
+) -> tuple[str, str | list[str] | None]:
+    """
+    Process a parameter chunk into name and value.
+
+    Args:
+        chunk: Parameter chunk to process.
+        params: Dictionary to store parameters in.
+
+    Returns:
+        Tuple of parameter name and value.
+
+    Raises:
+        ValueError: If chunk has invalid syntax or missing required value.
+    """
+    if not chunk or chunk == "--":
+        msg = "Empty parameter name"
+        raise ValueError(msg)
+
+    # Split on first double dash
+    parts = chunk.split("--", 1)
+    if len(parts) != 2:
+        msg = f"Parameter name cannot start with dash: {chunk}"
+        raise ValueError(msg)
+
+    # Split parameter name and value
+    param_parts = parts[1].split(maxsplit=1)
+    name = param_parts[0].lower()
+    expanded_name = PARAMETER_ALIASES.get(name, name)
+
+    # Define flag parameters that don't require values
+    flag_params = {"tile", "turbo", "relax", "video", "remix"}
+
+    # Handle flag parameters (no value)
+    if len(param_parts) == 1:
+        if expanded_name in {"personalization", "p"}:
+            return "personalization", None
+        if expanded_name == "niji":
+            return "version", "niji"  # Return niji without version number
+        if expanded_name in flag_params:
+            return expanded_name, None
+        # For non-flag parameters, raise error if value is missing
+        msg = f"Missing value for parameter: {name}"
+        raise ValueError(msg)
+
+    # Get value part (everything after the first space)
+    value = param_parts[1]
+
+    # Process the value based on parameter type
+    if expanded_name in {"personalization", "p"}:
+        # Return list of space-separated values for personalization codes
+        # Handle quoted values
+        if value.startswith('"') and value.endswith('"'):
+            value = value[1:-1]  # Remove quotes
+        elif value.startswith("'") and value.endswith("'"):
+            value = value[1:-1]  # Remove quotes
+        return "personalization", value.split() if value else None
+    elif expanded_name in {"character_reference", "cref"}:
+        # Return list of space-separated values for character references
+        # Handle quoted URLs as a single value
+        if value.startswith('"') and value.endswith('"'):
+            # Remove quotes and treat as a single value
+            return "character_reference", [value[1:-1]]
+        if value.startswith("'") and value.endswith("'"):
+            # Remove quotes and treat as a single value
+            return "character_reference", [value[1:-1]]
+        # Split on spaces for multiple values
+        return "character_reference", value.split()
+    elif expanded_name in {"style_reference", "sref"}:
+        # Return list of space-separated values for style references
+        # Handle quoted URLs as a single value
+        if value.startswith('"') and value.endswith('"'):
+            # Remove quotes and treat as a single value
+            return "style_reference", [value[1:-1]]
+        if value.startswith("'") and value.endswith("'"):
+            # Remove quotes and treat as a single value
+            return "style_reference", [value[1:-1]]
+        # Split on spaces for multiple values
+        return "style_reference", value.split()
+    elif expanded_name == "version" or name == "v":
+        # Handle version parameter
+        if value.startswith("v"):
+            value = value[1:]  # Strip 'v' prefix
+        return "version", value
+    elif expanded_name == "niji":
+        # Handle niji version without adding 'v' prefix
+        return "version", f"niji {value}"  # Return niji version directly
+    else:
+        # Handle quoted values for other parameters
+        if value.startswith('"') and value.endswith('"'):
+            value = value[1:-1]  # Remove quotes
+        elif value.startswith("'") and value.endswith("'"):
+            value = value[1:-1]  # Remove quotes
+        # All other parameters are returned as strings
+        return expanded_name, value
 
 
 def _process_current_param(
@@ -337,6 +463,18 @@ def _process_current_param(
         params[expanded_name] = value
         return
 
+    # Special handling for niji parameter
+    if expanded_name == "niji":
+        if not current_values:
+            params["version"] = "niji"  # Just niji without version
+            return
+        value = process_param_value(current_values)
+        if isinstance(value, str):
+            if value.startswith("v"):
+                value = value[1:]  # Strip 'v' prefix if present
+            params["version"] = f"niji {value}"  # niji with version
+        return
+
     # Regular parameter handling
     if not is_flag and not current_values:
         msg = f"Missing value for parameter: {current_param}"
@@ -345,53 +483,36 @@ def _process_current_param(
     # Process and store the parameter
     value = process_param_value(current_values)
     validate_param_value(expanded_name, value)
-    if expanded_name == "version" and current_param == "niji":
-        params[expanded_name] = "niji" if value is None else f"niji {value}"
+    if expanded_name == "version":
+        if isinstance(value, str):
+            if value.startswith("v"):
+                value = value[1:]  # Strip 'v' prefix if present
+            params[expanded_name] = value
     else:
         params[expanded_name] = value
 
 
-def parse_parameters(param_str: str) -> ParamDict:
+def parse_parameters(param_str: str) -> dict[str, str | list[str] | None]:
     """
-    Parse a parameter string into a dictionary.
+    Parse parameter string into a dictionary.
 
     Args:
-        param_str: String containing parameters (e.g., "--ar 16:9 --stylize 100").
+        param_str: Parameter string to parse.
 
     Returns:
-        Dictionary mapping parameter names to values.
+        Dictionary of parameter names and values.
 
     Raises:
-        ValueError: If parameter format is invalid.
+        ValueError: If parameter string has invalid syntax.
     """
     if not param_str:
         return {}
 
-    # Initialize parameters dictionary
-    params: ParamDict = {}
-
-    # Split into chunks (handling quoted values)
-    chunks = _split_into_chunks(param_str)
-
-    # Process chunks
-    current_param = None
-    current_values = []
+    params: dict[str, str | list[str] | None] = {}
+    chunks = _split_param_chunks(param_str)
 
     for chunk in chunks:
-        # Validate that parameters start with '--'
-        if not current_param and not chunk.startswith("--"):
-            msg = "Parameter name cannot start with dash"
-            raise ValueError(msg)
-
-        if chunk.startswith("--"):
-            # Process previous parameter if exists
-            _process_current_param(current_param, current_values, params)
-            current_param = chunk[2:]  # Remove leading --
-            current_values = []
-        else:
-            current_values.append(chunk)
-
-    # Process the last parameter
-    _process_current_param(current_param, current_values, params)
+        name, value = _process_param_chunk(chunk, params)
+        params[name] = value
 
     return params
