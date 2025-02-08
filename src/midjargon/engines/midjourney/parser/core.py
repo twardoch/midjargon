@@ -152,39 +152,8 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             prompt_data["personalization"] = True
             return
 
-        # Handle list value
-        if isinstance(value, list):
-            # If it's a list of strings, keep it as is
-            if all(isinstance(item, str) for item in value):
-                # Strip any quotes from the strings
-                cleaned_items = [item.strip("\"'") for item in value]
-                prompt_data["personalization"] = cleaned_items
-                return
-            prompt_data["personalization"] = value
-            return
-
-        # Handle string value that looks like a list
-        if isinstance(value, str):
-            # Strip any surrounding quotes
-            value = value.strip("\"'")
-            if value.startswith("[") and value.endswith("]"):
-                try:
-                    # Remove any extra quotes around the items
-                    clean_value = value.strip("[]").replace("'", "").replace('"', "")
-                    items = [
-                        item.strip() for item in clean_value.split(",") if item.strip()
-                    ]
-                    prompt_data["personalization"] = items
-                    return
-                except Exception:
-                    pass
-            # If the string contains spaces and is not already a list representation,
-            # keep it as a single string
-            prompt_data["personalization"] = value
-            return
-
-        # Default case - treat as boolean
-        prompt_data["personalization"] = bool(value)
+        # Pass the value directly to the model validator
+        prompt_data["personalization"] = value
 
     def _process_references(
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
@@ -285,15 +254,10 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
     ) -> None:
         """Process extra parameters."""
-        excluded_fields = {
+        # Get all known parameter keys
+        known_params = {
             "text",
             "images",
-            "aspect",
-            "ar",
-            "style",
-            "version",
-            "v",
-            "niji",
             "stylize",
             "s",
             "chaos",
@@ -304,10 +268,22 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             "iw",
             "seed",
             "stop",
+            "aspect",
+            "ar",
+            "style",
+            "version",
+            "v",
+            "niji",
+            "personalization",
+            "p",
             "quality",
             "q",
+            "character_reference",
+            "cref",
             "character_weight",
             "cw",
+            "style_reference",
+            "sref",
             "style_weight",
             "sw",
             "style_version",
@@ -317,27 +293,18 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             "turbo",
             "relax",
             "tile",
-            "negative_prompt",
             "no",
-            "character_reference",
-            "cref",
-            "style_reference",
-            "sref",
-            "personalization",
-            "p",
         }
 
-        for name, value in midjargon_dict.items():
-            if (
-                name not in excluded_fields
-                and not name.startswith("_")
-                and (
-                    value is None or isinstance(value, str | int | float | bool | list)
-                )
-            ):
-                prompt_data["extra_params"][name] = (
-                    str(value) if not isinstance(value, list | type(None)) else value
-                )
+        # Add any unknown parameters to extra_params
+        for key, value in midjargon_dict.items():
+            if key not in known_params:
+                if value is None:
+                    prompt_data["extra_params"][key] = None
+                elif isinstance(value, (list, dict)):
+                    prompt_data["extra_params"][key] = value
+                else:
+                    prompt_data["extra_params"][key] = str(value)
 
     def parse_dict(self, midjargon_dict: MidjargonDict) -> MidjourneyPrompt:
         """Parse a dictionary into a MidjourneyPrompt object.

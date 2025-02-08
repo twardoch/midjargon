@@ -135,7 +135,7 @@ class MidjourneyPrompt(BaseModel):
     negative_prompt: str | None = Field(default=None)
 
     # Store any unknown parameters
-    extra_params: dict[str, str | None] = Field(default_factory=dict)
+    extra_params: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("text")
     @classmethod
@@ -183,28 +183,50 @@ class MidjourneyPrompt(BaseModel):
         """Validate personalization field."""
         if v is None or v == "":
             return True
+        if isinstance(v, bool):
+            return v
         if isinstance(v, list):
             if not v:
                 return False
-            # Handle case where the list might be a string representation
-            if (
-                len(v) == 1
-                and isinstance(v[0], str)
-                and v[0].startswith("[")
-                and v[0].endswith("]")
-            ):
+            # Convert all items to strings and handle potential string representations
+            cleaned = []
+            for item in v:
+                if isinstance(item, str):
+                    # Remove quotes and extra whitespace
+                    item = item.strip().strip("'\"")
+                    if item.startswith("[") and item.endswith("]"):
+                        try:
+                            # Try to parse as a list
+                            import ast
+
+                            parsed = ast.literal_eval(item)
+                            if isinstance(parsed, list):
+                                cleaned.extend(
+                                    str(i).strip().strip("'\"") for i in parsed
+                                )
+                                continue
+                        except (ValueError, SyntaxError):
+                            pass
+                    cleaned.append(item)
+                else:
+                    cleaned.append(str(item))
+            return cleaned
+        # Handle string that might contain multiple codes
+        if isinstance(v, str):
+            v = v.strip().strip("'\"")
+            if v.startswith("[") and v.endswith("]"):
                 try:
-                    # Try to parse as a list
                     import ast
 
-                    parsed = ast.literal_eval(v[0])
+                    parsed = ast.literal_eval(v)
                     if isinstance(parsed, list):
-                        return [str(item) for item in parsed]
+                        return [str(item).strip().strip("'\"") for item in parsed]
                 except (ValueError, SyntaxError):
                     pass
-            return [str(item) for item in v]
-        if isinstance(v, bool):
-            return v
+            # Split on whitespace if not a list representation
+            if " " in v:
+                return v  # Keep the original string with spaces
+            return [v]
         return [str(v)]
 
     @model_validator(mode="after")
