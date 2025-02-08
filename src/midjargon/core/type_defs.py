@@ -4,6 +4,8 @@ type_defs.py
 Defines type aliases for clarity in the midjargon package.
 """
 
+from typing import Union
+
 # The raw input prompt as a string.
 MidjargonInput = str
 
@@ -17,4 +19,4 @@ MidjargonPrompt = str
 # - "images": list of image URLs (if any)
 # - "text": core text prompt
 # - All other parameters (keys without the '--' prefix)
-MidjargonDict = dict[str, None | str | list[str]]
+MidjargonDict = dict[str, Union[None, str, list[str], int, float]]

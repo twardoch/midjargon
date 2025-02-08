@@ -6,11 +6,11 @@ This module provides a unified interface for parameter handling,
 supporting both raw string parsing and structured parameter handling.
 """
 
-from typing import TypeAlias
+from typing import TypeAlias, Union
 
 # Type aliases for clarity
 ParamName: TypeAlias = str
-ParamValue: TypeAlias = str | list[str] | None | bool
+ParamValue: TypeAlias = Union[str, list[str], None, bool, int, float]
 ParamDict: TypeAlias = dict[ParamName, ParamValue]
 
 # Common parameter shortcuts
@@ -165,6 +165,10 @@ def process_param_value(values: list[str]) -> str | None:
     # Handle version parameter
     elif result.startswith("v") and result[1:].replace(".", "").isdigit():
         result = result[1:]  # Strip 'v' prefix for version numbers
+    # Handle aspect ratio
+    elif ":" in result and all(part.strip().isdigit() for part in result.split(":")):
+        width, height = map(int, result.split(":"))
+        return f"{width}:{height}"
     # Handle reference files
     elif "," in result and any(
         ext in result.lower() for ext in (".jpg", ".jpeg", ".png", ".gif")

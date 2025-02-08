@@ -12,6 +12,7 @@ Supports both raw parsing and Midjourney-specific validation.
 """
 
 import json
+import re
 import sys
 from typing import Any, NoReturn
 
@@ -142,21 +143,26 @@ class MidjargonCLI:
             if isinstance(results, list) and len(results) == 1:
                 results = results[0]
 
-            # Add computed fields for aspect ratio
+            # Add computed fields for aspect ratio and handle numeric parameters
             if isinstance(results, list):
                 for result in results:
                     if "aspect_width" in result and "aspect_height" in result:
                         result["aspect"] = (
                             f"{result['aspect_width']}:{result['aspect_height']}"
                         )
-            elif (
-                isinstance(results, dict)
-                and "aspect_width" in results
-                and "aspect_height" in results
-            ):
-                results["aspect"] = (
-                    f"{results['aspect_width']}:{results['aspect_height']}"
-                )
+                    # Ensure numeric parameters are strings and not in text
+                    if "text" in result and isinstance(result["text"], str):
+                        result["text"] = re.sub(
+                            r"\s+\d+\s*$", "", result["text"]
+                        ).strip()
+            elif isinstance(results, dict):
+                if "aspect_width" in results and "aspect_height" in results:
+                    results["aspect"] = (
+                        f"{results['aspect_width']}:{results['aspect_height']}"
+                    )
+                # Ensure numeric parameters are strings and not in text
+                if "text" in results and isinstance(results["text"], str):
+                    results["text"] = re.sub(r"\s+\d+\s*$", "", results["text"]).strip()
 
             if json_output:
                 _output_json(results)

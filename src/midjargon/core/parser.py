@@ -250,9 +250,47 @@ def parse_midjargon_prompt_to_dict(expanded_prompt: MidjargonPrompt) -> Midjargo
     # Parse parameters using the consolidated parameter parsing logic
     params = parse_parameters(param_part) if param_part.startswith("--") else {}
 
-    # Build the result dictionary
+    # Convert numeric parameters to numbers
+    numeric_params = {
+        "stylize",
+        "chaos",
+        "weird",
+        "image_weight",
+        "quality",
+        "character_weight",
+        "style_weight",
+        "style_version",
+        "repeat",
+        "seed",
+        "stop",
+    }
+
+    for key, value in list(params.items()):
+        if key in numeric_params:
+            if isinstance(value, str):
+                try:
+                    if value.strip().isdigit():
+                        params[key] = int(value)
+                    elif "." in value:
+                        params[key] = float(value)
+                except (ValueError, TypeError):
+                    pass
+            elif isinstance(value, list):
+                try:
+                    numeric_values = []
+                    for v in value:
+                        if isinstance(v, str):
+                            if v.strip().isdigit():
+                                numeric_values.append(int(v))
+                            elif "." in v:
+                                numeric_values.append(float(v))
+                    if numeric_values:
+                        params[key] = numeric_values
+                except (ValueError, TypeError):
+                    pass
+
+    # Build the result dictionary with proper typing
     result: MidjargonDict = {"text": main_text, "images": urls}
-    for key, value in params.items():
-        result[key] = value
+    result.update(params)
 
     return result
