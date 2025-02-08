@@ -245,10 +245,25 @@ def parse_midjargon_prompt_to_dict(expanded_prompt: MidjargonPrompt) -> Midjargo
     main_text = re.sub(r"\s*--\S+\s*", " ", main_text).strip()
 
     # Remove any numeric values that were incorrectly appended to the text
-    main_text = re.sub(r"\s+\d+\s*$", "", main_text).strip()
+    main_text = re.sub(r"\s+\d+(?:\s*:\s*\d+)?\s*$", "", main_text).strip()
 
     # Parse parameters using the consolidated parameter parsing logic
     params = parse_parameters(param_part) if param_part.startswith("--") else {}
+
+    # Handle aspect ratio
+    if "ar" in params or "aspect" in params:
+        aspect_value = params.get("ar") or params.get("aspect")
+        if aspect_value:
+            try:
+                if isinstance(aspect_value, str):
+                    width_str, height_str = aspect_value.split(":")
+                    width = int(width_str.strip())
+                    height = int(height_str.strip())
+                    params["aspect"] = f"{width}:{height}"
+                    params["aspect_width"] = width
+                    params["aspect_height"] = height
+            except (ValueError, AttributeError):
+                pass
 
     # Convert numeric parameters to numbers
     numeric_params = {

@@ -106,7 +106,18 @@ def validate_param_value(name: str, value: ParamValue) -> None:
         "stop",
     }:
         try:
-            float(value)
+            if isinstance(value, str):
+                if value.strip().isdigit():
+                    int(value)
+                elif "." in value:
+                    float(value)
+                elif "," in value:  # Handle numeric permutations
+                    for v in value.split(","):
+                        v = v.strip()
+                        if v.isdigit():
+                            int(v)
+                        elif "." in v:
+                            float(v)
         except ValueError as e:
             msg = f"Invalid numeric value for {name}: {value}"
             raise ValueError(msg) from e

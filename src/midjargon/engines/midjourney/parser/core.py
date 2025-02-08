@@ -58,6 +58,8 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
             text = ""
         if isinstance(text, list):
             text = text[0] if text else ""
+        if not isinstance(text, str):
+            text = str(text)
         text = text.strip()
         if not text:
             msg = "Empty prompt"
@@ -66,8 +68,9 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
 
         # Process images
         images = midjargon_dict.get("images", [])
-        if images:
-            prompt_data["image_prompts"] = [ImagePrompt(url=url) for url in images]
+        if not isinstance(images, list):
+            images = [str(images)] if images else []
+        prompt_data["image_prompts"] = [ImagePrompt(url=str(url)) for url in images]
 
     def _process_aspect_ratio(
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict
@@ -84,13 +87,14 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
                 return
 
         # Handle value with additional parameters
-        value_parts = str(value).split("--")
+        value_str = str(value)
+        value_parts = value_str.split("--")
         aspect_value = value_parts[0].strip()
 
         try:
             width_str, height_str = aspect_value.split(":")
-            width = int(width_str)
-            height = int(height_str)
+            width = int(width_str.strip())
+            height = int(height_str.strip())
         except (ValueError, AttributeError) as e:
             msg = f"Invalid aspect ratio format: {aspect_value} - must be width:height"
             raise ValueError(msg) from e
@@ -102,6 +106,11 @@ class MidjourneyParser(EngineParser[MidjourneyPrompt]):
         prompt_data["aspect_width"] = width
         prompt_data["aspect_height"] = height
         prompt_data["aspect"] = f"{width}:{height}"
+
+        # Also set the aspect ratio in the original dict for consistency
+        midjargon_dict["aspect"] = f"{width}:{height}"
+        midjargon_dict["aspect_width"] = width
+        midjargon_dict["aspect_height"] = height
 
     def _process_version(
         self, prompt_data: dict[str, Any], midjargon_dict: MidjargonDict

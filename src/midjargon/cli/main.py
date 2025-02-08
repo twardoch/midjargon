@@ -275,14 +275,13 @@ class MidjargonCLI:
 
             if json_output:
                 _output_json(results)
+            elif isinstance(results, list):
+                for i, result in enumerate(results, 1):
+                    if len(results) > 1:
+                        console.print(f"\nVariant {i}:", style="bold blue")
+                    console.print(Panel(_format_prompt(result)))
             else:
-                if isinstance(results, list):
-                    for i, result in enumerate(results, 1):
-                        if len(results) > 1:
-                            console.print(f"\nVariant {i}:", style="bold blue")
-                        console.print(Panel(_format_prompt(result)))
-                else:
-                    console.print(Panel(_format_prompt(results)))
+                console.print(Panel(_format_prompt(results)))
 
             return results
 
