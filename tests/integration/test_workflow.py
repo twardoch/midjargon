@@ -260,7 +260,7 @@ def test_permutations_with_complex_parameters():
             r.text.strip(),
             r.personalization[0]
             if isinstance(r.personalization, list)
-            else bool(r.personalization),
+            else r.personalization,
             f"{r.aspect_width}:{r.aspect_height}",
             r.stylize,
         )

@@ -196,8 +196,8 @@ def test_multiple_permutations():
     expected = {
         ("smooth edges", 75, False),
         ("smooth edges", 300, False),
-        ("smooth edges", 75, None),
-        ("smooth edges", 300, None),
+        ("smooth edges", 75, True),
+        ("smooth edges", 300, True),
     }
 
     assert result_tuples == expected
@@ -248,7 +248,7 @@ def test_personalization_parameter():
 
     # Test with empty list - should be False
     prompt = parser.parse_dict({"text": "a photo", "p": []})
-    assert prompt.personalization == []
+    assert prompt.personalization is False
 
     # Test without personalization - should be False
     prompt = parser.parse_dict({"text": "a photo"})

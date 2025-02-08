@@ -198,7 +198,7 @@ def test_personalization_parameter(cli):
         sys.stdout = sys.__stdout__
         data = parse_json_output(capture_stdout)
     assert isinstance(data, dict)
-    assert data["personalization"] == "CODE1 CODE2"
+    assert data["personalization"] == '"CODE1 CODE2"'
 
 
 def test_numeric_range_permutations(cli):
@@ -267,8 +267,8 @@ def test_nested_parameter_permutations(cli):
         (None, 300),  # No --p, stylize 300
         ("", 75),  # Empty --p, stylize 75
         ("", 300),  # Empty --p, stylize 300
-        ("CODE1 CODE2", 75),  # --p with codes, stylize 75
-        ("CODE1 CODE2", 300),  # --p with codes, stylize 300
+        ('"CODE1 CODE2"', 75),  # --p with codes, stylize 75
+        ('"CODE1 CODE2"', 300),  # --p with codes, stylize 300
     ]
     for prompt in data:
         assert prompt["text"] == "smooth edges"
