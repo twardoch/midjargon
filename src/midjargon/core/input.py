@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # this_file: src/midjargon/core/input.py
 
-
-
-from midjargon.core.models import PromptVariant
+from midjargon.core.models import MidjourneyPrompt, PromptVariant
 from midjargon.core.parser import parse_midjargon_prompt
+from midjargon.core.permutations import expand_permutations
 
 
 def parse_weighted_prompt(prompt: str) -> list[tuple[str, float]]:
@@ -26,7 +25,6 @@ def parse_weighted_prompt(prompt: str) -> list[tuple[str, float]]:
     # Split on double colon and parse weights
     result = []
     current_prompt = []
-    current_weight = None
     i = 0
 
     while i < len(prompt):
@@ -58,7 +56,6 @@ def parse_weighted_prompt(prompt: str) -> list[tuple[str, float]]:
 
             result.append((text, weight))
             current_prompt = []
-            current_weight = None
         else:
             current_prompt.append(prompt[i])
             i += 1
@@ -76,130 +73,17 @@ def parse_weighted_prompt(prompt: str) -> list[tuple[str, float]]:
     return result
 
 
-def expand_permutations(prompt: str) -> list[str]:
-    """Expand permutations in a prompt.
-
-    Args:
-        prompt: Raw prompt string with permutations.
-
-    Returns:
-        List of expanded prompts.
-
-    Raises:
-        ValueError: If permutation syntax is invalid.
-    """
-    # Handle escaped braces and commas
-    prompt = prompt.replace("\\{", "\x00").replace("\\}", "\x01").replace("\\,", "\x02")
-
-    # Find all permutation groups
-    groups = []
-    start = 0
-    depth = 0
-    group_start = -1
-
-    for i, char in enumerate(prompt):
-        if char == "{":
-            depth += 1
-            if depth == 1:
-                group_start = i
-        elif char == "}":
-            depth -= 1
-            if depth == 0:
-                groups.append((group_start, i))
-            elif depth < 0:
-                msg = "Unmatched closing brace"
-                raise ValueError(msg)
-
-    if depth > 0:
-        msg = "Unclosed permutation group"
-        raise ValueError(msg)
-
-    # No permutations found
-    if not groups:
-        return [prompt.replace("\x00", "{").replace("\x01", "}").replace("\x02", ",")]
-
-    # Process each group
-    result = [""]
-    pos = 0
-
-    for start, end in groups:
-        # Add text before group
-        prefix = (
-            prompt[pos:start]
-            .replace("\x00", "{")
-            .replace("\x01", "}")
-            .replace("\x02", ",")
-        )
-        result = [r + prefix for r in result]
-
-        # Get group options
-        options = [
-            o.strip()
-            for o in prompt[start + 1 : end].split(",")
-            if o.strip() or o.strip() == ""
-        ]
-        if not options:
-            msg = "Empty permutation group"
-            raise ValueError(msg)
-
-        # Expand options
-        new_result = []
-        for r in result:
-            for opt in options:
-                new_result.append(
-                    r
-                    + opt.replace("\x00", "{").replace("\x01", "}").replace("\x02", ",")
-                )
-        result = new_result
-        pos = end + 1
-
-    # Add remaining text
-    if pos < len(prompt):
-        suffix = (
-            prompt[pos:].replace("\x00", "{").replace("\x01", "}").replace("\x02", ",")
-        )
-        result = [r + suffix for r in result]
-
-    return result
-
-
 def expand_midjargon_input(prompt: str) -> list[PromptVariant]:
-    """Expand a midjargon prompt by processing weights and permutations.
+    """Expand a midjourney prompt by processing permutations and returning a list of prompt variants.
 
     Args:
-        prompt: Raw prompt string with optional weights and permutations.
+        prompt: The prompt string to expand.
 
     Returns:
-        List of PromptVariant objects.
-
-    Raises:
-        ValueError: If prompt parsing or expansion fails.
+        A list of PromptVariant objects, each containing an expanded prompt.
     """
-    try:
-        # Parse weighted prompts
-        weighted_prompts = parse_weighted_prompt(prompt)
-    except Exception as e:
-        msg = f"Failed to parse weighted prompts: {e!s}"
-        raise ValueError(msg)
-
-    result = []
-
-    for prompt_text, weight in weighted_prompts:
-        try:
-            # Expand permutations
-            variants = expand_permutations(prompt_text)
-
-            # Parse each variant
-            for variant in variants:
-                try:
-                    parsed = parse_midjargon_prompt(variant)
-                    result.append(PromptVariant(prompt=parsed, weight=weight))
-                except Exception as e:
-                    msg = f"Failed to parse variant '{variant}': {e!s}"
-                    raise ValueError(msg)
-
-        except Exception as e:
-            msg = f"Failed to expand prompt '{prompt_text}': {e!s}"
-            raise ValueError(msg)
-
-    return result
+    permutation_options = expand_permutations(prompt)
+    return [
+        PromptVariant(prompt=MidjourneyPrompt(text=opt), weight=1.0)
+        for opt in permutation_options
+    ]

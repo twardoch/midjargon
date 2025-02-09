@@ -7,11 +7,7 @@ from urllib.parse import urlparse
 
 from pydantic import HttpUrl
 
-from midjargon.core.models import (
-    ImageReference,
-    MidjourneyParameters,
-    MidjourneyPrompt,
-)
+from midjargon.core.models import MidjourneyPrompt
 from midjargon.core.parameters import parse_parameters
 
 
@@ -31,14 +27,14 @@ def is_valid_image_url(url: str) -> bool:
         return False
 
 
-def extract_image_urls(prompt: str) -> tuple[list[ImageReference], str]:
+def extract_image_urls(prompt: str) -> tuple[list[HttpUrl], str]:
     """Extract image URLs from a prompt string.
 
     Args:
         prompt: Raw prompt string.
 
     Returns:
-        Tuple of (list of ImageReference objects, remaining text).
+        Tuple of (list of HttpUrl objects, remaining text).
     """
     if isinstance(prompt, str):
         matches = re.finditer(r"(https?://\S+)", prompt)
@@ -50,7 +46,8 @@ def extract_image_urls(prompt: str) -> tuple[list[ImageReference], str]:
             start, end = match.span()
             remaining_parts.append(prompt[last_end:start])
             url = match.group(1)
-            images.append(ImageReference(url=HttpUrl(url)))
+            if is_valid_image_url(url):
+                images.append(HttpUrl(url))
             last_end = end
 
         remaining_parts.append(prompt[last_end:])
@@ -59,7 +56,7 @@ def extract_image_urls(prompt: str) -> tuple[list[ImageReference], str]:
         )
         return images, remaining_text
     else:
-        return getattr(prompt, "images", []), str(prompt)
+        return [], str(prompt)
 
 
 def parse_midjargon_prompt_to_dict(prompt: str) -> dict[str, Any]:
@@ -107,7 +104,9 @@ def parse_midjargon_prompt(prompt: str) -> MidjourneyPrompt:
     # Create and validate the prompt object
     try:
         return MidjourneyPrompt(
-            text=text_part, images=images, parameters=MidjourneyParameters(**parameters)
+            text=text_part,
+            image_prompts=images,
+            **parameters,
         )
     except Exception as e:
         msg = f"Failed to create prompt object: {e!s}"

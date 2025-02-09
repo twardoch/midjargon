@@ -15,7 +15,7 @@ this_file: TODO.md
    - Added no-color support and consistent formatting
    - Improved parameter type conversion and validation
 
-2. ✅ Testing
+2. ✅ Testing Setup
    - Added core functionality tests
    - Included edge case handling
    - Created test suite for all major features
@@ -24,6 +24,28 @@ this_file: TODO.md
    - Added docstrings to all functions
    - Created example script
    - Updated implementation log
+
+## Current Priorities
+
+1. 🚧 Fix Test Failures
+   - [ ] Fix parameter parsing for reference parameters (--cref, --sref)
+   - [ ] Fix output format mismatches in CLI
+   - [ ] Add missing CLI commands (json, perm)
+   - [ ] Fix MidjourneyParser initialization
+   - [ ] Resolve flag parameter handling issues
+   - [ ] Fix test assertions for parameter values
+
+2. 🚧 Improve Error Handling
+   - [ ] Add more descriptive error messages
+   - [ ] Implement better error recovery
+   - [ ] Add error documentation
+   - [ ] Improve validation error messages
+
+3. 🚧 Enhance CLI
+   - [ ] Complete missing commands
+   - [ ] Fix output formatting
+   - [ ] Improve error reporting
+   - [ ] Add progress indicators
 
 ## Next Steps
 
@@ -77,6 +99,25 @@ this_file: TODO.md
    - [ ] Create prompt optimization suggestions
 
 ## Implementation Notes
+
+### Current Focus
+1. Parameter Parsing
+   - Fix reference parameter handling
+   - Improve flag parameter support
+   - Fix type conversion issues
+   - Add better validation
+
+2. CLI Improvements
+   - Add missing commands
+   - Fix output formatting
+   - Improve error handling
+   - Add progress indicators
+
+3. Testing
+   - Fix failing tests
+   - Add missing test cases
+   - Improve test coverage
+   - Add integration tests
 
 ### Engine Implementation Strategy
 1. Start with Midjourney engine
