@@ -2,7 +2,6 @@
 # this_file: src/midjargon/core/input.py
 
 from midjargon.core.models import MidjourneyPrompt, PromptVariant
-from midjargon.core.parser import parse_midjargon_prompt
 from midjargon.core.permutations import expand_permutations
 
 

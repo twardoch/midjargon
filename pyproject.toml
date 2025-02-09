@@ -95,8 +95,8 @@ detached = true
 
 [tool.hatch.envs.lint.scripts]
 all = ["style", "typing"]
-fmt = ["ruff format {args:.}", "ruff check --fix {args:.}"]
-style = ["ruff check {args:.}", "ruff format {args:.}"]
+fmt = ["fd -e py -x pyupgrade --keep-runtime-typing --py310-plus", "ruff format {args:.}", "ruff check --fix --unsafe-fixes {args:.}"]
+style = ["fd -e py -x pyupgrade --keep-runtime-typing --py310-plus", "ruff format {args:.}", "ruff check --fix --unsafe-fixes {args:.}", "ruff format {args:.}"]
 typing = "mypy --install-types --non-interactive {args:src/midjargon tests}"
 
 [tool.hatch.envs.test]

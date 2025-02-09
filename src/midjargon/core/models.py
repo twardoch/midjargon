@@ -31,18 +31,46 @@ class MidjourneyVersion(str, Enum):
         try:
             # Try to normalize version string
             value = str(value).lower().strip()
+
+            # Handle numeric versions (e.g., 4, 5, 6)
+            if value.replace(".", "").isdigit():
+                if "." not in value:
+                    value = f"v{value}"
+                else:
+                    value = f"v{value}"
+
+            # Handle niji versions
             if value == "niji":
                 return cls.NIJI6
-            if value.startswith("v"):
-                value = value[1:]
+            if value.startswith("niji"):
+                for member in cls:
+                    if member.value == value:
+                        return member
+                return cls.NIJI6
+
+            # Handle v prefix
+            if not value.startswith("v") and not value.startswith("niji"):
+                value = f"v{value}"
+
             # Try exact match first
             for member in cls:
                 if member.value == value:
                     return member
-            # Try prefix match
-            for member in cls:
-                if member.value.startswith(value):
-                    return member
+
+            # Try prefix match for v* versions
+            if value.startswith("v"):
+                base_version = value.split(".")[0]
+                latest_version = None
+                for member in cls:
+                    if member.value.startswith(base_version):
+                        if (
+                            latest_version is None
+                            or member.value > latest_version.value
+                        ):
+                            latest_version = member
+                if latest_version:
+                    return latest_version
+
             return None
         except:
             return None
@@ -70,6 +98,7 @@ class CharacterReference(BaseModel):
 
     url: HttpUrl
     weight: float = 1.0
+    code: str | None = None
 
 
 class StyleReference(BaseModel):
@@ -77,6 +106,7 @@ class StyleReference(BaseModel):
 
     url: HttpUrl
     weight: float = 1.0
+    code: str | None = None
 
 
 class MidjourneyParameters(BaseModel):
@@ -142,29 +172,29 @@ class MidjourneyPrompt(BaseModel):
 
     text: str
     image_prompts: list[HttpUrl] = []
-    stylize: Optional[float] = 100
-    chaos: Optional[float] = 0
-    weird: Optional[float] = 0
-    image_weight: Optional[float] = 1.0
-    seed: Optional[int] = None
-    stop: Optional[float] = 100
-    aspect_width: Optional[int] = None
-    aspect_height: Optional[int] = None
-    aspect_ratio: Optional[str] = None
-    style: Optional[StyleMode] = None
-    version: Optional[MidjourneyVersion] = None
+    stylize: float | None = 100
+    chaos: float | None = 0
+    weird: float | None = 0
+    image_weight: float | None = 1.0
+    seed: int | None = None
+    stop: float | None = 100
+    aspect_width: int | None = None
+    aspect_height: int | None = None
+    aspect_ratio: str | None = None
+    style: StyleMode | None = None
+    version: MidjourneyVersion | None = None
     personalization: bool = False
-    quality: Optional[float] = 1.0
+    quality: float | None = 1.0
     character_reference: list[CharacterReference] = []
-    character_weight: Optional[float] = 100
+    character_weight: float | None = 100
     style_reference: list[StyleReference] = []
-    style_weight: Optional[float] = None
-    style_version: Optional[int] = 2
-    repeat: Optional[int] = None
+    style_weight: float | None = None
+    style_version: int | None = 2
+    repeat: int | None = None
     turbo: bool = False
     relax: bool = False
     tile: bool = False
-    negative_prompt: Optional[str] = None
+    negative_prompt: str | None = None
     extra_params: dict[str, Any] = Field(default_factory=dict)
 
     def to_string(self) -> str:

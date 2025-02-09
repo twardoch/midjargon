@@ -88,6 +88,20 @@ The midjargon package is a robust Python library for parsing and manipulating Mi
    - Working on parameter validation
    - Improving format conversion
 
+4. Test Suite Status [🚧]
+   - Multiple test failures identified in core functionality:
+     - Parameter parsing and validation issues
+     - MidjourneyPrompt model attribute access problems
+     - CLI command implementation gaps
+     - Type conversion mismatches
+     - Permutation expansion bugs
+   - Key areas needing immediate attention:
+     - Parameter type conversion (string vs numeric values)
+     - Model attribute access ('images', 'parameters' attributes)
+     - Reference parameter handling
+     - CLI command implementations (json, fal, perm)
+     - Permutation expansion logic
+
 ## Current Focus
 
 1. Fixing remaining test failures:

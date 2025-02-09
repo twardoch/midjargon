@@ -27,25 +27,44 @@ this_file: TODO.md
 
 ## Current Priorities
 
-1. 🚧 Fix Test Failures
-   - [ ] Fix parameter parsing for reference parameters (--cref, --sref)
-   - [ ] Fix output format mismatches in CLI
-   - [ ] Add missing CLI commands (json, perm)
-   - [ ] Fix MidjourneyParser initialization
-   - [ ] Resolve flag parameter handling issues
-   - [ ] Fix test assertions for parameter values
+1. 🚧 Fix Core Model Issues
+   - [ ] Fix MidjourneyPrompt model attribute access
+     - [ ] Add proper 'images' attribute access
+     - [ ] Add proper 'parameters' attribute access
+     - [ ] Fix model validation for version parameters
+   - [ ] Fix parameter type conversion
+     - [ ] Ensure numeric parameters maintain correct types (int/float)
+     - [ ] Fix version parameter validation (v4, v5, etc.)
+     - [ ] Fix style reference parameter handling
+   - [ ] Fix permutation expansion
+     - [ ] Fix weighted prompt handling
+     - [ ] Fix nested permutation groups
+     - [ ] Fix whitespace handling in permutations
 
-2. 🚧 Improve Error Handling
-   - [ ] Add more descriptive error messages
-   - [ ] Implement better error recovery
-   - [ ] Add error documentation
-   - [ ] Improve validation error messages
-
-3. 🚧 Enhance CLI
-   - [ ] Complete missing commands
+2. 🚧 Fix CLI Implementation
+   - [ ] Implement missing CLI commands
+     - [ ] Add 'fal' command for Fal.ai support
+     - [ ] Fix 'json' command implementation
+     - [ ] Fix 'perm' command implementation
    - [ ] Fix output formatting
-   - [ ] Improve error reporting
-   - [ ] Add progress indicators
+     - [ ] Fix JSON output structure
+     - [ ] Fix permutation output format
+     - [ ] Add proper error formatting
+   - [ ] Add proper parameter validation
+     - [ ] Add input validation for all commands
+     - [ ] Add proper error messages for invalid inputs
+
+3. 🚧 Fix Test Suite
+   - [ ] Fix core functionality tests
+     - [ ] Fix parameter parsing tests
+     - [ ] Fix model validation tests
+     - [ ] Fix permutation tests
+   - [ ] Fix CLI tests
+     - [ ] Fix command tests
+     - [ ] Fix output format tests
+   - [ ] Fix integration tests
+     - [ ] Fix workflow tests
+     - [ ] Fix engine-specific tests
 
 ## Next Steps
 

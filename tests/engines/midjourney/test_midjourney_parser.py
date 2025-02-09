@@ -1,8 +1,6 @@
 # this_file: tests/engines/midjourney/test_midjourney_parser.py
 """Tests for Midjourney parser."""
 
-from typing import TYPE_CHECKING
-
 import pytest
 from pydantic import HttpUrl
 

@@ -3,7 +3,7 @@
 
 import shlex
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import urlparse
 
 from pydantic import HttpUrl
 
@@ -45,10 +45,25 @@ ALIASES = {
 }
 
 # Parameters that can have multiple values
-MULTI_VALUE_PARAMS = {"no", "personalization", "character_reference", "style_reference"}
+MULTI_VALUE_PARAMS = {"no", "character_reference", "style_reference"}
 
 # Parameters that are flags (no value needed)
-FLAG_PARAMS = {"tile", "turbo", "relax", "fast", "video"}
+FLAG_PARAMS = {"tile", "turbo", "relax", "fast", "video", "personalization"}
+
+# Parameters that should remain as strings
+STRING_PARAMS = {"aspect", "negative_prompt"}
+
+# Parameters that should be integers
+INT_PARAMS = {"seed", "style_version", "repeat"}
+
+
+def is_url(value: str) -> bool:
+    """Check if a string is a valid URL."""
+    try:
+        result = urlparse(value)
+        return all([result.scheme, result.netloc])
+    except:
+        return False
 
 
 def convert_parameter_value(param: str, value: str | None) -> Any:
@@ -61,51 +76,67 @@ def convert_parameter_value(param: str, value: str | None) -> Any:
     if value is None:
         return None
 
-    # Handle multi-value parameters
-    if param in MULTI_VALUE_PARAMS:
-        return value.split(",") if value else []
+    # Handle string parameters
+    if param in STRING_PARAMS:
+        return str(value)
 
     # Handle version parameter
     if param == "version":
-        if value.startswith("niji"):
-            return MidjourneyVersion.NIJI6
         try:
-            return float(value)
+            return MidjourneyVersion(value)
         except ValueError:
-            raise ValueError(f"Invalid version value: {value}")
+            msg = f"Invalid version value: {value}"
+            raise ValueError(msg)
 
-    # Handle numeric parameters
+    # Handle integer parameters
+    if param in INT_PARAMS:
+        try:
+            return int(value)
+        except ValueError:
+            msg = f"Invalid integer value for {param}: {value}"
+            raise ValueError(msg)
+
+    # Handle float parameters
     if param in {
         "stylize",
         "chaos",
         "weird",
-        "seed",
         "quality",
         "character_weight",
         "style_weight",
-        "style_version",
+        "image_weight",
+        "stop",
     }:
         try:
             return float(value)
         except ValueError:
-            raise ValueError(f"Invalid numeric value for {param}: {value}")
+            msg = f"Invalid numeric value for {param}: {value}"
+            raise ValueError(msg)
 
     # Handle style parameter
     if param == "style":
         try:
             return StyleMode(value)
         except ValueError:
-            raise ValueError(f"Invalid style value: {value}")
+            msg = f"Invalid style value: {value}"
+            raise ValueError(msg)
 
     # Handle character and style references
     if param in {"character_reference", "style_reference"}:
         ref_class = (
             CharacterReference if param == "character_reference" else StyleReference
         )
-        if value.startswith("http"):
-            return ref_class(url=HttpUrl(value), weight=1.0)
-        else:
-            return ref_class(code=value, weight=1.0)
+        try:
+            if is_url(value):
+                return ref_class(url=HttpUrl(value), weight=1.0)
+            else:
+                # Handle reference codes (e.g., p123456)
+                return ref_class(
+                    url=HttpUrl(f"https://example.com/{value}"), code=value, weight=1.0
+                )
+        except Exception:
+            msg = f"Invalid reference value for {param}: {value}"
+            raise ValueError(msg)
 
     # Default case: return as string
     return value
@@ -120,40 +151,73 @@ def parse_parameters(param_str: str) -> dict[str, Any]:
     try:
         parts = shlex.split(param_str)
     except ValueError as e:
-        raise ValueError(f"Failed to parse parameters: {e}")
+        msg = f"Failed to parse parameters: {e}"
+        raise ValueError(msg)
 
     result: dict[str, Any] = {}
     current_param = None
+    current_values = []
 
     for part in parts:
         if part.startswith("--"):
-            # New parameter
+            # Store previous parameter if exists
             if current_param:
-                # Previous parameter was a flag
-                result[current_param] = True
-            current_param = part[2:]  # Remove --
-            # Resolve alias if exists
-            current_param = ALIASES.get(current_param, current_param)
-        elif current_param:
-            # Parameter value
-            try:
-                value = convert_parameter_value(current_param, part)
-                if current_param in result and current_param in MULTI_VALUE_PARAMS:
-                    # Append to existing multi-value parameter
-                    if isinstance(result[current_param], list):
-                        result[current_param].append(value)
+                try:
+                    if current_param in MULTI_VALUE_PARAMS:
+                        # Handle multi-value parameters
+                        values = (
+                            [
+                                convert_parameter_value(current_param, v)
+                                for v in current_values
+                            ]
+                            if current_values
+                            else [True]
+                        )
+                        if current_param in result:
+                            result[current_param].extend(values)
+                        else:
+                            result[current_param] = values
                     else:
-                        result[current_param] = [result[current_param], value]
-                else:
-                    result[current_param] = value
-            except Exception as e:
-                raise ValueError(f"Failed to parse parameter {current_param}: {e}")
-            current_param = None
-        else:
-            raise ValueError(f"Unexpected value without parameter: {part}")
+                        # Handle single value parameters
+                        value = convert_parameter_value(
+                            current_param, current_values[0] if current_values else None
+                        )
+                        result[current_param] = value
+                except Exception as e:
+                    msg = f"Failed to parse parameter {current_param}: {e}"
+                    raise ValueError(msg)
 
-    # Handle last parameter if it was a flag
+            # Start new parameter
+            current_param = ALIASES.get(
+                part[2:], part[2:]
+            )  # Remove -- and resolve alias
+            current_values = []
+        elif current_param:
+            current_values.append(part)
+        else:
+            msg = f"Unexpected value without parameter: {part}"
+            raise ValueError(msg)
+
+    # Handle last parameter
     if current_param:
-        result[current_param] = True
+        try:
+            if current_param in MULTI_VALUE_PARAMS:
+                values = (
+                    [convert_parameter_value(current_param, v) for v in current_values]
+                    if current_values
+                    else [True]
+                )
+                if current_param in result:
+                    result[current_param].extend(values)
+                else:
+                    result[current_param] = values
+            else:
+                value = convert_parameter_value(
+                    current_param, current_values[0] if current_values else None
+                )
+                result[current_param] = value
+        except Exception as e:
+            msg = f"Failed to parse parameter {current_param}: {e}"
+            raise ValueError(msg)
 
     return result

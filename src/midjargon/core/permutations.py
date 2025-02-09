@@ -2,7 +2,6 @@
 # this_file: src/midjargon/core/permutations.py
 
 
-
 def find_unescaped(s: str, char: str, start: int = 0) -> int:
     """Find the next unescaped occurrence of a character.
 

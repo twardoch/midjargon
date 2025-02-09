@@ -4,15 +4,16 @@
 # dependencies = ["fire", "rich"]
 # ///
 
-import json
 import sys
-from typing import Any, Sequence
+from typing import Any
+from collections.abc import Sequence
 
 import fire
 from rich.console import Console
 
 from midjargon.core.input import expand_midjargon_input
 from midjargon.core.models import PromptVariant
+from midjargon.engines.fal import FalParser
 from midjargon.engines.midjourney import MidjourneyParser
 
 # Set up console for output
@@ -20,9 +21,9 @@ console = Console()
 error_console = Console(stderr=True)
 
 
-def format_json_output(variants: Sequence[PromptVariant]) -> dict[str, Any]:
+def format_json_output(variants: Sequence[PromptVariant]) -> list[dict[str, Any]]:
     """Format variants as JSON output."""
-    return {"variants": [variant.prompt.model_dump() for variant in variants]}
+    return [variant.prompt.model_dump() for variant in variants]
 
 
 def format_rich_output(variants: Sequence[PromptVariant]) -> str:
@@ -35,26 +36,29 @@ def format_rich_output(variants: Sequence[PromptVariant]) -> str:
 class MidjargonCLI:
     """CLI interface for midjargon."""
 
-    def json(self, prompt: str) -> None:
+    def json(self, prompt: str, no_color: bool = False) -> None:
         """Parse a prompt to MidjargonDict format.
 
         Args:
             prompt: The prompt to parse.
+            no_color: Whether to disable colored output.
         """
         try:
             variants = expand_midjargon_input(prompt)
-            output = format_json_output(variants)
-            print(json.dumps(output))
+            format_json_output(variants)
         except Exception as e:
-            error_console.print(f"[red]Error:[/red] {e!s}")
+            error_console.print(f"[red]Error:[/red] {e!s}", highlight=not no_color)
             sys.exit(1)
 
-    def mj(self, prompt: str, json_output: bool = False) -> None:
+    def mj(
+        self, prompt: str, json_output: bool = False, no_color: bool = False
+    ) -> None:
         """Convert a prompt to Midjourney format.
 
         Args:
             prompt: The prompt to convert.
             json_output: Whether to output JSON.
+            no_color: Whether to disable colored output.
         """
         try:
             variants = expand_midjargon_input(prompt)
@@ -65,34 +69,75 @@ class MidjargonCLI:
                 results.append(mj_prompt.model_dump())
 
             if json_output:
-                print(json.dumps({"variants": results}))
+                pass
             else:
                 for i, result in enumerate(results):
                     if len(results) > 1:
-                        console.print(f"{i + 1}. ", end="")
+                        console.print(f"{i + 1}. ", end="", highlight=not no_color)
+                    params = " ".join(
+                        f"--{k} {v}"
+                        for k, v in result.items()
+                        if k not in {"text", "image_prompts", "extra_params"}
+                        and v is not None
+                    )
                     console.print(
-                        f"{result['text']} {' '.join(f'--{k} {v}' for k, v in result.items() if k != 'text' and v is not None)}"
+                        f"{result['text']} {params}",
+                        highlight=not no_color,
                     )
         except Exception as e:
-            error_console.print(f"[red]Error:[/red] {e!s}")
+            error_console.print(f"[red]Error:[/red] {e!s}", highlight=not no_color)
             sys.exit(1)
 
-    def perm(self, prompt: str, json_output: bool = False) -> None:
+    def fal(
+        self, prompt: str, json_output: bool = False, no_color: bool = False
+    ) -> None:
+        """Convert a prompt to Fal.ai format.
+
+        Args:
+            prompt: The prompt to convert.
+            json_output: Whether to output JSON.
+            no_color: Whether to disable colored output.
+        """
+        try:
+            variants = expand_midjargon_input(prompt)
+            parser = FalParser()
+            results = []
+            for variant in variants:
+                fal_prompt = parser.parse_dict(variant.prompt.model_dump())
+                results.append(fal_prompt.model_dump())
+
+            if json_output:
+                pass
+            else:
+                for i, result in enumerate(results):
+                    if len(results) > 1:
+                        console.print(f"{i + 1}. ", end="", highlight=not no_color)
+                    console.print(
+                        result["text"],
+                        highlight=not no_color,
+                    )
+        except Exception as e:
+            error_console.print(f"[red]Error:[/red] {e!s}", highlight=not no_color)
+            sys.exit(1)
+
+    def perm(
+        self, prompt: str, json_output: bool = False, no_color: bool = False
+    ) -> None:
         """Expand permutations in a prompt.
 
         Args:
             prompt: The prompt to expand.
             json_output: Whether to output JSON.
+            no_color: Whether to disable colored output.
         """
         try:
             variants = expand_midjargon_input(prompt)
             if json_output:
-                output = format_json_output(variants)
-                print(json.dumps(output))
+                format_json_output(variants)
             else:
-                print(format_rich_output(variants))
+                pass
         except Exception as e:
-            error_console.print(f"[red]Error:[/red] {e!s}")
+            error_console.print(f"[red]Error:[/red] {e!s}", highlight=not no_color)
             sys.exit(1)
 
 
