@@ -1,125 +1,148 @@
 ---
 this_file: TODO.md
 ---
-# Midjargon Package Implementation Status
+# Midjargon Package Implementation Plan
 
-## Critical Issues (Priority 1)
+## Priority 0: Critical Import Fixes [IMMEDIATE]
 
-1. 🚧 Fix Pydantic Model Implementation
-   - [ ] Fix MidjourneyPrompt model
-     - [ ] Add proper 'images' property getter/setter
-     - [ ] Add proper 'parameters' property getter/setter
-     - [ ] Fix model validation for all fields
-     - [ ] Ensure proper type conversion in model fields
-     - [ ] Fix character reference validation
-     - [ ] Add proper model field documentation
-   - [ ] Fix parameter type conversion
-     - [ ] Ensure numeric parameters maintain correct types (int/float)
-     - [ ] Fix version parameter validation (v4, v5, etc.)
-     - [ ] Fix style reference parameter handling
-     - [ ] Add proper validation for all parameter types
-   - [ ] Fix model attribute access patterns
-     - [ ] Implement proper __getattr__ handling
-     - [ ] Fix model field access methods
-     - [ ] Add proper validation error messages
+### 0.1 Fix Missing Exports [CRITICAL]
+- [ ] Fix `__init__.py` exports
+  - [ ] Add `expand_midjargon_input` to exports from `core.input`
+  - [ ] Add `PromptVariant` to exports from `core.models`
+  - [ ] Verify all necessary types and functions are exported
 
-2. 🚧 Fix Core Parser Issues
-   - [ ] Fix parameter parsing
-     - [ ] Fix quotation handling in parameters
-     - [ ] Fix numeric parameter parsing
-     - [ ] Fix flag parameter handling
-     - [ ] Add proper error messages for parsing failures
-   - [ ] Fix permutation expansion
-     - [ ] Fix weighted prompt handling
-     - [ ] Fix nested permutation groups
-     - [ ] Fix whitespace handling in permutations
-     - [ ] Add proper escape character handling
-   - [ ] Fix input validation
-     - [ ] Add proper input sanitization
-     - [ ] Fix URL validation
-     - [ ] Add proper error handling for invalid inputs
+## Priority 1: Critical Model and Parser Fixes
 
-3. 🚧 Fix CLI Implementation
-   - [ ] Fix command implementations
-     - [ ] Fix 'json' command output formatting
-     - [ ] Fix 'mj' command parameter handling
-     - [ ] Fix 'fal' command implementation
-     - [ ] Fix 'perm' command implementation
-   - [ ] Fix output formatting
-     - [ ] Fix JSON output structure
-     - [ ] Fix permutation output format
-     - [ ] Add proper error formatting
-     - [ ] Ensure consistent output across all commands
-   - [ ] Add proper error handling
-     - [ ] Add descriptive error messages
-     - [ ] Add proper error recovery
-     - [ ] Add validation error formatting
+### 1.1 Fix Pydantic Model Implementation [CRITICAL]
+- [ ] Fix MidjourneyPrompt model validation issues
+  - [ ] Fix character_reference and style_reference list validation
+  - [ ] Ensure proper type conversion for list fields
+  - [ ] Add proper validation for empty lists
+  - [ ] Fix extra_params handling in model_dump()
+  - [ ] Fix aspect ratio handling and validation
+  - [ ] Fix computed_field for images property
+  - [ ] Fix parameters property implementation
 
-## High Priority Tasks (Priority 2)
+### 1.2 Fix Parameter Parsing [CRITICAL]
+- [ ] Fix parse_parameters function
+  - [ ] Fix type conversion for numeric parameters
+  - [ ] Fix flag parameter handling (True/False values)
+  - [ ] Fix list parameter parsing (character_reference, style_reference)
+  - [ ] Fix aspect ratio parameter parsing
+  - [ ] Add proper validation for all parameter types
+  - [ ] Fix version parameter handling
 
-1. 🚧 Fix Engine Implementation
-   - [ ] Fix MidjourneyParser
-     - [ ] Fix initialization issues
-     - [ ] Add proper parameter validation
-     - [ ] Fix type conversion
-     - [ ] Add proper reference handling
-   - [ ] Fix FalParser
-     - [ ] Fix initialization issues
-     - [ ] Add proper parameter mapping
-     - [ ] Fix type conversion
-     - [ ] Add proper validation
+### 1.3 Fix Core Parser [CRITICAL]
+- [ ] Fix parse_midjargon_prompt function
+  - [ ] Fix parameter extraction and validation
+  - [ ] Fix image URL extraction
+  - [ ] Fix text part extraction
+  - [ ] Add proper error handling and messages
+  - [ ] Fix model instantiation with parameters
 
-2. 🚧 Fix Test Suite
-   - [ ] Fix core functionality tests
-     - [ ] Fix parameter parsing tests
-     - [ ] Fix model validation tests
-     - [ ] Fix permutation tests
-     - [ ] Add missing edge cases
-   - [ ] Fix CLI tests
-     - [ ] Fix command tests
-     - [ ] Fix output format tests
-     - [ ] Add error handling tests
-   - [ ] Fix integration tests
-     - [ ] Fix workflow tests
-     - [ ] Fix engine-specific tests
-     - [ ] Add missing scenarios
+## Priority 2: Code Quality Fixes
 
-## Medium Priority Tasks (Priority 3)
+### 2.1 Fix Linting Issues
+- [ ] Fix FBT001/FBT002 issues in CLI
+  - [ ] Replace boolean positional arguments with proper flags
+  - [ ] Use dataclasses or Pydantic models for CLI options
+- [ ] Fix complexity issues
+  - [ ] Refactor `parse_weighted_prompt` (C901)
+  - [ ] Refactor `convert_parameter_value` (C901)
+  - [ ] Refactor `parse_parameters` (C901)
+- [ ] Fix error handling
+  - [ ] Replace bare excepts with specific exception handling
+  - [ ] Add proper error chaining with `raise ... from`
+  - [ ] Add descriptive error messages
 
-1. 🚧 Documentation Updates
-   - [ ] Update API documentation
-     - [ ] Document model attributes
-     - [ ] Document parameter handling
-     - [ ] Document CLI commands
-   - [ ] Add error handling guide
-     - [ ] Document common errors
-     - [ ] Add troubleshooting steps
-     - [ ] Add validation rules
-   - [ ] Update examples
-     - [ ] Add CLI usage examples
-     - [ ] Add parameter examples
-     - [ ] Add error handling examples
+### 2.2 Fix Type Safety
+- [ ] Add proper type hints throughout
+- [ ] Fix unused arguments (ARG003)
+- [ ] Add validation for all input parameters
+- [ ] Add runtime type checking where necessary
 
-2. 🚧 Code Quality Improvements
-   - [ ] Add proper type hints
-   - [ ] Add proper docstrings
-   - [ ] Fix linting issues
-   - [ ] Add proper logging
-   - [ ] Add proper error messages
+## Priority 3: Core Functionality Fixes
 
-## Low Priority Tasks (Priority 4)
+### 3.1 Fix Permutation Handling
+- [ ] Fix expand_midjargon_input function
+  - [ ] Fix weighted prompt handling
+  - [ ] Fix nested permutation groups
+  - [ ] Fix whitespace handling
+  - [ ] Fix escape character handling
+  - [ ] Add proper validation for permutation syntax
 
-1. Performance Optimization
-   - [ ] Profile code for bottlenecks
-   - [ ] Optimize permutation expansion
-   - [ ] Improve memory usage
-   - [ ] Add caching where beneficial
+### 3.2 Fix Input Processing
+- [ ] Fix input validation and sanitization
+  - [ ] Add proper URL validation
+  - [ ] Fix multi-prompt handling
+  - [ ] Fix weight parsing
+  - [ ] Add proper input sanitization
+  - [ ] Fix escape character handling
 
-2. Additional Features
-   - [ ] Add support for custom engines
-   - [ ] Implement prompt templates
-   - [ ] Add prompt validation rules
-   - [ ] Create prompt optimization suggestions
+### 3.3 Fix CLI Implementation
+- [ ] Fix command implementations
+  - [ ] Fix 'mj' command
+  - [ ] Fix 'fal' command
+  - [ ] Fix 'perm' command
+  - [ ] Fix JSON output formatting
+  - [ ] Add proper error handling
+
+## Priority 4: Engine-Specific Fixes
+
+### 4.1 Fix Midjourney Engine
+- [ ] Fix MidjourneyParser implementation
+  - [ ] Fix parameter mapping
+  - [ ] Fix type conversion
+  - [ ] Fix validation
+  - [ ] Fix reference handling
+
+### 4.2 Fix Fal.ai Engine
+- [ ] Fix FalParser implementation
+  - [ ] Fix parameter mapping
+  - [ ] Fix type conversion
+  - [ ] Fix validation
+  - [ ] Fix reference handling
+
+## Priority 5: Testing and Documentation
+
+### 5.1 Fix Test Suite
+- [ ] Fix core functionality tests
+  - [ ] Fix parameter parsing tests
+  - [ ] Fix model validation tests
+  - [ ] Fix permutation tests
+  - [ ] Add missing edge cases
+
+### 5.2 Update Documentation
+- [ ] Update API documentation
+  - [ ] Document model attributes
+  - [ ] Document parameter handling
+  - [ ] Document CLI commands
+  - [ ] Add error handling guide
+
+## Implementation Order
+
+1. Start with Priority 0: Fix missing exports (IMMEDIATE)
+   - This is blocking the test suite from running
+   - Add missing exports to __init__.py
+
+2. Move to Priority 1: Critical Model and Parser Fixes
+   - Fix MidjourneyPrompt model validation issues
+   - Fix parameter parsing
+   - Fix core parser implementation
+
+3. Address Priority 2: Code Quality Fixes
+   - Fix linting issues
+   - Improve type safety
+   - Clean up error handling
+
+4. Then proceed with remaining priorities in order
+
+## Current Focus
+
+The immediate focus should be on fixing the missing exports in __init__.py:
+1. Add `expand_midjargon_input` to exports
+2. Add `PromptVariant` to exports
+3. Verify all necessary types and functions are exported
 
 ## Dependencies
 - pydantic (>=2.0.0)

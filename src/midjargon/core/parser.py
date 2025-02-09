@@ -69,7 +69,10 @@ def parse_parameters(param_str: str) -> dict[str, Any]:
     Raises:
         ValueError: If parameter parsing fails.
     """
-    params: dict[str, Any] = {}
+    params: dict[str, Any] = {
+        "character_reference": [],
+        "style_reference": [],
+    }
 
     # Split into individual parameters
     parts = param_str.split("--")
@@ -86,35 +89,50 @@ def parse_parameters(param_str: str) -> dict[str, Any]:
         if param_name == "cref":
             if param_value:
                 if is_url(param_value):
-                    params.setdefault("character_reference", []).append(
+                    params["character_reference"].append(
                         CharacterReference(url=HttpUrl(param_value), code=None)
                     )
                 else:
-                    params.setdefault("character_reference", []).append(
+                    params["character_reference"].append(
                         CharacterReference(url=None, code=param_value)
                     )
         elif param_name == "sref":
             if param_value:
                 if is_url(param_value):
-                    params.setdefault("style_reference", []).append(
+                    params["style_reference"].append(
                         StyleReference(url=HttpUrl(param_value), code=None)
                     )
                 else:
-                    params.setdefault("style_reference", []).append(
+                    params["style_reference"].append(
                         StyleReference(url=None, code=param_value)
                     )
-        # Handle regular parameters
+        # Handle flag parameters
         elif param_value is None:
             params[param_name] = True
-        else:
+        # Handle numeric parameters
+        elif param_value.replace(".", "").isdigit():
+            if "." in param_value:
+                params[param_name] = float(param_value)
+            else:
+                params[param_name] = int(param_value)
+        # Handle boolean parameters
+        elif param_value.lower() in ("true", "false"):
+            params[param_name] = param_value.lower() == "true"
+        # Handle list parameters
+        elif param_value.startswith("[") and param_value.endswith("]"):
             try:
-                # Try to convert to number
-                if "." in param_value:
-                    params[param_name] = float(param_value)
-                else:
-                    params[param_name] = int(param_value)
-            except ValueError:
-                params[param_name] = param_value
+                items = [
+                    item.strip()
+                    for item in param_value[1:-1].split(",")
+                    if item.strip()
+                ]
+                params[param_name] = items
+            except Exception as e:
+                msg = f"Failed to parse list parameter {param_name}: {e!s}"
+                raise ValueError(msg)
+        # Handle string parameters
+        else:
+            params[param_name] = param_value
 
     return params
 
@@ -146,7 +164,10 @@ def parse_midjargon_prompt(prompt: str) -> MidjourneyPrompt:
             raise ValueError(msg)
     else:
         text_part = remaining_text.strip()
-        parameters = {}
+        parameters = {
+            "character_reference": [],
+            "style_reference": [],
+        }
 
     # Create and validate the prompt object
     try:

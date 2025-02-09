@@ -92,23 +92,41 @@ class ImageReference(BaseModel):
     """Reference to an image."""
 
     url: HttpUrl
-    weight: float = 1.0
+    weight: float = Field(default=1.0, ge=0.0, le=2.0)
 
 
 class CharacterReference(BaseModel):
     """Reference to a character."""
 
     url: HttpUrl | None = None
-    weight: float = 1.0
+    weight: float = Field(default=1.0, ge=0.0, le=2.0)
     code: str | None = None
+
+    @field_validator("url", "code")
+    @classmethod
+    def validate_reference(cls, v: Any, info: ValidationInfo) -> Any:
+        """Validate that either url or code is provided."""
+        if info.data.get("url") is None and info.data.get("code") is None:
+            msg = "Either url or code must be provided"
+            raise ValueError(msg)
+        return v
 
 
 class StyleReference(BaseModel):
     """Reference to a style."""
 
     url: HttpUrl | None = None
-    weight: float = 1.0
+    weight: float = Field(default=1.0, ge=0.0, le=2.0)
     code: str | None = None
+
+    @field_validator("url", "code")
+    @classmethod
+    def validate_reference(cls, v: Any, info: ValidationInfo) -> Any:
+        """Validate that either url or code is provided."""
+        if info.data.get("url") is None and info.data.get("code") is None:
+            msg = "Either url or code must be provided"
+            raise ValueError(msg)
+        return v
 
 
 class MidjourneyParameters(BaseModel):
@@ -116,9 +134,9 @@ class MidjourneyParameters(BaseModel):
 
     version: MidjourneyVersion | None = None
     style: StyleMode | None = None
-    stylize: int = 100
-    chaos: int = 0
-    weird: int = 0
+    stylize: int = Field(default=100, ge=0, le=1000)
+    chaos: int = Field(default=0, ge=0, le=100)
+    weird: int = Field(default=0, ge=0, le=3000)
     seed: int | str | None = None
     aspect: str = "1:1"
     tile: bool = False
@@ -216,6 +234,16 @@ class MidjourneyPrompt(BaseModel):
                 raise ValueError(msg)
         return v
 
+    @field_validator("character_reference", "style_reference")
+    @classmethod
+    def validate_references(cls, v: list[Any], info: ValidationInfo) -> list[Any]:
+        """Validate reference lists."""
+        if v is None:
+            return []
+        if isinstance(v, str) and v == "[]":
+            return []
+        return v
+
     @computed_field
     def images(self) -> list[HttpUrl]:
         """Get image URLs."""
@@ -248,22 +276,15 @@ class MidjourneyPrompt(BaseModel):
         # Add parameters
         params = []
         for field, value in self.parameters.model_dump().items():
-            if value is None:
+            if value is None or (isinstance(value, list | dict) and not value):
                 continue
-            if isinstance(value, bool) and value:
-                params.append(f"--{field}")
-            elif isinstance(value, list) and value:
-                for v in value:
-                    params.append(f"--{field} {v}")
+            if isinstance(value, bool):
+                if value:
+                    params.append(f"--{field}")
+            elif isinstance(value, list | dict):
+                params.append(f"--{field} {value}")
             else:
                 params.append(f"--{field} {value}")
-
-        # Add extra parameters
-        for key, value in self.extra_params.items():
-            if value is None:
-                params.append(f"--{key}")
-            else:
-                params.append(f"--{key} {value}")
 
         if params:
             parts.append(" ".join(params))

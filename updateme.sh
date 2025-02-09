@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
-# this_file: midjargon/printme.sh
+# this_file: ./printme.sh
+uv venv
+# Activate venv if not active
+if [[ -z "${VIRTUAL_ENV}" ]] && [[ -f "venv/bin/activate" ]]; then
+    source venv/bin/activate
+    uv pip install fire gitignore-find
+fi
+uv pip install -e .[all]
 if [ -e ./midjargon.txt ]; then
     rm ./midjargon.txt
 fi
