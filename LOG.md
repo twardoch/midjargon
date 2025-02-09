@@ -9,116 +9,139 @@ The midjargon package is a robust Python library for parsing and manipulating Mi
 
 ## Core Components Status
 
-### 1. Core Modules [✅ COMPLETED]
+### 1. Core Modules [❌ FAILING]
 
-#### 1.1 Parser (`src/midjargon/core/parser.py`) [✅]
+#### 1.1 Parser (`src/midjargon/core/parser.py`) [❌]
 
-- ✅ Main prompt parser that coordinates other components
-- ✅ Handles URL extraction and basic prompt structure
-- ✅ Integrates with parameter parser and permutation expander
-- ✅ Returns structured data (Pydantic models)
+- ❌ Main prompt parser failing with multiple issues:
+  - Unclosed quotation errors in parameter parsing
+  - Model validation errors
+  - Type conversion issues
+  - Missing attribute access
+- 🚧 Needs complete overhaul of parameter parsing and model handling
 
-#### 1.2 Parameters (`src/midjargon/core/parameters.py`) [🚧 IN PROGRESS]
+#### 1.2 Parameters (`src/midjargon/core/parameters.py`) [❌]
 
-- ✅ Parameter validation and type conversion
-- ✅ Alias resolution
-- ✅ Default value handling
-- ✅ Support for all Midjourney parameters (--v, --niji, --style, etc.)
-- 🚧 Fixing issues with reference parameters (--cref, --sref)
-- 🚧 Improving flag parameter handling
+- ❌ Multiple parameter handling issues:
+  - Type conversion failures (numeric vs string)
+  - Flag parameter handling broken
+  - Reference parameter validation failing
+  - Version parameter issues
+- 🚧 Requires complete rework of parameter validation and type conversion
 
-#### 1.3 Permutations (`src/midjargon/core/permutations.py`) [✅]
+#### 1.3 Permutations (`src/midjargon/core/permutations.py`) [❌]
 
-- ✅ Recursive permutation expansion
-- ✅ Escape character handling
-- ✅ Nested group support
-- ✅ Efficient combination generation
+- ❌ Permutation expansion failing:
+  - Weighted prompts not working
+  - Nested groups failing
+  - Escape character issues
+  - Whitespace handling problems
+- 🚧 Needs complete revision of permutation logic
 
-#### 1.4 Input (`src/midjargon/core/input.py`) [✅]
+#### 1.4 Input (`src/midjargon/core/input.py`) [❌]
 
-- ✅ Input preprocessing
-- ✅ URL validation
-- ✅ Basic sanitization
-- ✅ Multi-prompt handling with weights
+- ❌ Input processing issues:
+  - URL validation failing
+  - Basic sanitization issues
+  - Multi-prompt handling broken
+  - Weight parsing failing
+- 🚧 Requires complete rework of input processing
 
-### 2. Engine-Specific Modules [🚧 IN PROGRESS]
+### 2. Engine-Specific Modules [❌ FAILING]
 
-#### 2.1 Midjourney Engine (`src/midjargon/engines/midjourney/`)
+#### 2.1 Midjourney Engine (`src/midjargon/engines/midjourney/`) [❌]
 
-- 🚧 Fixing MidjourneyParser initialization
-- [ ] Midjourney-specific parameter validation
-- [ ] Format conversion
-- [ ] Style reference handling
-- [ ] Personalization support
+- ❌ Multiple critical issues:
+  - MidjourneyPrompt model attribute access failing
+  - Parameter validation errors
+  - Type conversion issues
+  - Reference handling broken
+- 🚧 Needs complete overhaul of model implementation
 
-#### 2.2 Fal.ai Engine (`src/midjargon/engines/fal/`)
+#### 2.2 Fal.ai Engine (`src/midjargon/engines/fal/`) [❌]
 
-- [ ] Fal.ai-specific parameter mapping
-- [ ] Format conversion
-- [ ] API integration
+- ❌ Similar issues to Midjourney engine:
+  - Model attribute access failing
+  - Parameter mapping issues
+  - Type conversion problems
+  - Validation errors
+- 🚧 Requires complete rework
 
-### 3. CLI Interface (`src/midjargon/cli/`) [🚧 IN PROGRESS]
+### 3. CLI Interface (`src/midjargon/cli/`) [❌ FAILING]
 
-- ✅ Fire-based command structure
-- ✅ Rich output formatting
-- ✅ JSON output support
-- ✅ Error handling
-- ✅ No-color output support
-- ✅ Consistent output formatting
-- 🚧 Fixing output format issues
-- 🚧 Adding missing CLI commands (json, perm)
-- 🚧 Improving error handling
+- ❌ Multiple command implementation issues:
+  - JSON output formatting broken
+  - Command parameter handling failing
+  - Error handling inadequate
+  - Missing functionality
+- 🚧 Needs complete revision of command handling and output formatting
 
-## Recent Changes
+## Test Suite Status [❌ FAILING]
 
-1. Parameter Handling Improvements
-   - Fixed reference parameter handling (--cref, --sref)
-   - Added support for multiple reference values
-   - Improved flag parameter handling
-   - Fixed type conversion issues
+### Critical Issues (2024-03-21)
 
-2. CLI Enhancements
-   - Fixed JSON output formatting
-   - Improved error handling
-   - Added consistent output formatting
-   - Working on missing commands
+1. Model Implementation Issues
+   - MidjourneyPrompt missing key attributes ('images', 'parameters')
+   - Incorrect attribute access patterns
+   - Type conversion failures
+   - Validation errors in model fields
 
-3. Engine Work
-   - Fixed MidjourneyParser initialization
-   - Working on parameter validation
-   - Improving format conversion
+2. Parameter Handling Issues
+   - Failed parameter parsing and validation
+   - Incorrect type conversions
+   - Problems with reference parameters
+   - Flag parameter handling broken
+   - Version parameter validation failing
 
-4. Test Suite Status [🚧]
-   - Multiple test failures identified in core functionality:
-     - Parameter parsing and validation issues
-     - MidjourneyPrompt model attribute access problems
-     - CLI command implementation gaps
-     - Type conversion mismatches
-     - Permutation expansion bugs
-   - Key areas needing immediate attention:
-     - Parameter type conversion (string vs numeric values)
-     - Model attribute access ('images', 'parameters' attributes)
-     - Reference parameter handling
-     - CLI command implementations (json, fal, perm)
-     - Permutation expansion logic
+3. CLI Implementation Issues
+   - JSON output formatting broken
+   - Missing command implementations
+   - Incorrect parameter handling
+   - Output formatting inconsistencies
 
-## Current Focus
+4. Core Functionality Issues
+   - Permutation expansion failing
+   - Weighted prompt handling broken
+   - Nested permutation issues
+   - Escape character processing failing
 
-1. Fixing remaining test failures:
-   - Parameter parsing issues
-   - Output format mismatches
-   - Missing CLI functionality
-   - Engine-specific tests
+5. Engine-Specific Issues
+   - MidjourneyParser initialization failing
+   - Parameter validation errors
+   - Type conversion mismatches
+   - Reference handling broken
 
-2. Improving robustness:
-   - Better error handling
-   - More consistent output formats
-   - Enhanced parameter validation
+## Next Steps
+
+1. Fix Model Implementation
+   - Implement proper attribute access
+   - Fix type conversion
+   - Add proper validation
+   - Fix reference handling
+
+2. Fix Parameter Handling
+   - Rewrite parameter parsing
+   - Fix type conversion
+   - Implement proper validation
+   - Add proper error handling
+
+3. Fix CLI Implementation
+   - Fix command handling
+   - Fix output formatting
+   - Add proper error handling
+   - Implement missing functionality
+
+4. Fix Core Functionality
+   - Fix permutation expansion
+   - Fix weighted prompts
+   - Fix escape handling
+   - Add proper validation
+
+See TODO.md for detailed next steps and implementation plan.
 
 ## Dependencies [✅]
 
 All core dependencies are in place:
-
 - ✅ pydantic (>=2.0.0): Data validation
 - ✅ rich (>=13.0.0): CLI output formatting
 - ✅ fire (>=0.5.0): CLI interface

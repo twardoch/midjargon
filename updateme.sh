@@ -9,3 +9,10 @@ else
     uv pip install gitignore-find
 fi
 printfolder . ../midjargon.txt && mv ../midjargon.txt .
+
+hatch run lint:style >ERRORS.txt
+hatch test >>ERRORS.txt
+
+cat midjargon.txt ERRORS.txt
+
+echo ">> The codebase is in @midjargon.txt and the recent errors are in @ERRORS.txt"

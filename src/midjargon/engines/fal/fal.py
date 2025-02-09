@@ -21,13 +21,11 @@ class FalPrompt(BaseModel):
     extra_params: dict[str, Any] = {}
 
     @computed_field
-    @property
     def images(self) -> list[HttpUrl]:
         """Get image URLs."""
         return self.image_prompts
 
     @computed_field
-    @property
     def parameters(self) -> dict[str, Any]:
         """Get all parameters as a dictionary."""
         params = self.model_dump(exclude={"text", "image_prompts", "extra_params"})
@@ -83,7 +81,7 @@ class FalParser:
             ValueError: If the prompt text is empty.
         """
         # Validate text
-        text = prompt_dict.get("text", "").strip()
+        text = prompt_dict.pop("text", "").strip()
         if not text:
             msg = "Empty prompt"
             raise ValueError(msg)

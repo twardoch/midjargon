@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # this_file: tests/integration/test_workflow.py
 """Integration tests for complete midjargon workflow."""
 
@@ -8,7 +9,8 @@ import pytest
 
 from midjargon import expand_midjargon_input, parse_midjargon_prompt_to_dict
 from midjargon.cli.main import MidjargonCLI
-from midjargon.engines.midjourney import MidjourneyPrompt, parse_midjourney_dict
+from midjargon.core.models import MidjourneyPrompt
+from midjargon.engines.midjourney import parse_midjourney_dict
 from tests.cli.test_main import parse_json_output  # Added import for JSON parsing
 
 # Test constants
@@ -35,7 +37,10 @@ def process_prompt(prompt: str) -> list[MidjourneyPrompt]:
     expanded = expand_midjargon_input(prompt)
 
     # Step 2: Parse each expanded prompt to a dictionary
-    midjargon_dicts = [parse_midjargon_prompt_to_dict(p) for p in expanded]
+    midjargon_dicts = [
+        parse_midjargon_prompt_to_dict(variant.prompt.to_string())
+        for variant in expanded
+    ]
 
     # Step 3: Convert each dictionary to a MidjourneyPrompt
     return [parse_midjourney_dict(d) for d in midjargon_dicts]
@@ -86,7 +91,7 @@ def test_image_workflow():
 
     assert result.text == "abstract fusion"
     assert len(result.image_prompts) == 2
-    assert [p.url for p in result.image_prompts] == urls
+    assert [str(p) for p in result.image_prompts] == urls
     assert result.image_weight == IMAGE_WEIGHT_VALUE
 
 
