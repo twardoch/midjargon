@@ -120,12 +120,131 @@
 }======
 A black and white oak tree icon --style {raw, default} --stylize {0, 1000} --weird {0, 3000}
 {
-  "error": "1 validation error for MidjourneyPrompt\nstyle\n  Value error, Invalid style value. Must be one of: {'scenic', 'raw', 'original', 'cute', 'expressive'} [type=value_error, input_value='default', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.10/v/value_error"
+  "error": "1 validation error for MidjourneyPrompt\nstyle\n  Value error, Invalid style value. Must be one of: {'cute', 'expressive', 'raw', 'scenic', 'original'} [type=value_error, input_value='default', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.10/v/value_error"
 }======
 A botanical sketch of fern fronds --video --version {5.2, 6} --ar {1:1, 16:9} --chaos 30
-{
-  "error": "Missing value for parameter: video"
-}======
+[
+  {
+    "text": "A botanical sketch of fern fronds",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 30,
+    "weird": 0,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 1,
+    "aspect_height": 1,
+    "aspect_ratio": "1:1",
+    "style": null,
+    "version": "v5.2",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {
+      "video": null
+    }
+  },
+  {
+    "text": "A botanical sketch of fern fronds",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 30,
+    "weird": 0,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 16,
+    "aspect_height": 9,
+    "aspect_ratio": "16:9",
+    "style": null,
+    "version": "v5.2",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {
+      "video": null
+    }
+  },
+  {
+    "text": "A botanical sketch of fern fronds",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 30,
+    "weird": 0,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 1,
+    "aspect_height": 1,
+    "aspect_ratio": "1:1",
+    "style": null,
+    "version": "v6",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {
+      "video": null
+    }
+  },
+  {
+    "text": "A botanical sketch of fern fronds",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 30,
+    "weird": 0,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 16,
+    "aspect_height": 9,
+    "aspect_ratio": "16:9",
+    "style": null,
+    "version": "v6",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {
+      "video": null
+    }
+  }
+]======
 A cartoon drawing of a manual with the words "read the docs" in big text on the pages --v 6 --stylize 100 --ar 2:3
 {
   "text": "A cartoon drawing of a manual with the words \"read the docs\" in big text on the pages",
@@ -644,7 +763,7 @@ A pattern of {pink and blue striped river stones, colorful watercolor fall leave
 ]======
 A pencil sketch of a dragon made of constellations --ar 2:3 --style random-64 --no color, shading
 {
-  "error": "1 validation error for MidjourneyPrompt\nstyle\n  Value error, Invalid style value. Must be one of: {'original', 'expressive', 'cute', 'scenic', 'raw'} [type=value_error, input_value='random-64', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.10/v/value_error"
+  "error": "1 validation error for MidjourneyPrompt\nstyle\n  Value error, Invalid style value. Must be one of: {'scenic', 'cute', 'original', 'raw', 'expressive'} [type=value_error, input_value='random-64', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.10/v/value_error"
 }======
 A portrait of a melancholic robot butler --cref <image URL of classic butler> --cw {0, 50, 100} --sref <image URL of sad painting> --sw {100, 800}
 [
@@ -665,19 +784,11 @@ A portrait of a melancholic robot butler --cref <image URL of classic butler> --
     "personalization": false,
     "quality": 1.0,
     "character_reference": [
-      "<image",
-      "URL",
-      "of",
-      "classic",
-      "butler>"
+      "<image URL of classic butler>"
     ],
     "character_weight": 0,
     "style_reference": [
-      "<image",
-      "URL",
-      "of",
-      "sad",
-      "painting>"
+      "<image URL of sad painting>"
     ],
     "style_weight": 100,
     "style_version": 2,
@@ -705,19 +816,11 @@ A portrait of a melancholic robot butler --cref <image URL of classic butler> --
     "personalization": false,
     "quality": 1.0,
     "character_reference": [
-      "<image",
-      "URL",
-      "of",
-      "classic",
-      "butler>"
+      "<image URL of classic butler>"
     ],
     "character_weight": 0,
     "style_reference": [
-      "<image",
-      "URL",
-      "of",
-      "sad",
-      "painting>"
+      "<image URL of sad painting>"
     ],
     "style_weight": 800,
     "style_version": 2,
@@ -745,19 +848,11 @@ A portrait of a melancholic robot butler --cref <image URL of classic butler> --
     "personalization": false,
     "quality": 1.0,
     "character_reference": [
-      "<image",
-      "URL",
-      "of",
-      "classic",
-      "butler>"
+      "<image URL of classic butler>"
     ],
     "character_weight": 50,
     "style_reference": [
-      "<image",
-      "URL",
-      "of",
-      "sad",
-      "painting>"
+      "<image URL of sad painting>"
     ],
     "style_weight": 100,
     "style_version": 2,
@@ -785,19 +880,11 @@ A portrait of a melancholic robot butler --cref <image URL of classic butler> --
     "personalization": false,
     "quality": 1.0,
     "character_reference": [
-      "<image",
-      "URL",
-      "of",
-      "classic",
-      "butler>"
+      "<image URL of classic butler>"
     ],
     "character_weight": 50,
     "style_reference": [
-      "<image",
-      "URL",
-      "of",
-      "sad",
-      "painting>"
+      "<image URL of sad painting>"
     ],
     "style_weight": 800,
     "style_version": 2,
@@ -825,19 +912,11 @@ A portrait of a melancholic robot butler --cref <image URL of classic butler> --
     "personalization": false,
     "quality": 1.0,
     "character_reference": [
-      "<image",
-      "URL",
-      "of",
-      "classic",
-      "butler>"
+      "<image URL of classic butler>"
     ],
     "character_weight": 100,
     "style_reference": [
-      "<image",
-      "URL",
-      "of",
-      "sad",
-      "painting>"
+      "<image URL of sad painting>"
     ],
     "style_weight": 100,
     "style_version": 2,
@@ -865,19 +944,11 @@ A portrait of a melancholic robot butler --cref <image URL of classic butler> --
     "personalization": false,
     "quality": 1.0,
     "character_reference": [
-      "<image",
-      "URL",
-      "of",
-      "classic",
-      "butler>"
+      "<image URL of classic butler>"
     ],
     "character_weight": 100,
     "style_reference": [
-      "<image",
-      "URL",
-      "of",
-      "sad",
-      "painting>"
+      "<image URL of sad painting>"
     ],
     "style_weight": 800,
     "style_version": 2,
@@ -1069,11 +1140,11 @@ A {continuous line, loose gestural} charcoal drawing of a value study of a cybor
 ]======
 A {dreary, vibrant} cyberpunk cityscape --ar {16:9, 1:1} --style {raw, random} --chaos {0, 100}
 {
-  "error": "1 validation error for MidjourneyPrompt\nstyle\n  Value error, Invalid style value. Must be one of: {'scenic', 'cute', 'original', 'expressive', 'raw'} [type=value_error, input_value='random', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.10/v/value_error"
+  "error": "1 validation error for MidjourneyPrompt\nstyle\n  Value error, Invalid style value. Must be one of: {'scenic', 'raw', 'cute', 'original', 'expressive'} [type=value_error, input_value='random', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.10/v/value_error"
 }======
 A {Millennial Pink, Acid Green, Ebony} colored cat --s 250 --style random-16 --no monochrome
 {
-  "error": "1 validation error for MidjourneyPrompt\nstyle\n  Value error, Invalid style value. Must be one of: {'cute', 'original', 'expressive', 'scenic', 'raw'} [type=value_error, input_value='random-16', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.10/v/value_error"
+  "error": "1 validation error for MidjourneyPrompt\nstyle\n  Value error, Invalid style value. Must be one of: {'cute', 'expressive', 'original', 'raw', 'scenic'} [type=value_error, input_value='random-16', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.10/v/value_error"
 }======
 A {pastel, blacklight} painting of a {determined, sleepy} sloth riding a unicorn through a {crystal forest, salt flat} --chaos 25
 [
@@ -1304,7 +1375,7 @@ A {pastel, blacklight} painting of a {determined, sleepy} sloth riding a unicorn
 ]======
 A {pixel art, acrylic pour} style cat --style random-128 --weird 1000 --no fur, whiskers
 {
-  "error": "1 validation error for MidjourneyPrompt\nstyle\n  Value error, Invalid style value. Must be one of: {'cute', 'scenic', 'original', 'expressive', 'raw'} [type=value_error, input_value='random-128', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.10/v/value_error"
+  "error": "1 validation error for MidjourneyPrompt\nstyle\n  Value error, Invalid style value. Must be one of: {'cute', 'scenic', 'raw', 'expressive', 'original'} [type=value_error, input_value='random-128', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.10/v/value_error"
 }======
 An impressionistic watercolor of a cat playing chess with a dog --ar 4:3 --s 50 --no board, pieces --style raw
 {
@@ -2633,12 +2704,488 @@ Cyanotype cat --weird {250, 1000, 2000} --stylize {100, 500, 1000} --chaos {10, 
   }
 ]======
 Ice cream icon --niji {5, 6} --style {cute, expressive} --weird {250, 1000} --ar {1:1, 2:3}
-{
-  "error": "1 validation error for MidjourneyPrompt\nversion\n  Value error, Invalid version value. Must be one of: {'6', '5', '4', '3', '2', '1', '5.2', '5.0', '5.1', '6.1'} [type=value_error, input_value='vniji 5', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.10/v/value_error"
-}======
+[
+  {
+    "text": "Ice cream icon",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 0,
+    "weird": 250,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 1,
+    "aspect_height": 1,
+    "aspect_ratio": "1:1",
+    "style": "cute",
+    "version": "niji 5",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {}
+  },
+  {
+    "text": "Ice cream icon",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 0,
+    "weird": 250,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 2,
+    "aspect_height": 3,
+    "aspect_ratio": "2:3",
+    "style": "cute",
+    "version": "niji 5",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {}
+  },
+  {
+    "text": "Ice cream icon",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 0,
+    "weird": 1000,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 1,
+    "aspect_height": 1,
+    "aspect_ratio": "1:1",
+    "style": "cute",
+    "version": "niji 5",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {}
+  },
+  {
+    "text": "Ice cream icon",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 0,
+    "weird": 1000,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 2,
+    "aspect_height": 3,
+    "aspect_ratio": "2:3",
+    "style": "cute",
+    "version": "niji 5",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {}
+  },
+  {
+    "text": "Ice cream icon",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 0,
+    "weird": 250,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 1,
+    "aspect_height": 1,
+    "aspect_ratio": "1:1",
+    "style": "expressive",
+    "version": "niji 5",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {}
+  },
+  {
+    "text": "Ice cream icon",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 0,
+    "weird": 250,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 2,
+    "aspect_height": 3,
+    "aspect_ratio": "2:3",
+    "style": "expressive",
+    "version": "niji 5",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {}
+  },
+  {
+    "text": "Ice cream icon",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 0,
+    "weird": 1000,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 1,
+    "aspect_height": 1,
+    "aspect_ratio": "1:1",
+    "style": "expressive",
+    "version": "niji 5",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {}
+  },
+  {
+    "text": "Ice cream icon",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 0,
+    "weird": 1000,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 2,
+    "aspect_height": 3,
+    "aspect_ratio": "2:3",
+    "style": "expressive",
+    "version": "niji 5",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {}
+  },
+  {
+    "text": "Ice cream icon",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 0,
+    "weird": 250,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 1,
+    "aspect_height": 1,
+    "aspect_ratio": "1:1",
+    "style": "cute",
+    "version": "niji 6",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {}
+  },
+  {
+    "text": "Ice cream icon",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 0,
+    "weird": 250,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 2,
+    "aspect_height": 3,
+    "aspect_ratio": "2:3",
+    "style": "cute",
+    "version": "niji 6",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {}
+  },
+  {
+    "text": "Ice cream icon",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 0,
+    "weird": 1000,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 1,
+    "aspect_height": 1,
+    "aspect_ratio": "1:1",
+    "style": "cute",
+    "version": "niji 6",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {}
+  },
+  {
+    "text": "Ice cream icon",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 0,
+    "weird": 1000,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 2,
+    "aspect_height": 3,
+    "aspect_ratio": "2:3",
+    "style": "cute",
+    "version": "niji 6",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {}
+  },
+  {
+    "text": "Ice cream icon",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 0,
+    "weird": 250,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 1,
+    "aspect_height": 1,
+    "aspect_ratio": "1:1",
+    "style": "expressive",
+    "version": "niji 6",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {}
+  },
+  {
+    "text": "Ice cream icon",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 0,
+    "weird": 250,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 2,
+    "aspect_height": 3,
+    "aspect_ratio": "2:3",
+    "style": "expressive",
+    "version": "niji 6",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {}
+  },
+  {
+    "text": "Ice cream icon",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 0,
+    "weird": 1000,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 1,
+    "aspect_height": 1,
+    "aspect_ratio": "1:1",
+    "style": "expressive",
+    "version": "niji 6",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {}
+  },
+  {
+    "text": "Ice cream icon",
+    "image_prompts": [],
+    "stylize": 100,
+    "chaos": 0,
+    "weird": 1000,
+    "image_weight": 1.0,
+    "seed": null,
+    "stop": 100,
+    "aspect_width": 2,
+    "aspect_height": 3,
+    "aspect_ratio": "2:3",
+    "style": "expressive",
+    "version": "niji 6",
+    "personalization": false,
+    "quality": 1.0,
+    "character_reference": [],
+    "character_weight": 100,
+    "style_reference": [],
+    "style_weight": null,
+    "style_version": 2,
+    "repeat": null,
+    "turbo": false,
+    "relax": false,
+    "tile": false,
+    "negative_prompt": null,
+    "extra_params": {}
+  }
+]======
 image of a robot holding flowers --remix --prompt "A cyborg holding cybernetic orchids" --zoom 2x
 {
-  "error": "Missing value for parameter: remix"
+  "text": "image of a robot holding flowers",
+  "image_prompts": [],
+  "stylize": 100,
+  "chaos": 0,
+  "weird": 0,
+  "image_weight": 1.0,
+  "seed": null,
+  "stop": 100,
+  "aspect_width": 1,
+  "aspect_height": 1,
+  "aspect_ratio": "1:1",
+  "style": null,
+  "version": null,
+  "personalization": false,
+  "quality": 1.0,
+  "character_reference": [],
+  "character_weight": 100,
+  "style_reference": [],
+  "style_weight": null,
+  "style_version": 2,
+  "repeat": null,
+  "turbo": false,
+  "relax": false,
+  "tile": false,
+  "negative_prompt": null,
+  "extra_params": {
+    "remix": null,
+    "prompt": "A cyborg holding cybernetic orchids",
+    "zoom": "2x"
+  }
 }======
 Imagine a {1400s, 1990s} cat --sref <image URL of medieval tapestry> --sv {1, 4} --ar 5:4
 [
@@ -2661,11 +3208,7 @@ Imagine a {1400s, 1990s} cat --sref <image URL of medieval tapestry> --sv {1, 4}
     "character_reference": [],
     "character_weight": 100,
     "style_reference": [
-      "<image",
-      "URL",
-      "of",
-      "medieval",
-      "tapestry>"
+      "<image URL of medieval tapestry>"
     ],
     "style_weight": null,
     "style_version": 1,
@@ -2695,11 +3238,7 @@ Imagine a {1400s, 1990s} cat --sref <image URL of medieval tapestry> --sv {1, 4}
     "character_reference": [],
     "character_weight": 100,
     "style_reference": [
-      "<image",
-      "URL",
-      "of",
-      "medieval",
-      "tapestry>"
+      "<image URL of medieval tapestry>"
     ],
     "style_weight": null,
     "style_version": 4,
@@ -2729,11 +3268,7 @@ Imagine a {1400s, 1990s} cat --sref <image URL of medieval tapestry> --sv {1, 4}
     "character_reference": [],
     "character_weight": 100,
     "style_reference": [
-      "<image",
-      "URL",
-      "of",
-      "medieval",
-      "tapestry>"
+      "<image URL of medieval tapestry>"
     ],
     "style_weight": null,
     "style_version": 1,
@@ -2763,11 +3298,7 @@ Imagine a {1400s, 1990s} cat --sref <image URL of medieval tapestry> --sv {1, 4}
     "character_reference": [],
     "character_weight": 100,
     "style_reference": [
-      "<image",
-      "URL",
-      "of",
-      "medieval",
-      "tapestry>"
+      "<image URL of medieval tapestry>"
     ],
     "style_weight": null,
     "style_version": 4,
