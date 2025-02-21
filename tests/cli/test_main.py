@@ -2,7 +2,6 @@
 # /// script
 # dependencies = ["pytest", "rich"]
 # ///
-# this_file: tests/cli/test_main.py
 
 """Tests for CLI functionality."""
 

@@ -1,4 +1,3 @@
-# this_file: tests/test_package.py
 """Test suite for midjargon."""
 
 

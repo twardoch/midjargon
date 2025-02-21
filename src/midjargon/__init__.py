@@ -1,36 +1,33 @@
-#!/usr/bin/env python3
-# this_file: src/midjargon/__init__.py
+"""
+midjargon
 
-"""Midjargon package for parsing and manipulating Midjourney-style prompts."""
+A Python library for parsing and manipulating Midjourney prompts.
+"""
 
-__version__ = "0.1.0"
+from importlib import metadata
 
-from midjargon.core.input import expand_midjargon_input
-from midjargon.core.models import (
-    CharacterReference,
-    ImageReference,
-    MidjourneyParameters,
-    MidjourneyPrompt,
-    MidjourneyVersion,
-    PromptVariant,
-    StyleMode,
-    StyleReference,
-)
-from midjargon.core.parser import (
-    parse_midjargon_prompt,
+from midjargon.core import (
+    MidjargonDict,
+    MidjargonInput,
+    MidjargonList,
+    MidjargonPrompt,
+    expand_midjargon_input,
     parse_midjargon_prompt_to_dict,
 )
+from midjargon.engines.midjourney import MidjourneyPrompt, parse_midjourney_dict
+
+__version__ = metadata.version(__name__)
 
 __all__ = [
-    "CharacterReference",
-    "ImageReference",
-    "MidjourneyParameters",
+    "MidjargonDict",
+    # Core types
+    "MidjargonInput",
+    "MidjargonList",
+    "MidjargonPrompt",
+    # Midjourney-specific
     "MidjourneyPrompt",
-    "MidjourneyVersion",
-    "PromptVariant",
-    "StyleMode",
-    "StyleReference",
+    # Core functions
     "expand_midjargon_input",
-    "parse_midjargon_prompt",
     "parse_midjargon_prompt_to_dict",
+    "parse_midjourney_dict",
 ]

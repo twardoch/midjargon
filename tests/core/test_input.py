@@ -1,4 +1,3 @@
-# this_file: tests/core/test_input.py
 """Tests for input handling."""
 
 from midjargon.core.input import expand_midjargon_input

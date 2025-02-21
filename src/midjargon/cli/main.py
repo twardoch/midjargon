@@ -1,153 +1,271 @@
 #!/usr/bin/env -S uv run
-# this_file: src/midjargon/cli/main.py
 # /// script
-# dependencies = ["fire", "rich"]
+# dependencies = ["fire", "rich", "pydantic"]
 # ///
 
+"""
+midjargon.cli.main
+~~~~~~~~~~~~~~~~~
+
+A CLI tool that parses and validates Midjourney prompts.
+Supports both raw parsing and Midjourney-specific validation.
+"""
+
+import json
 import sys
-from typing import Any
-from collections.abc import Sequence
+from typing import Any, NoReturn
 
 import fire
 from rich.console import Console
+from rich.panel import Panel
+from rich.traceback import install
 
-from midjargon.core.input import expand_midjargon_input
-from midjargon.core.models import PromptVariant
-from midjargon.engines.fal import FalParser
-from midjargon.engines.midjourney import MidjourneyParser
+from midjargon.core.converter import (
+    parse_prompt,
+    permute_prompt,
+    to_fal_dicts,
+    to_midjourney_prompts,
+)
 
-# Set up console for output
-console = Console()
-error_console = Console(stderr=True)
-
-
-def format_json_output(variants: Sequence[PromptVariant]) -> list[dict[str, Any]]:
-    """Format variants as JSON output."""
-    return [variant.prompt.model_dump() for variant in variants]
+# Install rich traceback handler
+install(show_locals=True)
 
 
-def format_rich_output(variants: Sequence[PromptVariant]) -> str:
-    """Format variants as rich text output."""
-    if len(variants) == 1:
-        return variants[0].prompt.to_string()
-    return "\n".join(f"{i + 1}. {v.prompt.to_string()}" for i, v in enumerate(variants))
+def _handle_error(console: Console, error: Exception) -> NoReturn:
+    """Handle errors by printing to stderr and exiting."""
+    error_console = Console(stderr=True)
+    error_console.print(f"Error: {error!s}", style="red")
+    sys.exit(1)
+
+
+def _output_json(data: Any) -> None:
+    """Output data as formatted JSON without any Rich formatting."""
+    sys.stdout.write(json.dumps(data, indent=2))
+    sys.stdout.flush()
+
+
+def _format_prompt(prompt: Any) -> str:
+    """Format a prompt for display."""
+    if hasattr(prompt, "model_dump"):
+        return json.dumps(prompt.model_dump(), indent=2)
+    return json.dumps(prompt, indent=2)
 
 
 class MidjargonCLI:
-    """CLI interface for midjargon."""
-
-    def json(self, prompt: str, no_color: bool = False) -> None:
-        """Parse a prompt to MidjargonDict format.
-
-        Args:
-            prompt: The prompt to parse.
-            no_color: Whether to disable colored output.
-        """
-        try:
-            variants = expand_midjargon_input(prompt)
-            format_json_output(variants)
-        except Exception as e:
-            error_console.print(f"[red]Error:[/red] {e!s}", highlight=not no_color)
-            sys.exit(1)
-
-    def mj(
-        self, prompt: str, json_output: bool = False, no_color: bool = False
-    ) -> None:
-        """Convert a prompt to Midjourney format.
-
-        Args:
-            prompt: The prompt to convert.
-            json_output: Whether to output JSON.
-            no_color: Whether to disable colored output.
-        """
-        try:
-            variants = expand_midjargon_input(prompt)
-            parser = MidjourneyParser()
-            results = []
-            for variant in variants:
-                mj_prompt = parser.parse_dict(variant.prompt.model_dump())
-                results.append(mj_prompt.model_dump())
-
-            if json_output:
-                pass
-            else:
-                for i, result in enumerate(results):
-                    if len(results) > 1:
-                        console.print(f"{i + 1}. ", end="", highlight=not no_color)
-                    params = " ".join(
-                        f"--{k} {v}"
-                        for k, v in result.items()
-                        if k not in {"text", "image_prompts", "extra_params"}
-                        and v is not None
-                    )
-                    console.print(
-                        f"{result['text']} {params}",
-                        highlight=not no_color,
-                    )
-        except Exception as e:
-            error_console.print(f"[red]Error:[/red] {e!s}", highlight=not no_color)
-            sys.exit(1)
-
-    def fal(
-        self, prompt: str, json_output: bool = False, no_color: bool = False
-    ) -> None:
-        """Convert a prompt to Fal.ai format.
-
-        Args:
-            prompt: The prompt to convert.
-            json_output: Whether to output JSON.
-            no_color: Whether to disable colored output.
-        """
-        try:
-            variants = expand_midjargon_input(prompt)
-            parser = FalParser()
-            results = []
-            for variant in variants:
-                fal_prompt = parser.parse_dict(variant.prompt.model_dump())
-                results.append(fal_prompt.model_dump())
-
-            if json_output:
-                pass
-            else:
-                for i, result in enumerate(results):
-                    if len(results) > 1:
-                        console.print(f"{i + 1}. ", end="", highlight=not no_color)
-                    console.print(
-                        result["text"],
-                        highlight=not no_color,
-                    )
-        except Exception as e:
-            error_console.print(f"[red]Error:[/red] {e!s}", highlight=not no_color)
-            sys.exit(1)
+    """Midjargon CLI interface."""
 
     def perm(
-        self, prompt: str, json_output: bool = False, no_color: bool = False
+        self,
+        prompt: str,
+        *,
+        json_output: bool = False,
+        no_color: bool = False,
     ) -> None:
-        """Expand permutations in a prompt.
+        """
+        Permute a prompt string, expanding all permutation markers.
 
         Args:
-            prompt: The prompt to expand.
-            json_output: Whether to output JSON.
-            no_color: Whether to disable colored output.
+            prompt: The prompt string to permute.
+            json_output: If True, output in JSON format (alias: -j).
+            no_color: If True, disable colored output.
+
+        Example prompts:
+            "A {red, blue, green} bird on a {branch, rock}"
+            "elephant {, --s {200, 300}}"
         """
+        console = Console(force_terminal=not no_color)
+
         try:
-            variants = expand_midjargon_input(prompt)
+            results = permute_prompt(prompt)
+
             if json_output:
-                format_json_output(variants)
+                _output_json(results)
+                return
+
+            for i, result in enumerate(results, 1):
+                if len(results) > 1:
+                    console.print(f"\nVariant {i}:", style="bold blue")
+                console.print(Panel(result))
+
+        except (
+            ValueError,
+            TypeError,
+            SyntaxError,
+        ) as error:  # More specific exceptions
+            if json_output:
+                _output_json({"error": str(error)})
+                sys.exit(1)
             else:
-                pass
-        except Exception as e:
-            error_console.print(f"[red]Error:[/red] {e!s}", highlight=not no_color)
-            sys.exit(1)
+                _handle_error(console, error)
+
+    def json(
+        self,
+        prompt: str,
+        *,
+        json_output: bool = True,
+        no_color: bool = False,
+    ) -> None:
+        """
+        Parse a prompt into MidjargonDict format.
+
+        Args:
+            prompt: The prompt string to parse.
+            json_output: If True, output in JSON format (alias: -j).
+            no_color: If True, disable colored output.
+
+        Example prompts:
+            "A portrait of a wise old man --style raw --v 5.1"
+            "A {red, blue, green} bird on a {branch, rock} --ar 16:9"
+        """
+        console = Console(force_terminal=not no_color)
+
+        try:
+            # Always expand permutations to ensure consistent behavior with other commands
+            results = parse_prompt(prompt, permute=True)
+
+            # If there are no permutations (result is a single-item list), return just the dict
+            if isinstance(results, list) and len(results) == 1:
+                results = results[0]
+
+            if json_output:
+                _output_json(results)
+                return
+
+            if isinstance(results, list):
+                for i, result in enumerate(results, 1):
+                    if len(results) > 1:
+                        console.print(f"\nVariant {i}:", style="bold blue")
+                    console.print(Panel(_format_prompt(result)))
+            else:
+                console.print(Panel(_format_prompt(results)))
+
+        except (
+            ValueError,
+            TypeError,
+            SyntaxError,
+        ) as error:  # More specific exceptions
+            if json_output:
+                _output_json({"error": str(error)})
+                sys.exit(1)
+            else:
+                _handle_error(console, error)
+
+    def mj(
+        self,
+        prompt: str,
+        *,
+        json_output: bool = False,
+        no_color: bool = False,
+    ) -> None:
+        """
+        Convert a prompt to Midjourney format.
+
+        Args:
+            prompt: The prompt string to convert.
+            json_output: If True, output in JSON format (alias: -j).
+            no_color: If True, disable colored output.
+
+        Example prompts:
+            "A portrait of a wise old man --style raw --v 5.1"
+            "A {red, blue, green} bird on a {branch, rock} --ar 16:9"
+        """
+        console = Console(force_terminal=not no_color)
+
+        try:
+            results = to_midjourney_prompts(prompt)
+
+            if json_output:
+                if isinstance(results, list):
+                    json_results = [prompt.model_dump() for prompt in results]
+                else:
+                    json_results = results.model_dump()
+                _output_json(json_results)
+                return
+
+            if isinstance(results, list):
+                for i, result in enumerate(results, 1):
+                    if len(results) > 1:
+                        console.print(f"\nVariant {i}:", style="bold blue")
+                    console.print(Panel(_format_prompt(result)))
+            else:
+                console.print(Panel(_format_prompt(results)))
+
+        except (
+            ValueError,
+            TypeError,
+            SyntaxError,
+        ) as error:  # More specific exceptions
+            if json_output:
+                _output_json({"error": str(error)})
+                sys.exit(1)
+            else:
+                _handle_error(console, error)
+
+    def fal(
+        self,
+        prompt: str,
+        *,
+        json_output: bool = False,
+        no_color: bool = False,
+    ) -> None:
+        """
+        Convert a prompt to Fal.ai format.
+
+        Args:
+            prompt: The prompt string to convert.
+            json_output: If True, output in JSON format (alias: -j).
+            no_color: If True, disable colored output.
+
+        Example prompts:
+            "A portrait of a wise old man --style raw --v 5.1"
+            "A {red, blue, green} bird on a {branch, rock} --ar 16:9"
+        """
+        console = Console(force_terminal=not no_color)
+
+        try:
+            results = to_fal_dicts(prompt)
+
+            if json_output:
+                _output_json(results)
+                return
+
+            if isinstance(results, list):
+                for i, result in enumerate(results, 1):
+                    if len(results) > 1:
+                        console.print(f"\nVariant {i}:", style="bold blue")
+                    console.print(Panel(_format_prompt(result)))
+            else:
+                console.print(Panel(_format_prompt(results)))
+
+        except (
+            ValueError,
+            TypeError,
+            SyntaxError,
+        ) as error:  # More specific exceptions
+            if json_output:
+                _output_json({"error": str(error)})
+                sys.exit(1)
+            else:
+                _handle_error(console, error)
 
 
 def main() -> None:
-    """Main entry point."""
-    try:
-        fire.Fire(MidjargonCLI)
-    except Exception as e:
-        error_console.print(f"[red]Error:[/red] {e!s}")
-        sys.exit(1)
+    from rich.ansi import AnsiDecoder
+    from rich.console import Console, Group
+    from rich.theme import Theme
+    from rich.traceback import install
+
+    install(show_locals=True)
+    ansi_decoder = AnsiDecoder()
+    console = Console(theme=Theme({"prompt": "cyan", "question": "bold cyan"}))
+
+    def display(lines, out):
+        console.print(Group(*map(ansi_decoder.decode_line, lines)))
+
+    fire.core.Display = display
+
+    """Run the CLI application."""
+    fire.Fire(MidjargonCLI())
 
 
 if __name__ == "__main__":

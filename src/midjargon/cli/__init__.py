@@ -1,1 +1,7 @@
-# this_file: src/midjargon/cli/__init__.py
+"""
+CLI interface for midjargon.
+"""
+
+from midjargon.cli.main import main
+
+__all__ = ["main"]
