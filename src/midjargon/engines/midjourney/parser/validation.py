@@ -2,14 +2,18 @@
 Validation utilities for the Midjourney parser.
 """
 
-from collections.abc import Callable
-from typing import Any, ClassVar, TypeVar
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 
 from midjargon.engines.midjourney.constants import (
     VALID_NIJI_VERSIONS,
     VALID_VERSIONS,
 )
 from midjargon.engines.midjourney.parser.exceptions import ValidationError
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 T = TypeVar("T")
 

@@ -2,9 +2,12 @@
 Functions for converting MidjargonDict to Fal.ai API format.
 """
 
-from typing import Any, TypeAlias, cast
+from __future__ import annotations
 
-from midjargon.core.type_defs import MidjargonDict
+from typing import TYPE_CHECKING, Any, TypeAlias, cast
+
+if TYPE_CHECKING:
+    from midjargon.core.type_defs import MidjargonDict
 
 # Type alias for Fal.ai API dict format
 FalDict: TypeAlias = dict[str, Any]

@@ -5,9 +5,14 @@ Handles expansion of permutation expressions in Midjourney prompts.
 Supports nested permutations and proper spacing handling.
 """
 
-from collections.abc import Sequence
+from __future__ import annotations
 
-from midjargon.core.type_defs import MidjargonList
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from midjargon.core.type_defs import MidjargonList
 
 # Constants
 ESCAPE_SEQUENCE_LENGTH = 2  # Length of escape sequence: backslash + character

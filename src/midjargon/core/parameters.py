@@ -6,6 +6,8 @@ This module provides a unified interface for parameter handling,
 supporting both raw string parsing and structured parameter handling.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import TypeAlias
 
@@ -316,11 +318,10 @@ def _split_param_chunks(param_str: str) -> list[str]:
                     if current_param:
                         chunks.append(current_param)
                     current_param = chunk_str
+                elif current_param:
+                    current_param = f"{current_param} {chunk_str}"
                 else:
-                    if current_param:
-                        current_param = f"{current_param} {chunk_str}"
-                    else:
-                        current_param = chunk_str
+                    current_param = chunk_str
                 current_chunk = []
         else:
             current_chunk.append(char)
@@ -332,11 +333,10 @@ def _split_param_chunks(param_str: str) -> list[str]:
             if current_param:
                 chunks.append(current_param)
             current_param = chunk_str
+        elif current_param:
+            current_param = f"{current_param} {chunk_str}"
         else:
-            if current_param:
-                current_param = f"{current_param} {chunk_str}"
-            else:
-                current_param = chunk_str
+            current_param = chunk_str
 
     if current_param:
         chunks.append(current_param)
@@ -397,9 +397,9 @@ def _process_param_chunk(
     if expanded_name in {"personalization", "p"}:
         # Return list of space-separated values for personalization codes
         # Handle quoted values
-        if value.startswith('"') and value.endswith('"'):
-            value = value[1:-1]  # Remove quotes
-        elif value.startswith("'") and value.endswith("'"):
+        if (value.startswith('"') and value.endswith('"')) or (
+            value.startswith("'") and value.endswith("'")
+        ):
             value = value[1:-1]  # Remove quotes
         return "personalization", value.split() if value else None
     elif expanded_name in {"character_reference", "cref"}:
@@ -431,9 +431,9 @@ def _process_param_chunk(
         return "version", f"niji {value}"
     else:
         # Handle quoted values for other parameters
-        if value.startswith('"') and value.endswith('"'):
-            value = value[1:-1]  # Remove quotes
-        elif value.startswith("'") and value.endswith("'"):
+        if (value.startswith('"') and value.endswith('"')) or (
+            value.startswith("'") and value.endswith("'")
+        ):
             value = value[1:-1]  # Remove quotes
         # All other parameters are returned as strings
         return expanded_name, value

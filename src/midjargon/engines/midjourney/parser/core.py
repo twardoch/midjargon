@@ -2,13 +2,17 @@
 Core parser implementation for Midjourney engine.
 """
 
-from typing import Any
+from __future__ import annotations
 
-from midjargon.core.type_defs import MidjargonDict
+from typing import TYPE_CHECKING, Any
+
 from midjargon.engines.base import EngineParser
 from midjargon.engines.midjourney.models import ImagePrompt, MidjourneyPrompt
 from midjargon.engines.midjourney.parser.exceptions import ParameterValidationError
 from midjargon.engines.midjourney.parser.parameters import ParameterHandler
+
+if TYPE_CHECKING:
+    from midjargon.core.type_defs import MidjargonDict
 
 
 class MidjourneyParser(EngineParser[MidjourneyPrompt]):

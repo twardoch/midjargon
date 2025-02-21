@@ -9,12 +9,15 @@ Engine parsers are responsible for converting between the generic MidjargonDict 
 and engine-specific prompt types.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from pydantic import BaseModel
 
-from midjargon.core.type_defs import MidjargonDict
+if TYPE_CHECKING:
+    from midjargon.core.type_defs import MidjargonDict
 
 # Type variable for engine-specific prompt type, must be a Pydantic model
 T = TypeVar("T", bound=BaseModel)
@@ -59,10 +62,11 @@ class EngineParser(ABC, Generic[T]):
             msg = "Empty prompt"
             raise ValueError(msg)
 
-        if isinstance(text_value, list):
-            text = text_value[0] if text_value else ""
-        else:
-            text = str(text_value)
+        text = (
+            (text_value[0] if text_value else "")
+            if isinstance(text_value, list)
+            else str(text_value)
+        )
 
         if not text.strip():
             msg = "Empty prompt"

@@ -4,9 +4,12 @@ fal.py
 Provides functions to convert Midjourney prompts to Fal.ai format.
 """
 
-from typing import Any
+from __future__ import annotations
 
-from midjargon.core.type_defs import MidjargonDict
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from midjargon.core.type_defs import MidjargonDict
 
 
 def to_fal_dict(midjargon_dict: MidjargonDict) -> dict[str, Any]:

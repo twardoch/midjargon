@@ -10,13 +10,18 @@ TODO: Here are several end-user functionalites that our code can do. Your task i
 Let's modify the `cli` section of our code and expose these functions as Fire CLI commands. Move the existing CLI handling into a Fire `midjargon` command.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from typing import Annotated as Doc
 
 from midjargon.core.input import expand_midjargon_input
 from midjargon.core.parser import parse_midjargon_prompt_to_dict
-from midjargon.core.type_defs import MidjargonDict
 from midjargon.engines.fal import FalDict, to_fal_dict
 from midjargon.engines.midjourney import MidjourneyPrompt, parse_midjourney_dict
+
+if TYPE_CHECKING:
+    from midjargon.core.type_defs import MidjargonDict
 
 
 def permute_prompt(

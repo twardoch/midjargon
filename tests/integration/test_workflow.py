@@ -1,5 +1,7 @@
 """Integration tests for complete midjargon workflow."""
 
+from __future__ import annotations
+
 import sys
 from io import StringIO
 

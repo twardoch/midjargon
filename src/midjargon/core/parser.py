@@ -10,6 +10,8 @@ into a flat dictionary (MidjargonDict) with the following keys:
 This parser does not perform strict validation; it only tokenizes and groups values.
 """
 
+from __future__ import annotations
+
 import contextlib
 import re
 from typing import cast

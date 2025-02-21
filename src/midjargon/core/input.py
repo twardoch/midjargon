@@ -7,7 +7,9 @@ Specifically, it expands all permutation expressions in a prompt without doing a
 
 from midjargon.core.permutations import (
     expand_text,
-)  # reuse the existing expansion logic
+)
+
+# reuse the existing expansion logic
 from midjargon.core.type_defs import MidjargonInput, MidjargonList
 
 
