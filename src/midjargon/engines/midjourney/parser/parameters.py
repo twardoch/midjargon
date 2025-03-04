@@ -7,28 +7,25 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, TypeVar
 
-from midjargon.engines.midjourney.constants import (
-    CHAOS_RANGE,
-    CHARACTER_WEIGHT_RANGE,
-    DEFAULT_CHAOS,
-    DEFAULT_CHARACTER_WEIGHT,
-    DEFAULT_IMAGE_WEIGHT,
-    DEFAULT_QUALITY,
-    DEFAULT_STOP,
-    DEFAULT_STYLE_VERSION,
-    DEFAULT_STYLIZE,
-    DEFAULT_WEIRD,
-    IMAGE_WEIGHT_RANGE,
-    QUALITY_RANGE,
-    REPEAT_RANGE,
-    SEED_RANGE,
-    STOP_RANGE,
-    STYLE_VERSION_RANGE,
-    STYLE_WEIGHT_RANGE,
-    STYLIZE_RANGE,
-    WEIRD_RANGE,
-)
-from midjargon.engines.midjourney.parser.exceptions import ParameterValidationError
+from midjargon.engines.midjourney.constants import (CHAOS_RANGE,
+                                                    CHARACTER_WEIGHT_RANGE,
+                                                    DEFAULT_CHAOS,
+                                                    DEFAULT_CHARACTER_WEIGHT,
+                                                    DEFAULT_IMAGE_WEIGHT,
+                                                    DEFAULT_QUALITY,
+                                                    DEFAULT_STOP,
+                                                    DEFAULT_STYLE_VERSION,
+                                                    DEFAULT_STYLIZE,
+                                                    DEFAULT_WEIRD,
+                                                    IMAGE_WEIGHT_RANGE,
+                                                    QUALITY_RANGE,
+                                                    REPEAT_RANGE, SEED_RANGE,
+                                                    STOP_RANGE,
+                                                    STYLE_VERSION_RANGE,
+                                                    STYLE_WEIGHT_RANGE,
+                                                    STYLIZE_RANGE, WEIRD_RANGE)
+from midjargon.engines.midjourney.parser.exceptions import \
+    ParameterValidationError
 from midjargon.engines.midjourney.parser.validation import ValidatorRegistry
 
 if TYPE_CHECKING:

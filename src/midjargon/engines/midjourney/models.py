@@ -7,36 +7,32 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from midjargon.engines.midjourney.constants import (CHAOS_RANGE,
+                                                    CHARACTER_WEIGHT_RANGE,
+                                                    DEFAULT_ASPECT_RATIO,
+                                                    DEFAULT_CHAOS,
+                                                    DEFAULT_CHARACTER_WEIGHT,
+                                                    DEFAULT_IMAGE_WEIGHT,
+                                                    DEFAULT_QUALITY,
+                                                    DEFAULT_RELAX,
+                                                    DEFAULT_STOP,
+                                                    DEFAULT_STYLE_VERSION,
+                                                    DEFAULT_STYLIZE,
+                                                    DEFAULT_TILE,
+                                                    DEFAULT_TURBO,
+                                                    DEFAULT_WEIRD,
+                                                    IMAGE_WEIGHT_RANGE,
+                                                    QUALITY_RANGE,
+                                                    REPEAT_RANGE, SEED_RANGE,
+                                                    STOP_RANGE,
+                                                    STYLE_VERSION_RANGE,
+                                                    STYLE_WEIGHT_RANGE,
+                                                    STYLIZE_RANGE,
+                                                    VALID_NIJI_VERSIONS,
+                                                    VALID_STYLES,
+                                                    VALID_VERSIONS,
+                                                    WEIRD_RANGE)
 from pydantic import BaseModel, Field, field_validator, model_validator
-
-from midjargon.engines.midjourney.constants import (
-    CHAOS_RANGE,
-    CHARACTER_WEIGHT_RANGE,
-    DEFAULT_ASPECT_RATIO,
-    DEFAULT_CHAOS,
-    DEFAULT_CHARACTER_WEIGHT,
-    DEFAULT_IMAGE_WEIGHT,
-    DEFAULT_QUALITY,
-    DEFAULT_RELAX,
-    DEFAULT_STOP,
-    DEFAULT_STYLE_VERSION,
-    DEFAULT_STYLIZE,
-    DEFAULT_TILE,
-    DEFAULT_TURBO,
-    DEFAULT_WEIRD,
-    IMAGE_WEIGHT_RANGE,
-    QUALITY_RANGE,
-    REPEAT_RANGE,
-    SEED_RANGE,
-    STOP_RANGE,
-    STYLE_VERSION_RANGE,
-    STYLE_WEIGHT_RANGE,
-    STYLIZE_RANGE,
-    VALID_NIJI_VERSIONS,
-    VALID_STYLES,
-    VALID_VERSIONS,
-    WEIRD_RANGE,
-)
 
 
 class ImagePrompt(BaseModel):

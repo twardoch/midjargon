@@ -12,9 +12,8 @@ from io import StringIO
 from typing import Any
 
 import pytest
-from rich.console import Console
-
 from midjargon.cli.main import MidjargonCLI
+from rich.console import Console
 
 # Test constants
 ASPECT_WIDTH = 16

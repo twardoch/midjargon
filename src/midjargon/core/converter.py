@@ -18,15 +18,16 @@ from typing import Annotated as Doc
 from midjargon.core.input import expand_midjargon_input
 from midjargon.core.parser import parse_midjargon_prompt_to_dict
 from midjargon.engines.fal import FalDict, to_fal_dict
-from midjargon.engines.midjourney import MidjourneyPrompt, parse_midjourney_dict
+from midjargon.engines.midjourney import (MidjourneyPrompt,
+                                          parse_midjourney_dict)
 
 if TYPE_CHECKING:
     from midjargon.core.type_defs import MidjargonDict
 
 
 def permute_prompt(
-    text: Doc[str, "Input prompt that may include permutation markers"],
-) -> Doc[list[str], "List of permutated prompt strings"]:
+    text: Doc[str, Input prompt that may include permutation markers],
+) -> Doc[list[str], List of permutated prompt strings]:
     """
     Permute the input prompt, expanding it into a list of strings, by replacing permutation markers with actual values.
 
@@ -42,12 +43,12 @@ def permute_prompt(
 
 
 def parse_prompt(
-    text: Doc[str, "Input prompt string"],
+    text: Doc[str, Input prompt string],
     permute: Doc[
         bool,
-        "if true, we pass the prompt to permute_prompt first and then parse all prompts",
+        if true, we pass the prompt to permute_prompt first and then parse all prompts,
     ],
-) -> Doc[MidjargonDict | list[MidjargonDict], "List of parsed prompt dicts"]:
+) -> Doc[MidjargonDict | list[MidjargonDict], List of parsed prompt dicts]:
     """
     Parse the input prompt into:
     - a single dict (if permute is False)
@@ -75,9 +76,9 @@ def parse_prompt(
 def _prep_conversion(
     prompt: Doc[
         str | list[str] | MidjargonDict | list[MidjargonDict],
-        "Prompt(s) to convert, in various forms",
+        Prompt(s) to convert, in various forms,
     ],
-) -> Doc[list[MidjargonDict], "List of MidJargonDicts"]:
+) -> Doc[list[MidjargonDict], List of MidJargonDicts]:
     """
     If input is:
         - a single str, permute it and call this function on the list of the result strings
@@ -123,9 +124,9 @@ def _prep_conversion(
 def to_midjourney_prompts(
     prompt: Doc[
         str | list[str] | MidjargonDict | list[MidjargonDict],
-        "Prompt(s) to convert as Midjourney prompt",
+        Prompt(s) to convert as Midjourney prompt,
     ],
-) -> Doc[MidjourneyPrompt | list[MidjourneyPrompt], "Midjourney prompt(s)"]:
+) -> Doc[MidjourneyPrompt | list[MidjourneyPrompt], Midjourney prompt(s)]:
     """
     Convert the input prompt(s) into a Midjourney prompt(s). Pass the inputs to _prep_conversion and then take the resulting list of dicts and perform the actual conversion, calling parse_midjourney_dict on each, and prepare a list of MidjourneyPrompt results.
 
@@ -152,9 +153,9 @@ def to_midjourney_prompts(
 def to_fal_dicts(
     prompt: Doc[
         str | list[str] | MidjargonDict | list[MidjargonDict],
-        "Prompt(s) to convert as Fal prompt",
+        Prompt(s) to convert as Fal prompt,
     ],
-) -> Doc[FalDict | list[FalDict], "Fal prompt(s)"]:
+) -> Doc[FalDict | list[FalDict], Fal prompt(s)]:
     """
     Convert the input prompt(s) into Fal.ai prompt(s). Pass the inputs to _prep_conversion and then take the resulting list of dicts and perform the actual conversion, calling to_fal_dict on each, and prepare a list of FalDict results.
 

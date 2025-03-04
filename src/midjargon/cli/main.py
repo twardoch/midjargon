@@ -16,16 +16,11 @@ import sys
 from typing import Any, NoReturn
 
 import fire
+from midjargon.core.converter import (parse_prompt, permute_prompt,
+                                      to_fal_dicts, to_midjourney_prompts)
 from rich.console import Console
 from rich.panel import Panel
 from rich.traceback import install
-
-from midjargon.core.converter import (
-    parse_prompt,
-    permute_prompt,
-    to_fal_dicts,
-    to_midjourney_prompts,
-)
 
 # Install rich traceback handler
 install(show_locals=True)

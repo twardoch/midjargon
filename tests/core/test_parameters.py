@@ -1,7 +1,6 @@
 """Tests for parameter parsing functionality."""
 
 import pytest
-
 from midjargon.core.parameters import parse_parameters
 
 

@@ -5,10 +5,7 @@ Contains functions for handling raw input.
 Specifically, it expands all permutation expressions in a prompt without doing any parameter parsing/validation.
 """
 
-from midjargon.core.permutations import (
-    expand_text,
-)
-
+from midjargon.core.permutations import expand_text
 # reuse the existing expansion logic
 from midjargon.core.type_defs import MidjargonInput, MidjargonList
 

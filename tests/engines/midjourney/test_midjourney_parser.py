@@ -3,7 +3,6 @@
 from typing import TYPE_CHECKING
 
 import pytest
-
 from midjargon.engines.midjourney import MidjourneyParser
 
 if TYPE_CHECKING:
