@@ -2,6 +2,7 @@
 # /// script
 # dependencies = ["fire", "rich", "pydantic"]
 # ///
+from __future__ import annotations
 
 """
 midjargon.cli.main
@@ -13,17 +14,18 @@ Supports both raw parsing and Midjourney-specific validation.
 
 import json
 import sys
-from typing import Any, NoReturn
+from typing import TYPE_CHECKING, Any
 
 import fire
-from midjargon.core.converter import (parse_prompt, permute_prompt,
-                                      to_fal_dicts, to_midjourney_prompts)
+from midjargon.core.input import expand_midjargon_input
+from midjargon.engines.fal import FalParser
+from midjargon.engines.midjourney import MidjourneyParser
 from rich.console import Console
-from rich.panel import Panel
-from rich.traceback import install
 
-# Install rich traceback handler
-install(show_locals=True)
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from midjargon.core.models import PromptVariant
 
 
 def _handle_error(console: Console, error: Exception) -> NoReturn:

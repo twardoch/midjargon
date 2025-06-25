@@ -1,9 +1,8 @@
 """Tests for Midjourney parser."""
 
-from typing import TYPE_CHECKING
-
 import pytest
 from midjargon.engines.midjourney import MidjourneyParser
+from pydantic import HttpUrl
 
 if TYPE_CHECKING:
     from midjargon.core.type_defs import MidjargonDict

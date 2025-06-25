@@ -1,0 +1,2552 @@
+cmd [1] | fd -e py -x pyupgrade --keep-runtime-typing --py310-plus
+cmd [2] | ruff format .
+32 files left unchanged
+cmd [3] | ruff check --fix --unsafe-fixes .
+src/midjargon/core/input.py:9:5: C901 `parse_weighted_prompt` is too complex (13 > 10)
+   |
+ 9 | def parse_weighted_prompt(prompt: str) -> list[tuple[str, float]]:
+   |     ^^^^^^^^^^^^^^^^^^^^^ C901
+10 |     """Parse a prompt with optional weights.
+   |
+
+src/midjargon/core/input.py:54:89: E501 Line too long (92 > 88)
+   |
+52 |                     raise ValueError(msg)
+53 |             except ValueError as e:
+54 |                 msg = f"Invalid weight at position {weight_start}: {prompt[weight_start:i]}"
+   |                                                                                         ^^^^ E501
+55 |                 raise ValueError(msg) from e
+   |
+
+src/midjargon/core/input.py:82:89: E501 Line too long (101 > 88)
+   |
+81 | def expand_midjargon_input(prompt: str) -> list[PromptVariant]:
+82 |     """Expand a midjourney prompt by processing permutations and returning a list of prompt variants.
+   |                                                                                         ^^^^^^^^^^^^^ E501
+83 |
+84 |     Args:
+   |
+
+src/midjargon/core/models.py:32:9: C901 `_missing_` is too complex (16 > 10)
+   |
+31 |     @classmethod
+32 |     def _missing_(cls, value: Any) -> Optional["MidjourneyVersion"]:
+   |         ^^^^^^^^^ C901
+33 |         """Handle missing values by trying to normalize the input."""
+34 |         try:
+   |
+
+src/midjargon/core/models.py:179:17: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    |
+177 |             except ValueError as e:
+178 |                 msg = f"Invalid aspect ratio format: {e}"
+179 |                 raise ValueError(msg)
+    |                 ^^^^^^^^^^^^^^^^^^^^^ B904
+180 |         return v
+    |
+
+src/midjargon/core/models.py:197:17: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    |
+195 |             except ValueError:
+196 |                 msg = f"Invalid version value: {v}"
+197 |                 raise ValueError(msg)
+    |                 ^^^^^^^^^^^^^^^^^^^^^ B904
+198 |         return v
+    |
+
+src/midjargon/core/models.py:213:17: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    |
+211 |             except ValueError:
+212 |                 msg = f"Invalid seed value: {v}"
+213 |                 raise ValueError(msg)
+    |                 ^^^^^^^^^^^^^^^^^^^^^ B904
+214 |         return v
+    |
+
+src/midjargon/core/models.py:225:9: C901 `to_string` is too complex (32 > 10)
+    |
+223 |         return None
+224 |
+225 |     def to_string(self) -> str:
+    |         ^^^^^^^^^ C901
+226 |         """Convert parameters to string format."""
+227 |         parts = []
+    |
+
+src/midjargon/core/parameters.py:68:5: E722 Do not use bare `except`
+   |
+66 |         result = urlparse(value)
+67 |         return all([result.scheme, result.netloc])
+68 |     except:
+   |     ^^^^^^ E722
+69 |         return False
+   |
+
+src/midjargon/core/parameters.py:72:5: C901 `convert_parameter_value` is too complex (22 > 10)
+   |
+72 | def convert_parameter_value(param: str, value: str | None) -> Any:
+   |     ^^^^^^^^^^^^^^^^^^^^^^^ C901
+73 |     """Convert a parameter value to the appropriate type."""
+74 |     # Handle flag parameters
+   |
+
+src/midjargon/core/parameters.py:101:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    |
+ 99 |         except ValueError:
+100 |             msg = f"Invalid version value: {value}"
+101 |             raise ValueError(msg)
+    |             ^^^^^^^^^^^^^^^^^^^^^ B904
+102 |
+103 |     # Handle seed parameter
+    |
+
+src/midjargon/core/parameters.py:111:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    |
+109 |         except ValueError:
+110 |             msg = f"Invalid seed value: {value}"
+111 |             raise ValueError(msg)
+    |             ^^^^^^^^^^^^^^^^^^^^^ B904
+112 |
+113 |     # Handle integer parameters
+    |
+
+src/midjargon/core/parameters.py:119:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    |
+117 |         except ValueError:
+118 |             msg = f"Invalid integer value for {param}: {value}"
+119 |             raise ValueError(msg)
+    |             ^^^^^^^^^^^^^^^^^^^^^ B904
+120 |
+121 |     # Handle float parameters
+    |
+
+src/midjargon/core/parameters.py:136:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    |
+134 |         except ValueError:
+135 |             msg = f"Invalid numeric value for {param}: {value}"
+136 |             raise ValueError(msg)
+    |             ^^^^^^^^^^^^^^^^^^^^^ B904
+137 |
+138 |     # Handle style parameter
+    |
+
+src/midjargon/core/parameters.py:144:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    |
+142 |         except ValueError:
+143 |             msg = f"Invalid style value: {value}"
+144 |             raise ValueError(msg)
+    |             ^^^^^^^^^^^^^^^^^^^^^ B904
+145 |
+146 |     # Handle character and style references
+    |
+
+src/midjargon/core/parameters.py:159:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    |
+157 |         except Exception as e:
+158 |             msg = f"Invalid reference value for {param}: {value} ({str(e)})"
+159 |             raise ValueError(msg)
+    |             ^^^^^^^^^^^^^^^^^^^^^ B904
+160 |
+161 |     # Default case: return as string
+    |
+
+src/midjargon/core/parameters.py:165:5: C901 `parse_parameters` is too complex (14 > 10)
+    |
+165 | def parse_parameters(param_str: str) -> dict[str, Any]:
+    |     ^^^^^^^^^^^^^^^^ C901
+166 |     """Parse parameters from a string into a dictionary."""
+167 |     if not param_str:
+    |
+
+src/midjargon/core/parameters.py:175:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    |
+173 |     except ValueError as e:
+174 |         msg = f"Failed to parse parameters: {e}"
+175 |         raise ValueError(msg)
+    |         ^^^^^^^^^^^^^^^^^^^^^ B904
+176 |
+177 |     result: dict[str, Any] = {}
+    |
+
+src/midjargon/core/parameters.py:208:21: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    |
+206 |                 except Exception as e:
+207 |                     msg = f"Failed to parse parameter {current_param}: {e}"
+208 |                     raise ValueError(msg)
+    |                     ^^^^^^^^^^^^^^^^^^^^^ B904
+209 |
+210 |             # Start new parameter
+    |
+
+src/midjargon/core/parameters.py:241:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    |
+239 |         except Exception as e:
+240 |             msg = f"Failed to parse parameter {current_param}: {e}"
+241 |             raise ValueError(msg)
+    |             ^^^^^^^^^^^^^^^^^^^^^ B904
+242 |
+243 |     return result
+    |
+
+src/midjargon/core/parser.py:67:5: C901 `parse_parameters` is too complex (30 > 10)
+   |
+67 | def parse_parameters(param_str: str) -> dict[str, Any]:
+   |     ^^^^^^^^^^^^^^^^ C901
+68 |     """Parse parameter string into a dictionary.
+   |
+
+src/midjargon/core/permutations.py:127:9: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    |
+125 |     except Exception as e:
+126 |         msg = f"Failed to parse options at position {start}: {e!s}"
+127 |         raise ValueError(msg)
+    |         ^^^^^^^^^^^^^^^^^^^^^ B904
+128 |
+129 |     if not options:
+    |
+
+src/midjargon/core/permutations.py:145:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    |
+143 |         except Exception as e:
+144 |             msg = f"Failed to expand option '{option}': {e!s}"
+145 |             raise ValueError(msg)
+    |             ^^^^^^^^^^^^^^^^^^^^^ B904
+146 |
+147 |     return results
+    |
+
+src/midjargon/engines/midjourney/midjourney.py:31:9: C901 `parse_dict` is too complex (28 > 10)
+   |
+29 |         return HttpUrl(url)
+30 |
+31 |     def parse_dict(self, prompt_dict: dict[str, Any]) -> MidjourneyPrompt:
+   |         ^^^^^^^^^^ C901
+32 |         """Parse a dictionary into a MidjourneyPrompt.
+   |
+
+tests/cli/test_main.py:159:89: E501 Line too long (94 > 88)
+    |
+157 |         "https://example.com/img1.jpg https://example.com/img2.jpg "
+158 |         "a {red, blue} bird on a {branch, rock} "
+159 |         f"--ar {ASPECT_WIDTH}:{ASPECT_HEIGHT} --stylize {STYLIZE_VALUE} --chaos {CHAOS_VALUE}"
+    |                                                                                         ^^^^^^ E501
+160 |     )
+161 |     with StringIO() as capture_stdout:
+    |
+
+tests/conftest.py:18:89: E501 Line too long (95 > 88)
+   |
+16 |         "escaped_commas": "a {red\\, blue, green} bird",
+17 |         "nested": "a {big {red, blue}, small green} bird",
+18 |         "multiple_images": "https://example.com/1.jpg https://example.com/2.jpg forest --iw 2",
+   |                                                                                         ^^^^^^^ E501
+19 |     }
+   |
+
+Found 26 errors.
+============================= test session starts ==============================
+platform darwin -- Python 3.12.8, pytest-8.3.4, pluggy-1.5.0
+rootdir: /Users/adam/Developer/vcs/github.twardoch/pub/twat-packages/midjargon
+configfile: pyproject.toml
+plugins: rerunfailures-14.0, anyio-4.8.0, mock-3.14.0, xdist-3.6.1
+collected 91 items
+
+tests/cli/test_main.py FFFFFFFFFFFFFFF                                   [ 16%]
+tests/core/test_input.py FFFFFFFFFFFF                                    [ 29%]
+tests/core/test_parameters.py FFFFFFFFFFFFFFFF                           [ 47%]
+tests/core/test_parser.py FFFFF.....                                     [ 58%]
+tests/engines/midjourney/test_midjourney_parser.py FFFF.FFFF...          [ 71%]
+tests/integration/test_workflow.py F.FFFF..FFFFFF                        [ 86%]
+tests/test_core.py .F.F....FF.                                           [ 98%]
+tests/test_package.py .                                                  [100%]
+
+=================================== FAILURES ===================================
+______________________________ test_basic_prompt _______________________________
+
+cli = <midjargon.cli.main.MidjargonCLI object at 0x1096fa510>
+
+    def test_basic_prompt(cli):
+        """Test basic prompt processing."""
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+>           cli.json(
+                f"a beautiful landscape --ar {ASPECT_WIDTH}:{ASPECT_HEIGHT}",
+                json_output=True,
+            )
+E           TypeError: MidjargonCLI.json() got an unexpected keyword argument 'json_output'
+
+tests/cli/test_main.py:58: TypeError
+______________________________ test_permutations _______________________________
+
+cli = <midjargon.cli.main.MidjargonCLI object at 0x108babd70>
+
+    def test_permutations(cli):
+        """Test permutation processing."""
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+            cli.perm("a {red, blue} bird", json_output=True)
+            sys.stdout = sys.__stdout__
+>           data = parse_json_output(capture_stdout)
+
+tests/cli/test_main.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+output_stream = <_io.StringIO object at 0x1096a3c40>
+
+    def parse_json_output(output_stream: StringIO) -> Any:
+        """Parse JSON output from the CLI, removing ANSI escape sequences if any."""
+        output_stream.seek(0)
+        output = output_stream.getvalue()
+        # Remove ANSI escape sequences
+        output = ANSI_ESCAPE.sub("", output)
+        output = output.strip()
+        if not output:
+            msg = "No JSON found in output"
+>           raise ValueError(msg)
+E           ValueError: No JSON found in output
+
+tests/cli/test_main.py:40: ValueError
+_______________________________ test_raw_output ________________________________
+
+cli = <midjargon.cli.main.MidjargonCLI object at 0x1096b8560>
+
+    def test_raw_output(cli):
+        """Test raw output mode."""
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+>           cli.json(f"a photo --stylize {STYLIZE_VALUE}", json_output=True)
+E           TypeError: MidjargonCLI.json() got an unexpected keyword argument 'json_output'
+
+tests/cli/test_main.py:86: TypeError
+_________________________ test_json_output_formatting __________________________
+
+cli = <midjargon.cli.main.MidjargonCLI object at 0x1096b9070>
+
+    def test_json_output_formatting(cli):
+        """Test JSON output formatting."""
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+>           cli.json("a photo", json_output=True)
+E           TypeError: MidjargonCLI.json() got an unexpected keyword argument 'json_output'
+
+tests/cli/test_main.py:98: TypeError
+______________________________ test_invalid_input ______________________________
+
+cli = <midjargon.cli.main.MidjargonCLI object at 0x1096b9880>
+
+    def test_invalid_input(cli):
+        """Test handling of invalid input."""
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+>           cli.json("", json_output=True)
+E           TypeError: MidjargonCLI.json() got an unexpected keyword argument 'json_output'
+
+tests/cli/test_main.py:110: TypeError
+__________________________ test_parameter_validation ___________________________
+
+cli = <midjargon.cli.main.MidjargonCLI object at 0x1096ba1e0>
+
+    def test_parameter_validation(cli):
+        """Test parameter validation."""
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+>           cli.json(
+                f"a photo --stylize {STYLIZE_VALUE * 20}", json_output=True
+            )  # Over max
+E           TypeError: MidjargonCLI.json() got an unexpected keyword argument 'json_output'
+
+tests/cli/test_main.py:120: TypeError
+___________________________ test_image_url_handling ____________________________
+
+cli = <midjargon.cli.main.MidjargonCLI object at 0x1096bab70>
+
+    def test_image_url_handling(cli):
+        """Test handling of image URLs."""
+        url = "https://example.com/image.jpg"
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+>           cli.json(f"{url} a fusion", json_output=True)
+E           TypeError: MidjargonCLI.json() got an unexpected keyword argument 'json_output'
+
+tests/cli/test_main.py:133: TypeError
+_____________________________ test_no_color_output _____________________________
+
+cli = <midjargon.cli.main.MidjargonCLI object at 0x1096bb740>
+
+    def test_no_color_output(cli):
+        """Test no-color output mode."""
+        Console(force_terminal=False)
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+>           cli.json("a photo", json_output=True, no_color=True)
+E           TypeError: MidjargonCLI.json() got an unexpected keyword argument 'json_output'
+
+tests/cli/test_main.py:147: TypeError
+_____________________________ test_complex_prompt ______________________________
+
+cli = <midjargon.cli.main.MidjargonCLI object at 0x109660230>
+
+    def test_complex_prompt(cli):
+        """Test complex prompt with multiple features."""
+        prompt = (
+            "https://example.com/img1.jpg https://example.com/img2.jpg "
+            "a {red, blue} bird on a {branch, rock} "
+            f"--ar {ASPECT_WIDTH}:{ASPECT_HEIGHT} --stylize {STYLIZE_VALUE} --chaos {CHAOS_VALUE}"
+        )
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+>           cli.json(prompt, json_output=True)
+E           TypeError: MidjargonCLI.json() got an unexpected keyword argument 'json_output'
+
+tests/cli/test_main.py:163: TypeError
+________________________ test_personalization_parameter ________________________
+
+cli = <midjargon.cli.main.MidjargonCLI object at 0x1096607a0>
+
+    def test_personalization_parameter(cli):
+        """Test personalization parameter handling in different forms."""
+        # Test flag form (--p)
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+>           cli.json("a photo --p", json_output=True)
+E           TypeError: MidjargonCLI.json() got an unexpected keyword argument 'json_output'
+
+tests/cli/test_main.py:180: TypeError
+_______________________ test_numeric_range_permutations ________________________
+
+cli = <midjargon.cli.main.MidjargonCLI object at 0x109006030>
+
+    def test_numeric_range_permutations(cli):
+        """Test handling of numeric parameters in permutations."""
+        # Test stylize parameter range
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+>           cli.json("a photo --s {75, 300}", json_output=True)
+E           TypeError: MidjargonCLI.json() got an unexpected keyword argument 'json_output'
+
+tests/cli/test_main.py:210: TypeError
+______________________ test_nested_parameter_permutations ______________________
+
+cli = <midjargon.cli.main.MidjargonCLI object at 0x1096bb320>
+
+    def test_nested_parameter_permutations(cli):
+        """Test handling of nested permutations with parameters."""
+        # Test personalization with nested options
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+>           cli.json("smooth edges {, --p {, CODE1}} --s {75, 300}", json_output=True)
+E           TypeError: MidjargonCLI.json() got an unexpected keyword argument 'json_output'
+
+tests/cli/test_main.py:237: TypeError
+_______________________________ test_mj_command ________________________________
+
+cli = <midjargon.cli.main.MidjargonCLI object at 0x1096baf60>
+
+    def test_mj_command(cli):
+        """Test Midjourney prompt conversion."""
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+            cli.mj("a serene landscape --ar 16:9 --stylize 100", json_output=True)
+            sys.stdout = sys.__stdout__
+>           data = parse_json_output(capture_stdout)
+
+tests/cli/test_main.py:285: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+output_stream = <_io.StringIO object at 0x109672440>
+
+    def parse_json_output(output_stream: StringIO) -> Any:
+        """Parse JSON output from the CLI, removing ANSI escape sequences if any."""
+        output_stream.seek(0)
+        output = output_stream.getvalue()
+        # Remove ANSI escape sequences
+        output = ANSI_ESCAPE.sub("", output)
+        output = output.strip()
+        if not output:
+            msg = "No JSON found in output"
+>           raise ValueError(msg)
+E           ValueError: No JSON found in output
+
+tests/cli/test_main.py:40: ValueError
+_______________________________ test_fal_command _______________________________
+
+self = <midjargon.cli.main.MidjargonCLI object at 0x1096ba6f0>
+prompt = 'a serene landscape --ar 16:9 --stylize 100', json_output = True
+no_color = False
+
+    def fal(
+        self, prompt: str, json_output: bool = False, no_color: bool = False
+    ) -> None:
+        """Convert a prompt to Fal.ai format.
+    
+        Args:
+            prompt: The prompt to convert.
+            json_output: Whether to output JSON.
+            no_color: Whether to disable colored output.
+        """
+        try:
+            variants = expand_midjargon_input(prompt)
+            parser = FalParser()
+            results = []
+            for variant in variants:
+>               fal_prompt = parser.parse_dict(variant.prompt.model_dump())
+
+src/midjargon/cli/main.py:106: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <midjargon.engines.fal.fal.FalParser object at 0x1096ba3f0>
+prompt_dict = {'aspect_height': None, 'aspect_ratio': None, 'aspect_width': None, 'chaos': 0.0, ...}
+
+    def parse_dict(self, prompt_dict: dict[str, Any]) -> FalPrompt:
+        """Parse a dictionary into a FalPrompt.
+    
+        Args:
+            prompt_dict: Dictionary containing prompt data.
+    
+        Returns:
+            FalPrompt instance.
+    
+        Raises:
+            ValueError: If the prompt text is empty.
+        """
+        # Validate text
+        text = prompt_dict.pop("text", "").strip()
+        if not text:
+            msg = "Empty prompt"
+            raise ValueError(msg)
+    
+        # Extract known fields
+        known_fields = set(FalPrompt.model_fields)
+    
+        # Split into known and extra parameters
+        params = {}
+        extra_params = {}
+        for key, value in prompt_dict.items():
+            if key in known_fields:
+                params[key] = value
+            else:
+                extra_params[key] = value
+    
+        # Create prompt with all parameters
+>       return FalPrompt(text=text, **params, extra_params=extra_params)
+E       TypeError: midjargon.engines.fal.fal.FalPrompt() got multiple values for keyword argument 'extra_params'
+
+src/midjargon/engines/fal/fal.py:102: TypeError
+
+During handling of the above exception, another exception occurred:
+
+cli = <midjargon.cli.main.MidjargonCLI object at 0x1096ba6f0>
+
+    def test_fal_command(cli):
+        """Test Fal.ai prompt conversion."""
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+>           cli.fal("a serene landscape --ar 16:9 --stylize 100", json_output=True)
+
+tests/cli/test_main.py:296: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <midjargon.cli.main.MidjargonCLI object at 0x1096ba6f0>
+prompt = 'a serene landscape --ar 16:9 --stylize 100', json_output = True
+no_color = False
+
+    def fal(
+        self, prompt: str, json_output: bool = False, no_color: bool = False
+    ) -> None:
+        """Convert a prompt to Fal.ai format.
+    
+        Args:
+            prompt: The prompt to convert.
+            json_output: Whether to output JSON.
+            no_color: Whether to disable colored output.
+        """
+        try:
+            variants = expand_midjargon_input(prompt)
+            parser = FalParser()
+            results = []
+            for variant in variants:
+                fal_prompt = parser.parse_dict(variant.prompt.model_dump())
+                results.append(fal_prompt.model_dump())
+    
+            if json_output:
+                pass
+            else:
+                for i, result in enumerate(results):
+                    if len(results) > 1:
+                        console.print(f"{i + 1}. ", end="", highlight=not no_color)
+                    console.print(
+                        result["text"],
+                        highlight=not no_color,
+                    )
+        except Exception as e:
+            error_console.print(f"[red]Error:[/red] {e!s}", highlight=not no_color)
+>           sys.exit(1)
+E           SystemExit: 1
+
+src/midjargon/cli/main.py:121: SystemExit
+----------------------------- Captured stderr call -----------------------------
+Error: midjargon.engines.fal.fal.FalPrompt() got multiple values for keyword 
+argument 'extra_params'
+______________________________ test_perm_command _______________________________
+
+cli = <midjargon.cli.main.MidjargonCLI object at 0x1096b91f0>
+
+    def test_perm_command(cli):
+        """Test permutation expansion."""
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+            cli.perm("a {red, blue} bird on a {branch, rock}", json_output=True)
+            sys.stdout = sys.__stdout__
+>           data = parse_json_output(capture_stdout)
+
+tests/cli/test_main.py:311: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+output_stream = <_io.StringIO object at 0x109671840>
+
+    def parse_json_output(output_stream: StringIO) -> Any:
+        """Parse JSON output from the CLI, removing ANSI escape sequences if any."""
+        output_stream.seek(0)
+        output = output_stream.getvalue()
+        # Remove ANSI escape sequences
+        output = ANSI_ESCAPE.sub("", output)
+        output = output.strip()
+        if not output:
+            msg = "No JSON found in output"
+>           raise ValueError(msg)
+E           ValueError: No JSON found in output
+
+tests/cli/test_main.py:40: ValueError
+_______________________________ test_basic_input _______________________________
+
+    def test_basic_input():
+        """Test basic input without permutations."""
+        result = expand_midjargon_input("a simple prompt")
+        assert len(result) == 1
+>       assert result[0] == "a simple prompt"
+E       AssertionError: assert PromptVariant(prompt=MidjourneyPrompt(text='a simple prompt', image_prompts=[], parameters=MidjourneyParameters(versio...on=2, repeat=None, personalization=False, quality=1.0, negative_prompt=None, extra_params={}), weight=1.0), weight=1.0) == 'a simple prompt'
+
+tests/core/test_input.py:15: AssertionError
+___________________________ test_single_permutation ____________________________
+
+    def test_single_permutation():
+        """Test input with a single permutation."""
+        result = expand_midjargon_input("a {red, blue} bird")
+        assert len(result) == PERMUTATION_COUNT_2
+>       assert "a red bird" in result
+E       AssertionError: assert 'a red bird' in [PromptVariant(prompt=MidjourneyPrompt(text='a red bird', image_prompts=[], parameters=MidjourneyParameters(version=No...n=2, repeat=None, personalization=False, quality=1.0, negative_prompt=None, extra_params={}), weight=1.0), weight=1.0)]
+
+tests/core/test_input.py:22: AssertionError
+_______________________________ test_empty_input _______________________________
+
+    def test_empty_input():
+        """Test empty input handling."""
+>       result = expand_midjargon_input("")
+
+tests/core/test_input.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/midjargon/core/input.py:94: in expand_midjargon_input
+    weighted_prompts = parse_weighted_prompt(prompt)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+prompt = ''
+
+    def parse_weighted_prompt(prompt: str) -> list[tuple[str, float]]:
+        """Parse a prompt with optional weights.
+    
+        Args:
+            prompt: Raw prompt string with optional weights.
+    
+        Returns:
+            List of (prompt, weight) tuples.
+    
+        Raises:
+            ValueError: If prompt is empty or invalid.
+        """
+        if not prompt or not prompt.strip():
+            msg = "Empty prompt"
+>           raise ValueError(msg)
+E           ValueError: Empty prompt
+
+src/midjargon/core/input.py:23: ValueError
+__________________________ test_multiple_permutations __________________________
+
+    def test_multiple_permutations():
+        """Test input with multiple permutations."""
+        result = expand_midjargon_input("a {red, blue, green} bird")
+        assert len(result) == PERMUTATION_COUNT_3
+>       assert "a red bird" in result
+E       AssertionError: assert 'a red bird' in [PromptVariant(prompt=MidjourneyPrompt(text='a red bird', image_prompts=[], parameters=MidjourneyParameters(version=No...n=2, repeat=None, personalization=False, quality=1.0, negative_prompt=None, extra_params={}), weight=1.0), weight=1.0)]
+
+tests/core/test_input.py:37: AssertionError
+___________________________ test_nested_permutations ___________________________
+
+s = 'a {red {cat, dog}, blue bird}'
+
+    def expand_permutations(s: str) -> list[str]:
+        """Recursively expand permutations in the prompt string using {a, b, ...} syntax.
+    
+        Handles:
+        - Nested permutation groups
+        - Escaped characters (\\, \\{, \\}, \\,)
+        - Proper error reporting
+    
+        Args:
+            s: String containing permutation groups.
+    
+        Returns:
+            List of all possible permutations.
+    
+        Raises:
+            ValueError: If the permutation syntax is invalid.
+        """
+        # Find first unescaped opening brace
+        start = find_unescaped(s, "{")
+        if start == -1:
+            return [s]
+    
+        # Find matching closing brace
+        end, error = find_matching_brace(s, start)
+        if end == -1:
+            raise ValueError(error)
+    
+        # Extract and split options
+        options_str = s[start + 1 : end]
+        try:
+            options = split_unescaped(options_str)
+        except Exception as e:
+            msg = f"Failed to parse options at position {start}: {e!s}"
+            raise ValueError(msg)
+    
+        if not options:
+            msg = f"Empty permutation group at position {start}"
+            raise ValueError(msg)
+    
+        # Recursively expand each option
+        results = []
+        prefix = s[:start]
+        suffix = s[end + 1 :]
+    
+        for option in options:
+            # Replace the entire '{...}' with the option
+            new_s = prefix + option + suffix
+            try:
+>               results.extend(expand_permutations(new_s))
+
+src/midjargon/core/permutations.py:142: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+s = 'a red {cat'
+
+    def expand_permutations(s: str) -> list[str]:
+        """Recursively expand permutations in the prompt string using {a, b, ...} syntax.
+    
+        Handles:
+        - Nested permutation groups
+        - Escaped characters (\\, \\{, \\}, \\,)
+        - Proper error reporting
+    
+        Args:
+            s: String containing permutation groups.
+    
+        Returns:
+            List of all possible permutations.
+    
+        Raises:
+            ValueError: If the permutation syntax is invalid.
+        """
+        # Find first unescaped opening brace
+        start = find_unescaped(s, "{")
+        if start == -1:
+            return [s]
+    
+        # Find matching closing brace
+        end, error = find_matching_brace(s, start)
+        if end == -1:
+>           raise ValueError(error)
+E           ValueError: Unclosed brace at position 6
+
+src/midjargon/core/permutations.py:119: ValueError
+
+During handling of the above exception, another exception occurred:
+
+    def test_nested_permutations():
+        """Test input with nested permutations."""
+>       result = expand_midjargon_input("a {red {cat, dog}, blue bird}")
+
+tests/core/test_input.py:44: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/midjargon/core/input.py:100: in expand_midjargon_input
+    expanded = expand_permutations(text)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+s = 'a {red {cat, dog}, blue bird}'
+
+    def expand_permutations(s: str) -> list[str]:
+        """Recursively expand permutations in the prompt string using {a, b, ...} syntax.
+    
+        Handles:
+        - Nested permutation groups
+        - Escaped characters (\\, \\{, \\}, \\,)
+        - Proper error reporting
+    
+        Args:
+            s: String containing permutation groups.
+    
+        Returns:
+            List of all possible permutations.
+    
+        Raises:
+            ValueError: If the permutation syntax is invalid.
+        """
+        # Find first unescaped opening brace
+        start = find_unescaped(s, "{")
+        if start == -1:
+            return [s]
+    
+        # Find matching closing brace
+        end, error = find_matching_brace(s, start)
+        if end == -1:
+            raise ValueError(error)
+    
+        # Extract and split options
+        options_str = s[start + 1 : end]
+        try:
+            options = split_unescaped(options_str)
+        except Exception as e:
+            msg = f"Failed to parse options at position {start}: {e!s}"
+            raise ValueError(msg)
+    
+        if not options:
+            msg = f"Empty permutation group at position {start}"
+            raise ValueError(msg)
+    
+        # Recursively expand each option
+        results = []
+        prefix = s[:start]
+        suffix = s[end + 1 :]
+    
+        for option in options:
+            # Replace the entire '{...}' with the option
+            new_s = prefix + option + suffix
+            try:
+                results.extend(expand_permutations(new_s))
+            except Exception as e:
+                msg = f"Failed to expand option '{option}': {e!s}"
+>               raise ValueError(msg)
+E               ValueError: Failed to expand option 'red {cat': Unclosed brace at position 6
+
+src/midjargon/core/permutations.py:145: ValueError
+_____________________________ test_escaped_braces ______________________________
+
+    def test_escaped_braces():
+        """Test input with escaped braces."""
+        result = expand_midjargon_input(r"a \{red, blue\} bird")
+        assert len(result) == 1
+>       assert result[0] == "a {red, blue} bird"
+E       AssertionError: assert PromptVariant(prompt=MidjourneyPrompt(text='a \\{red, blue\\} bird', image_prompts=[], parameters=MidjourneyParameters...on=2, repeat=None, personalization=False, quality=1.0, negative_prompt=None, extra_params={}), weight=1.0), weight=1.0) == 'a {red, blue} bird'
+
+tests/core/test_input.py:55: AssertionError
+_____________________________ test_escaped_commas ______________________________
+
+    def test_escaped_commas():
+        """Test input with escaped commas."""
+        result = expand_midjargon_input(r"a {red\, blue, green} bird")
+        assert len(result) == PERMUTATION_COUNT_2
+>       assert "a red, blue bird" in result
+E       AssertionError: assert 'a red, blue bird' in [PromptVariant(prompt=MidjourneyPrompt(text='a red, blue bird', image_prompts=[], parameters=MidjourneyParameters(vers...n=2, repeat=None, personalization=False, quality=1.0, negative_prompt=None, extra_params={}), weight=1.0), weight=1.0)]
+
+tests/core/test_input.py:62: AssertionError
+____________________________ test_unmatched_braces _____________________________
+
+    def test_unmatched_braces():
+        """Test input with unmatched braces."""
+>       result = expand_midjargon_input("a {red, blue bird")
+
+tests/core/test_input.py:68: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/midjargon/core/input.py:100: in expand_midjargon_input
+    expanded = expand_permutations(text)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+s = 'a {red, blue bird'
+
+    def expand_permutations(s: str) -> list[str]:
+        """Recursively expand permutations in the prompt string using {a, b, ...} syntax.
+    
+        Handles:
+        - Nested permutation groups
+        - Escaped characters (\\, \\{, \\}, \\,)
+        - Proper error reporting
+    
+        Args:
+            s: String containing permutation groups.
+    
+        Returns:
+            List of all possible permutations.
+    
+        Raises:
+            ValueError: If the permutation syntax is invalid.
+        """
+        # Find first unescaped opening brace
+        start = find_unescaped(s, "{")
+        if start == -1:
+            return [s]
+    
+        # Find matching closing brace
+        end, error = find_matching_brace(s, start)
+        if end == -1:
+>           raise ValueError(error)
+E           ValueError: Unclosed brace at position 2
+
+src/midjargon/core/permutations.py:119: ValueError
+____________________________ test_empty_permutation ____________________________
+
+    def test_empty_permutation():
+        """Test input with empty permutation options."""
+>       result = expand_midjargon_input("a {} bird")
+
+tests/core/test_input.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/midjargon/core/input.py:100: in expand_midjargon_input
+    expanded = expand_permutations(text)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+s = 'a {} bird'
+
+    def expand_permutations(s: str) -> list[str]:
+        """Recursively expand permutations in the prompt string using {a, b, ...} syntax.
+    
+        Handles:
+        - Nested permutation groups
+        - Escaped characters (\\, \\{, \\}, \\,)
+        - Proper error reporting
+    
+        Args:
+            s: String containing permutation groups.
+    
+        Returns:
+            List of all possible permutations.
+    
+        Raises:
+            ValueError: If the permutation syntax is invalid.
+        """
+        # Find first unescaped opening brace
+        start = find_unescaped(s, "{")
+        if start == -1:
+            return [s]
+    
+        # Find matching closing brace
+        end, error = find_matching_brace(s, start)
+        if end == -1:
+            raise ValueError(error)
+    
+        # Extract and split options
+        options_str = s[start + 1 : end]
+        try:
+            options = split_unescaped(options_str)
+        except Exception as e:
+            msg = f"Failed to parse options at position {start}: {e!s}"
+            raise ValueError(msg)
+    
+        if not options:
+            msg = f"Empty permutation group at position {start}"
+>           raise ValueError(msg)
+E           ValueError: Empty permutation group at position 2
+
+src/midjargon/core/permutations.py:131: ValueError
+___________________________ test_whitespace_handling ___________________________
+
+    def test_whitespace_handling():
+        """Test input with various whitespace patterns."""
+        result = expand_midjargon_input("a {  red  ,  blue  } bird")
+        assert len(result) == PERMUTATION_COUNT_2
+>       assert "a red bird" in result
+E       AssertionError: assert 'a red bird' in [PromptVariant(prompt=MidjourneyPrompt(text='a red bird', image_prompts=[], parameters=MidjourneyParameters(version=No...n=2, repeat=None, personalization=False, quality=1.0, negative_prompt=None, extra_params={}), weight=1.0), weight=1.0)]
+
+tests/core/test_input.py:84: AssertionError
+_________________________ test_expand_midjargon_input __________________________
+
+    def test_expand_midjargon_input():
+        """Test expand_midjargon_input function to verify prompt expansion."""
+        result = expand_midjargon_input("a {red, blue} bird")
+        assert len(result) == 2
+>       assert "a red bird" in result
+E       AssertionError: assert 'a red bird' in [PromptVariant(prompt=MidjourneyPrompt(text='a red bird', image_prompts=[], parameters=MidjourneyParameters(version=No...n=2, repeat=None, personalization=False, quality=1.0, negative_prompt=None, extra_params={}), weight=1.0), weight=1.0)]
+
+tests/core/test_input.py:92: AssertionError
+_______________________ test_handling_escaped_characters _______________________
+
+    def test_handling_escaped_characters():
+        """Test handling of escaped characters in expand_midjargon_input."""
+        result = expand_midjargon_input(r"a \{red, blue\} bird")
+        assert len(result) == 1
+>       assert result[0] == "a {red, blue} bird"
+E       AssertionError: assert PromptVariant(prompt=MidjourneyPrompt(text='a \\{red, blue\\} bird', image_prompts=[], parameters=MidjourneyParameters...on=2, repeat=None, personalization=False, quality=1.0, negative_prompt=None, extra_params={}), weight=1.0), weight=1.0) == 'a {red, blue} bird'
+
+tests/core/test_input.py:112: AssertionError
+_________________________ test_basic_parameter_parsing _________________________
+
+    def test_basic_parameter_parsing():
+        """Test parsing of basic parameters."""
+        param_str = "--ar 16:9 --stylize 100"
+        params = parse_parameters(param_str)
+>       assert params["aspect"] == "16:9"
+E       KeyError: 'aspect'
+
+tests/core/test_parameters.py:13: KeyError
+_____________________________ test_flag_parameters _____________________________
+
+    def test_flag_parameters():
+        """Test parsing of flag parameters (without values)."""
+        param_str = "--tile --turbo --relax"
+        params = parse_parameters(param_str)
+>       assert params["tile"] is None
+E       assert True is None
+
+tests/core/test_parameters.py:21: AssertionError
+_____________________ test_parameter_with_multiple_values ______________________
+
+    def test_parameter_with_multiple_values():
+        """Test parsing parameters that accept multiple values."""
+        param_str = "--no blur,cars,watermark"
+        params = parse_parameters(param_str)
+>       assert params["no"] == "blur,cars,watermark"
+E       AssertionError: assert ['blur,cars,watermark'] == 'blur,cars,watermark'
+
+tests/core/test_parameters.py:30: AssertionError
+__________________________ test_parameter_with_spaces __________________________
+
+param = 'style', value = 'raw photo'
+
+    def convert_parameter_value(param: str, value: str | None) -> Any:
+        """Convert a parameter value to the appropriate type."""
+        # Handle flag parameters
+        if param in FLAG_PARAMS:
+            if value is None:
+                return True
+            val_lower = value.lower()
+            if val_lower in {"true", "1", "yes", "on"}:
+                return True
+            if val_lower in {"false", "0", "no", "off"}:
+                return False
+            return bool(value)
+    
+        # Handle empty values
+        if value is None:
+            return None
+    
+        # Handle string parameters
+        if param in STRING_PARAMS:
+            return str(value)
+    
+        # Handle version parameter
+        if param == "version":
+            if value.lower() == "niji":
+                return "niji"
+            try:
+                return MidjourneyVersion(value)
+            except ValueError:
+                msg = f"Invalid version value: {value}"
+                raise ValueError(msg)
+    
+        # Handle seed parameter
+        if param == "seed":
+            if value.lower() in SPECIAL_SEED_VALUES:
+                return value.lower()
+            try:
+                return int(value)
+            except ValueError:
+                msg = f"Invalid seed value: {value}"
+                raise ValueError(msg)
+    
+        # Handle integer parameters
+        if param in INT_PARAMS:
+            try:
+                return int(value)
+            except ValueError:
+                msg = f"Invalid integer value for {param}: {value}"
+                raise ValueError(msg)
+    
+        # Handle float parameters
+        if param in {
+            "stylize",
+            "chaos",
+            "weird",
+            "quality",
+            "character_weight",
+            "style_weight",
+            "image_weight",
+            "stop",
+        }:
+            try:
+                return float(value)
+            except ValueError:
+                msg = f"Invalid numeric value for {param}: {value}"
+                raise ValueError(msg)
+    
+        # Handle style parameter
+        if param == "style":
+            try:
+>               return StyleMode(value)
+
+src/midjargon/core/parameters.py:141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/enum.py:751: in __call__
+    return cls.__new__(cls, value)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <enum 'StyleMode'>, value = 'raw photo'
+
+    def __new__(cls, value):
+        # all enum instances are actually created during class construction
+        # without calling this method; this method is called by the metaclass'
+        # __call__ (i.e. Color(3) ), and by pickle
+        if type(value) is cls:
+            # For lookups like Color(Color.RED)
+            return value
+        # by-value search for a matching enum member
+        # see if it's in the reverse mapping (for hashable values)
+        try:
+            return cls._value2member_map_[value]
+        except KeyError:
+            # Not found, no need to do long O(n) search
+            pass
+        except TypeError:
+            # not there, now do long search -- O(n) behavior
+            for member in cls._member_map_.values():
+                if member._value_ == value:
+                    return member
+        # still not found -- verify that members exist, in-case somebody got here mistakenly
+        # (such as via super when trying to override __new__)
+        if not cls._member_map_:
+            raise TypeError("%r has no members defined" % cls)
+        #
+        # still not found -- try _missing_ hook
+        try:
+            exc = None
+            result = cls._missing_(value)
+        except Exception as e:
+            exc = e
+            result = None
+        try:
+            if isinstance(result, cls):
+                return result
+            elif (
+                    Flag is not None and issubclass(cls, Flag)
+                    and cls._boundary_ is EJECT and isinstance(result, int)
+                ):
+                return result
+            else:
+                ve_exc = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
+                if result is None and exc is None:
+>                   raise ve_exc
+E                   ValueError: 'raw photo' is not a valid StyleMode
+
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/enum.py:1165: ValueError
+
+During handling of the above exception, another exception occurred:
+
+param_str = '--style "raw photo" --seed 123456'
+
+    def parse_parameters(param_str: str) -> dict[str, Any]:
+        """Parse parameters from a string into a dictionary."""
+        if not param_str:
+            return {}
+    
+        # Split parameters while preserving quoted strings
+        try:
+            parts = shlex.split(param_str)
+        except ValueError as e:
+            msg = f"Failed to parse parameters: {e}"
+            raise ValueError(msg)
+    
+        result: dict[str, Any] = {}
+        current_param = None
+        current_values = []
+    
+        for part in parts:
+            if part.startswith("--"):
+                # Store previous parameter if exists
+                if current_param:
+                    try:
+                        if current_param in MULTI_VALUE_PARAMS:
+                            # Handle multi-value parameters
+                            values = (
+                                [
+                                    convert_parameter_value(current_param, v)
+                                    for v in current_values
+                                ]
+                                if current_values
+                                else [True]
+                            )
+                            if current_param in result:
+                                result[current_param].extend(values)
+                            else:
+                                result[current_param] = values
+                        else:
+                            # Handle single value parameters
+>                           value = convert_parameter_value(
+                                current_param, current_values[0] if current_values else None
+                            )
+
+src/midjargon/core/parameters.py:202: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+param = 'style', value = 'raw photo'
+
+    def convert_parameter_value(param: str, value: str | None) -> Any:
+        """Convert a parameter value to the appropriate type."""
+        # Handle flag parameters
+        if param in FLAG_PARAMS:
+            if value is None:
+                return True
+            val_lower = value.lower()
+            if val_lower in {"true", "1", "yes", "on"}:
+                return True
+            if val_lower in {"false", "0", "no", "off"}:
+                return False
+            return bool(value)
+    
+        # Handle empty values
+        if value is None:
+            return None
+    
+        # Handle string parameters
+        if param in STRING_PARAMS:
+            return str(value)
+    
+        # Handle version parameter
+        if param == "version":
+            if value.lower() == "niji":
+                return "niji"
+            try:
+                return MidjourneyVersion(value)
+            except ValueError:
+                msg = f"Invalid version value: {value}"
+                raise ValueError(msg)
+    
+        # Handle seed parameter
+        if param == "seed":
+            if value.lower() in SPECIAL_SEED_VALUES:
+                return value.lower()
+            try:
+                return int(value)
+            except ValueError:
+                msg = f"Invalid seed value: {value}"
+                raise ValueError(msg)
+    
+        # Handle integer parameters
+        if param in INT_PARAMS:
+            try:
+                return int(value)
+            except ValueError:
+                msg = f"Invalid integer value for {param}: {value}"
+                raise ValueError(msg)
+    
+        # Handle float parameters
+        if param in {
+            "stylize",
+            "chaos",
+            "weird",
+            "quality",
+            "character_weight",
+            "style_weight",
+            "image_weight",
+            "stop",
+        }:
+            try:
+                return float(value)
+            except ValueError:
+                msg = f"Invalid numeric value for {param}: {value}"
+                raise ValueError(msg)
+    
+        # Handle style parameter
+        if param == "style":
+            try:
+                return StyleMode(value)
+            except ValueError:
+                msg = f"Invalid style value: {value}"
+>               raise ValueError(msg)
+E               ValueError: Invalid style value: raw photo
+
+src/midjargon/core/parameters.py:144: ValueError
+
+During handling of the above exception, another exception occurred:
+
+    def test_parameter_with_spaces():
+        """Test parsing parameters with values containing spaces."""
+        param_str = '--style "raw photo" --seed 123456'
+>       params = parse_parameters(param_str)
+
+tests/core/test_parameters.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+param_str = '--style "raw photo" --seed 123456'
+
+    def parse_parameters(param_str: str) -> dict[str, Any]:
+        """Parse parameters from a string into a dictionary."""
+        if not param_str:
+            return {}
+    
+        # Split parameters while preserving quoted strings
+        try:
+            parts = shlex.split(param_str)
+        except ValueError as e:
+            msg = f"Failed to parse parameters: {e}"
+            raise ValueError(msg)
+    
+        result: dict[str, Any] = {}
+        current_param = None
+        current_values = []
+    
+        for part in parts:
+            if part.startswith("--"):
+                # Store previous parameter if exists
+                if current_param:
+                    try:
+                        if current_param in MULTI_VALUE_PARAMS:
+                            # Handle multi-value parameters
+                            values = (
+                                [
+                                    convert_parameter_value(current_param, v)
+                                    for v in current_values
+                                ]
+                                if current_values
+                                else [True]
+                            )
+                            if current_param in result:
+                                result[current_param].extend(values)
+                            else:
+                                result[current_param] = values
+                        else:
+                            # Handle single value parameters
+                            value = convert_parameter_value(
+                                current_param, current_values[0] if current_values else None
+                            )
+                            result[current_param] = value
+                    except Exception as e:
+                        msg = f"Failed to parse parameter {current_param}: {e}"
+>                       raise ValueError(msg)
+E                       ValueError: Failed to parse parameter style: Invalid style value: raw photo
+
+src/midjargon/core/parameters.py:208: ValueError
+____________________________ test_mixed_parameters _____________________________
+
+param = 'style', value = 'raw photo'
+
+    def convert_parameter_value(param: str, value: str | None) -> Any:
+        """Convert a parameter value to the appropriate type."""
+        # Handle flag parameters
+        if param in FLAG_PARAMS:
+            if value is None:
+                return True
+            val_lower = value.lower()
+            if val_lower in {"true", "1", "yes", "on"}:
+                return True
+            if val_lower in {"false", "0", "no", "off"}:
+                return False
+            return bool(value)
+    
+        # Handle empty values
+        if value is None:
+            return None
+    
+        # Handle string parameters
+        if param in STRING_PARAMS:
+            return str(value)
+    
+        # Handle version parameter
+        if param == "version":
+            if value.lower() == "niji":
+                return "niji"
+            try:
+                return MidjourneyVersion(value)
+            except ValueError:
+                msg = f"Invalid version value: {value}"
+                raise ValueError(msg)
+    
+        # Handle seed parameter
+        if param == "seed":
+            if value.lower() in SPECIAL_SEED_VALUES:
+                return value.lower()
+            try:
+                return int(value)
+            except ValueError:
+                msg = f"Invalid seed value: {value}"
+                raise ValueError(msg)
+    
+        # Handle integer parameters
+        if param in INT_PARAMS:
+            try:
+                return int(value)
+            except ValueError:
+                msg = f"Invalid integer value for {param}: {value}"
+                raise ValueError(msg)
+    
+        # Handle float parameters
+        if param in {
+            "stylize",
+            "chaos",
+            "weird",
+            "quality",
+            "character_weight",
+            "style_weight",
+            "image_weight",
+            "stop",
+        }:
+            try:
+                return float(value)
+            except ValueError:
+                msg = f"Invalid numeric value for {param}: {value}"
+                raise ValueError(msg)
+    
+        # Handle style parameter
+        if param == "style":
+            try:
+>               return StyleMode(value)
+
+src/midjargon/core/parameters.py:141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/enum.py:751: in __call__
+    return cls.__new__(cls, value)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <enum 'StyleMode'>, value = 'raw photo'
+
+    def __new__(cls, value):
+        # all enum instances are actually created during class construction
+        # without calling this method; this method is called by the metaclass'
+        # __call__ (i.e. Color(3) ), and by pickle
+        if type(value) is cls:
+            # For lookups like Color(Color.RED)
+            return value
+        # by-value search for a matching enum member
+        # see if it's in the reverse mapping (for hashable values)
+        try:
+            return cls._value2member_map_[value]
+        except KeyError:
+            # Not found, no need to do long O(n) search
+            pass
+        except TypeError:
+            # not there, now do long search -- O(n) behavior
+            for member in cls._member_map_.values():
+                if member._value_ == value:
+                    return member
+        # still not found -- verify that members exist, in-case somebody got here mistakenly
+        # (such as via super when trying to override __new__)
+        if not cls._member_map_:
+            raise TypeError("%r has no members defined" % cls)
+        #
+        # still not found -- try _missing_ hook
+        try:
+            exc = None
+            result = cls._missing_(value)
+        except Exception as e:
+            exc = e
+            result = None
+        try:
+            if isinstance(result, cls):
+                return result
+            elif (
+                    Flag is not None and issubclass(cls, Flag)
+                    and cls._boundary_ is EJECT and isinstance(result, int)
+                ):
+                return result
+            else:
+                ve_exc = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
+                if result is None and exc is None:
+>                   raise ve_exc
+E                   ValueError: 'raw photo' is not a valid StyleMode
+
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/enum.py:1165: ValueError
+
+During handling of the above exception, another exception occurred:
+
+param_str = '--ar 16:9 --tile --no blur,cars --style "raw photo"'
+
+    def parse_parameters(param_str: str) -> dict[str, Any]:
+        """Parse parameters from a string into a dictionary."""
+        if not param_str:
+            return {}
+    
+        # Split parameters while preserving quoted strings
+        try:
+            parts = shlex.split(param_str)
+        except ValueError as e:
+            msg = f"Failed to parse parameters: {e}"
+            raise ValueError(msg)
+    
+        result: dict[str, Any] = {}
+        current_param = None
+        current_values = []
+    
+        for part in parts:
+            if part.startswith("--"):
+                # Store previous parameter if exists
+                if current_param:
+                    try:
+                        if current_param in MULTI_VALUE_PARAMS:
+                            # Handle multi-value parameters
+                            values = (
+                                [
+                                    convert_parameter_value(current_param, v)
+                                    for v in current_values
+                                ]
+                                if current_values
+                                else [True]
+                            )
+                            if current_param in result:
+                                result[current_param].extend(values)
+                            else:
+                                result[current_param] = values
+                        else:
+                            # Handle single value parameters
+                            value = convert_parameter_value(
+                                current_param, current_values[0] if current_values else None
+                            )
+                            result[current_param] = value
+                    except Exception as e:
+                        msg = f"Failed to parse parameter {current_param}: {e}"
+                        raise ValueError(msg)
+    
+                # Start new parameter
+                current_param = ALIASES.get(
+                    part[2:], part[2:]
+                )  # Remove -- and resolve alias
+                current_values = []
+            elif current_param:
+                current_values.append(part)
+            else:
+                msg = f"Unexpected value without parameter: {part}"
+                raise ValueError(msg)
+    
+        # Handle last parameter
+        if current_param:
+            try:
+                if current_param in MULTI_VALUE_PARAMS:
+                    values = (
+                        [convert_parameter_value(current_param, v) for v in current_values]
+                        if current_values
+                        else [True]
+                    )
+                    if current_param in result:
+                        result[current_param].extend(values)
+                    else:
+                        result[current_param] = values
+                else:
+>                   value = convert_parameter_value(
+                        current_param, current_values[0] if current_values else None
+                    )
+
+src/midjargon/core/parameters.py:235: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+param = 'style', value = 'raw photo'
+
+    def convert_parameter_value(param: str, value: str | None) -> Any:
+        """Convert a parameter value to the appropriate type."""
+        # Handle flag parameters
+        if param in FLAG_PARAMS:
+            if value is None:
+                return True
+            val_lower = value.lower()
+            if val_lower in {"true", "1", "yes", "on"}:
+                return True
+            if val_lower in {"false", "0", "no", "off"}:
+                return False
+            return bool(value)
+    
+        # Handle empty values
+        if value is None:
+            return None
+    
+        # Handle string parameters
+        if param in STRING_PARAMS:
+            return str(value)
+    
+        # Handle version parameter
+        if param == "version":
+            if value.lower() == "niji":
+                return "niji"
+            try:
+                return MidjourneyVersion(value)
+            except ValueError:
+                msg = f"Invalid version value: {value}"
+                raise ValueError(msg)
+    
+        # Handle seed parameter
+        if param == "seed":
+            if value.lower() in SPECIAL_SEED_VALUES:
+                return value.lower()
+            try:
+                return int(value)
+            except ValueError:
+                msg = f"Invalid seed value: {value}"
+                raise ValueError(msg)
+    
+        # Handle integer parameters
+        if param in INT_PARAMS:
+            try:
+                return int(value)
+            except ValueError:
+                msg = f"Invalid integer value for {param}: {value}"
+                raise ValueError(msg)
+    
+        # Handle float parameters
+        if param in {
+            "stylize",
+            "chaos",
+            "weird",
+            "quality",
+            "character_weight",
+            "style_weight",
+            "image_weight",
+            "stop",
+        }:
+            try:
+                return float(value)
+            except ValueError:
+                msg = f"Invalid numeric value for {param}: {value}"
+                raise ValueError(msg)
+    
+        # Handle style parameter
+        if param == "style":
+            try:
+                return StyleMode(value)
+            except ValueError:
+                msg = f"Invalid style value: {value}"
+>               raise ValueError(msg)
+E               ValueError: Invalid style value: raw photo
+
+src/midjargon/core/parameters.py:144: ValueError
+
+During handling of the above exception, another exception occurred:
+
+    def test_mixed_parameters():
+        """Test parsing a mix of different parameter types."""
+        param_str = '--ar 16:9 --tile --no blur,cars --style "raw photo"'
+>       params = parse_parameters(param_str)
+
+tests/core/test_parameters.py:44: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+param_str = '--ar 16:9 --tile --no blur,cars --style "raw photo"'
+
+    def parse_parameters(param_str: str) -> dict[str, Any]:
+        """Parse parameters from a string into a dictionary."""
+        if not param_str:
+            return {}
+    
+        # Split parameters while preserving quoted strings
+        try:
+            parts = shlex.split(param_str)
+        except ValueError as e:
+            msg = f"Failed to parse parameters: {e}"
+            raise ValueError(msg)
+    
+        result: dict[str, Any] = {}
+        current_param = None
+        current_values = []
+    
+        for part in parts:
+            if part.startswith("--"):
+                # Store previous parameter if exists
+                if current_param:
+                    try:
+                        if current_param in MULTI_VALUE_PARAMS:
+                            # Handle multi-value parameters
+                            values = (
+                                [
+                                    convert_parameter_value(current_param, v)
+                                    for v in current_values
+                                ]
+                                if current_values
+                                else [True]
+                            )
+                            if current_param in result:
+                                result[current_param].extend(values)
+                            else:
+                                result[current_param] = values
+                        else:
+                            # Handle single value parameters
+                            value = convert_parameter_value(
+                                current_param, current_values[0] if current_values else None
+                            )
+                            result[current_param] = value
+                    except Exception as e:
+                        msg = f"Failed to parse parameter {current_param}: {e}"
+                        raise ValueError(msg)
+    
+                # Start new parameter
+                current_param = ALIASES.get(
+                    part[2:], part[2:]
+                )  # Remove -- and resolve alias
+                current_values = []
+            elif current_param:
+                current_values.append(part)
+            else:
+                msg = f"Unexpected value without parameter: {part}"
+                raise ValueError(msg)
+    
+        # Handle last parameter
+        if current_param:
+            try:
+                if current_param in MULTI_VALUE_PARAMS:
+                    values = (
+                        [convert_parameter_value(current_param, v) for v in current_values]
+                        if current_values
+                        else [True]
+                    )
+                    if current_param in result:
+                        result[current_param].extend(values)
+                    else:
+                        result[current_param] = values
+                else:
+                    value = convert_parameter_value(
+                        current_param, current_values[0] if current_values else None
+                    )
+                    result[current_param] = value
+            except Exception as e:
+                msg = f"Failed to parse parameter {current_param}: {e}"
+>               raise ValueError(msg)
+E               ValueError: Failed to parse parameter style: Invalid style value: raw photo
+
+src/midjargon/core/parameters.py:241: ValueError
+__________________________ test_shorthand_parameters ___________________________
+
+    def test_shorthand_parameters():
+        """Test parsing of shorthand parameter names."""
+        param_str = "--s 100 --c 50 --w 1000 --iw 2.0 --q 1.0"
+        params = parse_parameters(param_str)
+>       assert params["stylize"] == "100"
+E       AssertionError: assert 100.0 == '100'
+
+tests/core/test_parameters.py:55: AssertionError
+_________________________ test_niji_version_parameter __________________________
+
+    def test_niji_version_parameter():
+        """Test parsing of niji version parameter."""
+        # Test basic niji
+        params = parse_parameters("--niji")
+>       assert params["version"] == "niji"
+E       AssertionError: assert None == 'niji'
+
+tests/core/test_parameters.py:66: AssertionError
+____________________________ test_version_parameter ____________________________
+
+    def test_version_parameter():
+        """Test parsing of version parameter."""
+        # Test v parameter
+        params = parse_parameters("--v 5.2")
+>       assert params["version"] == "5.2"
+E       AssertionError: assert <MidjourneyVe....V5_2: 'v5.2'> == '5.2'
+E         
+E         - 5.2
+E         + v5.2
+E         ? +
+
+tests/core/test_parameters.py:77: AssertionError
+________________________ test_personalization_parameter ________________________
+
+    def test_personalization_parameter():
+        """Test parsing of personalization parameter."""
+        # Test basic p parameter
+        params = parse_parameters("--p")
+>       assert params["personalization"] is None  # Flag without value is None
+E       assert True is None
+
+tests/core/test_parameters.py:84: AssertionError
+__________________________ test_reference_parameters ___________________________
+
+    def test_reference_parameters():
+        """Test parsing of reference parameters."""
+        param_str = "--cref img1.jpg img2.jpg --sref style1.jpg style2.jpg"
+        params = parse_parameters(param_str)
+>       assert params["character_reference"] == ["img1.jpg", "img2.jpg"]
+E       AssertionError: assert [CharacterRef..., weight=1.0)] == ['img1.jpg', 'img2.jpg']
+E         
+E         At index 0 diff: CharacterReference(url=None, code='img1.jpg', weight=1.0) != 'img1.jpg'
+E         Use -v to get more diff
+
+tests/core/test_parameters.py:107: AssertionError
+_____________________________ test_parameter_order _____________________________
+
+    def test_parameter_order():
+        """Test that parameter order is preserved in output."""
+        param_str = "--seed 123 --ar 16:9 --chaos 20 --tile"
+        params = parse_parameters(param_str)
+        keys = list(params.keys())
+>       assert keys == ["seed", "aspect", "chaos", "tile"]
+E       AssertionError: assert ['seed', 'asp...haos', 'tile'] == ['seed', 'asp...haos', 'tile']
+E         
+E         At index 1 diff: 'aspect_ratio' != 'aspect'
+E         Use -v to get more diff
+
+tests/core/test_parameters.py:116: AssertionError
+___________________________ test_invalid_parameters ____________________________
+
+    def test_invalid_parameters():
+        """Test handling of invalid parameter formats."""
+>       with pytest.raises(ValueError, match="Empty parameter name"):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/core/test_parameters.py:121: Failed
+________________________ test_flag_parameters_handling _________________________
+
+    def test_flag_parameters_handling():
+        """Test handling of flag parameters in parse_parameters."""
+        param_str = "--tile --turbo --relax --video --remix"
+        params = parse_parameters(param_str)
+>       assert params["tile"] is None
+E       assert True is None
+
+tests/core/test_parameters.py:138: AssertionError
+___________________________ test_special_seed_values ___________________________
+
+    def test_special_seed_values():
+        """Test handling of special seed values."""
+        # Test random seed
+        params = parse_parameters("--seed random")
+        assert params["seed"] == "random"
+    
+        # Test numeric seed
+        params = parse_parameters("--seed 12345")
+>       assert params["seed"] == "12345"
+E       AssertionError: assert 12345 == '12345'
+
+tests/core/test_parameters.py:165: AssertionError
+_________________________ test_reference_url_handling __________________________
+
+    def test_reference_url_handling():
+        """Test handling of URLs in reference parameters."""
+        # Test character reference with quoted URL containing spaces
+        params = parse_parameters('--cref "https://example.com/image with spaces.jpg"')
+>       assert params["character_reference"] == [
+            "https://example.com/image with spaces.jpg"
+        ]
+E       AssertionError: assert [CharacterRef..., weight=1.0)] == ['https://exa...h spaces.jpg']
+E         
+E         At index 0 diff: CharacterReference(url=HttpUrl('https://example.com/image%20with%20spaces.jpg'), code=None, weight=1.0) != 'https://example.com/image with spaces.jpg'
+E         Use -v to get more diff
+
+tests/core/test_parameters.py:172: AssertionError
+__________________________ test_niji_version_handling __________________________
+
+    def test_niji_version_handling():
+        """Test handling of niji version parameter variations."""
+        # Test basic niji
+        params = parse_parameters("--niji")
+>       assert params["version"] == "niji"
+E       AssertionError: assert None == 'niji'
+
+tests/core/test_parameters.py:185: AssertionError
+__________________________ test_basic_prompt_parsing ___________________________
+
+    def test_basic_prompt_parsing():
+        """Test basic prompt parsing."""
+        prompt = "a beautiful landscape --ar 16:9 --stylize 100"
+        result = parse_midjargon_prompt_to_dict(prompt)
+        assert result["text"] == "a beautiful landscape"
+>       assert result["aspect"] == ASPECT_RATIO
+E       KeyError: 'aspect'
+
+tests/core/test_parser.py:18: KeyError
+__________________________ test_prompt_with_image_url __________________________
+
+    def test_prompt_with_image_url():
+        """Test prompt parsing with image URL."""
+        prompt = f"{IMAGE_URL} a mystical forest --chaos 50"
+        result = parse_midjargon_prompt_to_dict(prompt)
+        assert result["text"] == "a mystical forest"
+>       assert result["images"] == [IMAGE_URL]
+E       KeyError: 'images'
+
+tests/core/test_parser.py:27: KeyError
+_____________________ test_prompt_with_multiple_image_urls _____________________
+
+    def test_prompt_with_multiple_image_urls():
+        """Test prompt parsing with multiple image URLs."""
+        image_urls = [
+            "https://example.com/image1.jpg",
+            "https://example.com/image2.jpg",
+        ]
+        prompt = f"{image_urls[0]} {image_urls[1]} a serene landscape --stylize 100"
+        result = parse_midjargon_prompt_to_dict(prompt)
+        assert result["text"] == "a serene landscape"
+>       assert result["images"] == image_urls
+E       KeyError: 'images'
+
+tests/core/test_parser.py:40: KeyError
+_________________________ test_prompt_with_parameters __________________________
+
+    def test_prompt_with_parameters():
+        """Test prompt parsing with various parameters."""
+        prompt = "a futuristic city --ar 16:9 --stylize 100 --chaos 50"
+        result = parse_midjargon_prompt_to_dict(prompt)
+        assert result["text"] == "a futuristic city"
+>       assert result["aspect"] == ASPECT_RATIO
+E       KeyError: 'aspect'
+
+tests/core/test_parser.py:49: KeyError
+______________________ test_prompt_with_empty_parameters _______________________
+
+    def test_prompt_with_empty_parameters():
+        """Test prompt parsing with empty parameters."""
+        prompt = "a landscape photo --tile --no blur,cars"
+        result = parse_midjargon_prompt_to_dict(prompt)
+        assert result["text"] == "a landscape photo"
+>       assert result["tile"] is None
+E       assert False is None
+
+tests/core/test_parser.py:59: AssertionError
+___________________________ test_numeric_parameters ____________________________
+
+    def test_numeric_parameters():
+        """Test parsing of numeric parameters."""
+        parser = MidjourneyParser()
+        prompt = parser.parse_dict(
+            {
+                "text": "a photo",
+                "stylize": str(STYLIZE_VALUE),
+                "seed": str(SEED_VALUE),
+                "chaos": str(CHAOS_VALUE),
+            }
+        )
+    
+        assert prompt.text == "a photo"
+        assert prompt.stylize == float(STYLIZE_VALUE)
+>       assert prompt.seed == SEED_VALUE
+E       AssertionError: assert '12345' == 12345
+E        +  where '12345' = MidjourneyPrompt(text='a photo', image_prompts=[], parameters=MidjourneyParameters(version=None, style=None, stylize=1..., style_version=2, repeat=None, personalization=False, quality=1.0, negative_prompt=None, extra_params={}), weight=1.0).seed
+
+tests/engines/midjourney/test_midjourney_parser.py:39: AssertionError
+____________________________ test_style_parameters _____________________________
+
+    def test_style_parameters():
+        """Test parsing of style parameters."""
+        parser = MidjourneyParser()
+        prompt = parser.parse_dict(
+            {"text": "a photo", "style": "raw", "version": VERSION_NUMBER}
+        )
+    
+        assert prompt.text == "a photo"
+        assert prompt.style == "raw"
+>       assert prompt.version == f"v{VERSION_NUMBER}"
+E       AssertionError: assert '5.2' == 'v5.2'
+E         
+E         - v5.2
+E         ? -
+E         + 5.2
+
+tests/engines/midjourney/test_midjourney_parser.py:52: AssertionError
+______________________________ test_aspect_ratio _______________________________
+
+    def test_aspect_ratio():
+        """Test parsing of aspect ratio."""
+        parser = MidjourneyParser()
+        prompt = parser.parse_dict({"text": "a photo", "ar": "16:9"})
+    
+        assert prompt.text == "a photo"
+>       assert prompt.aspect_width == 16
+E       AssertionError: assert None == 16
+E        +  where None = MidjourneyPrompt(text='a photo', image_prompts=[], parameters=MidjourneyParameters(version=None, style=None, stylize=1..., style_version=2, repeat=None, personalization=False, quality=1.0, negative_prompt=None, extra_params={}), weight=1.0).aspect_width
+
+tests/engines/midjourney/test_midjourney_parser.py:61: AssertionError
+______________________________ test_image_prompts ______________________________
+
+    def test_image_prompts():
+        """Test parsing of image prompts."""
+        parser = MidjourneyParser()
+        urls = [
+            "https://example.com/image1.jpg",
+            "https://example.com/image2.jpg",
+        ]
+        prompt = parser.parse_dict({"text": "a fusion", "image_prompts": urls})
+    
+        assert prompt.text == "a fusion"
+        assert len(prompt.image_prompts) == 2
+>       assert all(isinstance(url, HttpUrl) for url in prompt.image_prompts)
+E       assert False
+E        +  where False = all(<generator object test_image_prompts.<locals>.<genexpr> at 0x1096c1c40>)
+
+tests/engines/midjourney/test_midjourney_parser.py:77: AssertionError
+__________________________ test_parameter_conversion ___________________________
+
+    def test_parameter_conversion():
+        """Test parameter value conversion."""
+        parser = MidjourneyParser()
+        prompt = parser.parse_dict(
+            {
+                "text": "a photo",
+                "stylize": str(STYLIZE_VALUE),
+                "seed": str(SEED_VALUE),
+                "image_weight": str(IMAGE_WEIGHT_VALUE),
+            }
+        )
+    
+        assert prompt.text == "a photo"
+        assert prompt.stylize == float(STYLIZE_VALUE)
+>       assert prompt.seed == SEED_VALUE
+E       AssertionError: assert '12345' == 12345
+E        +  where '12345' = MidjourneyPrompt(text='a photo', image_prompts=[], parameters=MidjourneyParameters(version=None, style=None, stylize=1...peat=None, personalization=False, quality=1.0, negative_prompt=None, extra_params={'image_weight': '2.0'}), weight=1.0).seed
+
+tests/engines/midjourney/test_midjourney_parser.py:110: AssertionError
+_____________________________ test_invalid_values ______________________________
+
+    def test_invalid_values():
+        """Test handling of invalid parameter values."""
+        parser = MidjourneyParser()
+    
+        # Invalid aspect ratio - now accepts any value
+        result = parser.parse_dict({"text": "a photo", "ar": "999:999"})
+>       assert result.aspect_width == 999
+E       AssertionError: assert None == 999
+E        +  where None = MidjourneyPrompt(text='a photo', image_prompts=[], parameters=MidjourneyParameters(version=None, style=None, stylize=1..., style_version=2, repeat=None, personalization=False, quality=1.0, negative_prompt=None, extra_params={}), weight=1.0).aspect_width
+
+tests/engines/midjourney/test_midjourney_parser.py:120: AssertionError
+______________________________ test_empty_values _______________________________
+
+    def test_empty_values():
+        """Test handling of empty values."""
+        parser = MidjourneyParser()
+    
+        # Empty text
+        with pytest.raises(ValueError, match="Empty prompt"):
+            parser.parse_dict({"text": ""})
+    
+        # Empty image list
+        prompt = parser.parse_dict({"text": "a photo", "image_prompts": []})
+        assert prompt.text == "a photo"
+        assert not prompt.image_prompts
+    
+        # None values
+>       prompt = parser.parse_dict({"text": "a photo", "stylize": None})
+
+tests/engines/midjourney/test_midjourney_parser.py:144: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <midjargon.engines.midjourney.midjourney.MidjourneyParser object at 0x109d303b0>
+prompt_dict = {}
+
+    def parse_dict(self, prompt_dict: dict[str, Any]) -> MidjourneyPrompt:
+        """Parse a dictionary into a MidjourneyPrompt.
+    
+        Args:
+            prompt_dict: Dictionary containing prompt data.
+    
+        Returns:
+            MidjourneyPrompt instance.
+    
+        Raises:
+            ValueError: If the prompt text is empty.
+        """
+        # Validate text
+        text = prompt_dict.pop("text", "").strip()
+        if not text:
+            msg = "Empty prompt"
+            raise ValueError(msg)
+    
+        # Handle image prompts
+        image_prompts = []
+        raw_image_prompts = prompt_dict.pop("image_prompts", [])
+        for img in raw_image_prompts:
+            if isinstance(img, str):
+                image_prompts.append(ImageReference(url=self._parse_url(img)))
+            elif isinstance(img, dict):
+                if "url" in img and isinstance(img["url"], str):
+                    img["url"] = self._parse_url(img["url"])
+                image_prompts.append(ImageReference(**img))
+            elif isinstance(img, ImageReference):
+                image_prompts.append(img)
+    
+        # Handle parameters
+        params = MidjourneyParameters()
+    
+        # Handle aspect ratio
+        if "ar" in prompt_dict:
+            params.aspect_ratio = prompt_dict.pop("ar")
+        elif "aspect_ratio" in prompt_dict:
+            params.aspect_ratio = prompt_dict.pop("aspect_ratio")
+        elif "aspect" in prompt_dict:
+            params.aspect_ratio = prompt_dict.pop("aspect")
+        elif all(k in prompt_dict for k in ["aspect_width", "aspect_height"]):
+            params.aspect_width = int(prompt_dict.pop("aspect_width"))
+            params.aspect_height = int(prompt_dict.pop("aspect_height"))
+    
+        # Handle version
+        if "v" in prompt_dict:
+            params.version = prompt_dict.pop("v")
+        elif "version" in prompt_dict:
+            params.version = prompt_dict.pop("version")
+    
+        # Handle style
+        if "style" in prompt_dict:
+            params.style = prompt_dict.pop("style")
+    
+        # Handle numeric parameters
+        if "s" in prompt_dict:
+            params.stylize = float(prompt_dict.pop("s"))
+        elif "stylize" in prompt_dict:
+>           params.stylize = float(prompt_dict.pop("stylize"))
+E           TypeError: float() argument must be a string or a real number, not 'NoneType'
+
+src/midjargon/engines/midjourney/midjourney.py:90: TypeError
+____________________________ test_version_parameter ____________________________
+
+    def test_version_parameter():
+        """Test parsing of version parameter."""
+        parser = MidjourneyParser()
+        prompt = parser.parse_dict(
+            {
+                "text": "a photo",
+                "version": "6",
+            }
+        )
+    
+        assert prompt.text == "a photo"
+>       assert prompt.version == "v6"
+E       AssertionError: assert '6' == 'v6'
+E         
+E         - v6
+E         + 6
+
+tests/engines/midjourney/test_midjourney_parser.py:160: AssertionError
+_____________________________ test_basic_workflow ______________________________
+
+    def test_basic_workflow():
+        """Test basic prompt processing workflow."""
+        prompt = "a portrait --ar 16:9 --stylize 200"
+        results = process_prompt(prompt)
+    
+        assert len(results) == 1
+        assert results[0]["text"] == "a portrait"
+>       assert results[0]["aspect_ratio"] == "16:9"
+E       AssertionError: assert None == '16:9'
+
+tests/integration/test_workflow.py:39: AssertionError
+_____________________________ test_image_workflow ______________________________
+
+    def test_image_workflow():
+        """Test workflow with image URLs."""
+        prompt = "https://example.com/image.jpg a portrait"
+        results = process_prompt(prompt)
+    
+        assert len(results) == 1
+>       assert len(results[0]["image_prompts"]) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/integration/test_workflow.py:59: AssertionError
+___________________________ test_parameter_workflow ____________________________
+
+    def test_parameter_workflow():
+        """Test workflow with various parameters."""
+        prompt = "portrait --ar 16:9 --stylize 200 --chaos 50 --v 6"
+        results = process_prompt(prompt)
+    
+        assert len(results) == 1
+        assert results[0]["text"] == "portrait"
+>       assert results[0]["aspect_ratio"] == "16:9"
+E       AssertionError: assert None == '16:9'
+
+tests/integration/test_workflow.py:70: AssertionError
+_________________________ test_new_parameters_workflow _________________________
+
+    def test_new_parameters_workflow():
+        """Test workflow with newer parameters."""
+        prompt = "portrait --cref https://example.com/char.jpg --cw 50"
+        results = process_prompt(prompt)
+    
+        assert len(results) == 1
+>       assert len(results[0]["character_reference"]) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/integration/test_workflow.py:82: AssertionError
+________________________ test_weighted_prompts_workflow ________________________
+
+    def test_weighted_prompts_workflow():
+        """Test workflow with weighted prompts."""
+        prompt = "first prompt::0.7 second prompt::0.3"
+        results = process_prompt(prompt)
+    
+        assert len(results) == 2
+        weights = [r.get("weight", 1.0) for r in results]
+>       assert 0.7 in weights
+E       assert 0.7 in [1.0, 1.0]
+
+tests/integration/test_workflow.py:93: AssertionError
+______________________ test_permutations_with_parameters _______________________
+
+    def test_permutations_with_parameters():
+        """Test permutations with parameters."""
+        prompt = "photo {modern, vintage} --ar {1:1, 16:9} --s 100"
+        results = process_prompt(prompt)
+    
+        # Convert results to set of tuples for easier comparison
+        result_tuples = {
+            (r["text"].strip(), r["aspect_ratio"], r["stylize"]) for r in results
+        }
+    
+        expected = {
+            ("photo modern", "1:1", 100),
+            ("photo modern", "16:9", 100),
+            ("photo vintage", "1:1", 100),
+            ("photo vintage", "16:9", 100),
+        }
+>       assert result_tuples == expected
+E       AssertionError: assert {('photo mode... None, 100.0)} == {('photo mode..., '1:1', 100)}
+E         
+E         Extra items in the left set:
+E         ('photo vintage', None, 100.0)
+E         ('photo modern', None, 100.0)
+E         Extra items in the right set:
+E         ('photo vintage', '16:9', 100)
+E         ('photo modern', '1:1', 100)...
+E         
+E         ...Full output truncated (3 lines hidden), use '-vv' to show
+
+tests/integration/test_workflow.py:139: AssertionError
+____________________ test_permutations_with_flag_parameters ____________________
+
+    def test_permutations_with_flag_parameters():
+        """Test permutations with flag parameters (no value) are handled correctly."""
+        prompt = "photo {, --tile} {, --turbo}"
+        results = process_prompt(prompt)
+    
+        # Convert results to set of tuples for easier comparison
+        result_tuples = {
+            (r["text"].strip(), r.get("tile", False), r.get("turbo", False))
+            for r in results
+        }
+    
+        expected = {
+            ("photo", False, False),
+            ("photo", False, True),
+            ("photo", True, False),
+            ("photo", True, True),
+        }
+>       assert result_tuples == expected
+E       AssertionError: assert {('photo', False, False)} == {('photo', Fa..., True, True)}
+E         
+E         Extra items in the right set:
+E         ('photo', True, True)
+E         ('photo', False, True)
+E         ('photo', True, False)
+E         Use -v to get more diff
+
+tests/integration/test_workflow.py:159: AssertionError
+__________________ test_permutations_with_complex_parameters ___________________
+
+    def test_permutations_with_complex_parameters():
+        """Test permutations with complex parameter combinations."""
+        prompt = "portrait {modern, vintage} {, --p custom} --ar {1:1, 16:9} --s 100"
+        results = process_prompt(prompt)
+    
+        # Convert results to set of tuples for easier comparison
+        result_tuples = {
+            (
+                r["text"].strip(),
+                (
+                    r["personalization"][0]
+                    if isinstance(r.get("personalization", []), list)
+                    else r.get("personalization")
+                ),
+                f"{r['aspect_width']}:{r['aspect_height']}",
+                r["stylize"],
+            )
+            for r in results
+        }
+    
+        expected = {
+            ("portrait modern", None, "1:1", 100),
+            ("portrait modern", "custom", "1:1", 100),
+            ("portrait modern", None, "16:9", 100),
+            ("portrait modern", "custom", "16:9", 100),
+            ("portrait vintage", None, "1:1", 100),
+            ("portrait vintage", "custom", "1:1", 100),
+            ("portrait vintage", None, "16:9", 100),
+            ("portrait vintage", "custom", "16:9", 100),
+        }
+>       assert result_tuples == expected
+E       AssertionError: assert {('portrait m...None', 100.0)} == {('portrait m...9', 100), ...}
+E         
+E         Extra items in the left set:
+E         ('portrait vintage', False, 'None:None', 100.0)
+E         ('portrait modern', False, 'None:None', 100.0)
+E         Extra items in the right set:
+E         ('portrait modern', None, '1:1', 100)
+E         ('portrait modern', 'custom', '16:9', 100)...
+E         
+E         ...Full output truncated (7 lines hidden), use '-vv' to show
+
+tests/integration/test_workflow.py:192: AssertionError
+_____________________________ test_cli_mj_command ______________________________
+
+    def test_cli_mj_command():
+        """Test Midjourney prompt conversion using CLI."""
+        cli = MidjargonCLI()
+        prompt = "a serene landscape --ar 16:9 --stylize 100"
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+            cli.mj(prompt, json_output=True)
+            sys.stdout = sys.__stdout__
+            output = capture_stdout.getvalue()
+>       assert "serene landscape" in output
+E       AssertionError: assert 'serene landscape' in ''
+
+tests/integration/test_workflow.py:204: AssertionError
+_____________________________ test_cli_fal_command _____________________________
+
+self = <midjargon.cli.main.MidjargonCLI object at 0x109d42d20>
+prompt = 'a serene landscape --ar 16:9 --stylize 100', json_output = True
+no_color = False
+
+    def fal(
+        self, prompt: str, json_output: bool = False, no_color: bool = False
+    ) -> None:
+        """Convert a prompt to Fal.ai format.
+    
+        Args:
+            prompt: The prompt to convert.
+            json_output: Whether to output JSON.
+            no_color: Whether to disable colored output.
+        """
+        try:
+            variants = expand_midjargon_input(prompt)
+            parser = FalParser()
+            results = []
+            for variant in variants:
+>               fal_prompt = parser.parse_dict(variant.prompt.model_dump())
+
+src/midjargon/cli/main.py:106: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <midjargon.engines.fal.fal.FalParser object at 0x109d42b40>
+prompt_dict = {'aspect_height': None, 'aspect_ratio': None, 'aspect_width': None, 'chaos': 0.0, ...}
+
+    def parse_dict(self, prompt_dict: dict[str, Any]) -> FalPrompt:
+        """Parse a dictionary into a FalPrompt.
+    
+        Args:
+            prompt_dict: Dictionary containing prompt data.
+    
+        Returns:
+            FalPrompt instance.
+    
+        Raises:
+            ValueError: If the prompt text is empty.
+        """
+        # Validate text
+        text = prompt_dict.pop("text", "").strip()
+        if not text:
+            msg = "Empty prompt"
+            raise ValueError(msg)
+    
+        # Extract known fields
+        known_fields = set(FalPrompt.model_fields)
+    
+        # Split into known and extra parameters
+        params = {}
+        extra_params = {}
+        for key, value in prompt_dict.items():
+            if key in known_fields:
+                params[key] = value
+            else:
+                extra_params[key] = value
+    
+        # Create prompt with all parameters
+>       return FalPrompt(text=text, **params, extra_params=extra_params)
+E       TypeError: midjargon.engines.fal.fal.FalPrompt() got multiple values for keyword argument 'extra_params'
+
+src/midjargon/engines/fal/fal.py:102: TypeError
+
+During handling of the above exception, another exception occurred:
+
+    def test_cli_fal_command():
+        """Test Fal.ai prompt conversion using CLI."""
+        cli = MidjargonCLI()
+        prompt = "a serene landscape --ar 16:9 --stylize 100"
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+>           cli.fal(prompt, json_output=True)
+
+tests/integration/test_workflow.py:215: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <midjargon.cli.main.MidjargonCLI object at 0x109d42d20>
+prompt = 'a serene landscape --ar 16:9 --stylize 100', json_output = True
+no_color = False
+
+    def fal(
+        self, prompt: str, json_output: bool = False, no_color: bool = False
+    ) -> None:
+        """Convert a prompt to Fal.ai format.
+    
+        Args:
+            prompt: The prompt to convert.
+            json_output: Whether to output JSON.
+            no_color: Whether to disable colored output.
+        """
+        try:
+            variants = expand_midjargon_input(prompt)
+            parser = FalParser()
+            results = []
+            for variant in variants:
+                fal_prompt = parser.parse_dict(variant.prompt.model_dump())
+                results.append(fal_prompt.model_dump())
+    
+            if json_output:
+                pass
+            else:
+                for i, result in enumerate(results):
+                    if len(results) > 1:
+                        console.print(f"{i + 1}. ", end="", highlight=not no_color)
+                    console.print(
+                        result["text"],
+                        highlight=not no_color,
+                    )
+        except Exception as e:
+            error_console.print(f"[red]Error:[/red] {e!s}", highlight=not no_color)
+>           sys.exit(1)
+E           SystemExit: 1
+
+src/midjargon/cli/main.py:121: SystemExit
+----------------------------- Captured stderr call -----------------------------
+Error: midjargon.engines.fal.fal.FalPrompt() got multiple values for keyword 
+argument 'extra_params'
+____________________________ test_cli_perm_command _____________________________
+
+    def test_cli_perm_command():
+        """Test permutation expansion using CLI."""
+        cli = MidjargonCLI()
+        prompt = "a {red, blue} bird on a {branch, rock}"
+        with StringIO() as capture_stdout:
+            sys.stdout = capture_stdout
+            cli.perm(prompt, json_output=True)
+            sys.stdout = sys.__stdout__
+            output = capture_stdout.getvalue()
+>       assert "red" in output
+E       AssertionError: assert 'red' in ''
+
+tests/integration/test_workflow.py:232: AssertionError
+_________________________ test_prompt_with_parameters __________________________
+
+    def test_prompt_with_parameters():
+        """Test prompt parsing with various parameters."""
+        prompt = "a portrait --ar 16:9 --stylize 200 --chaos 50 --v 6"
+        result = parse_midjargon_prompt(prompt)
+    
+        assert result.text == "a portrait"
+>       assert result.parameters.aspect == "16:9"
+E       AssertionError: assert None == '16:9'
+E        +  where None = MidjourneyParameters(version=None, style=None, stylize=100.0, chaos=0.0, weird=0.0, seed=None, aspect_width=None, aspe...e_weight=None, style_version=2, repeat=None, personalization=False, quality=1.0, negative_prompt=None, extra_params={}).aspect
+E        +    where MidjourneyParameters(version=None, style=None, stylize=100.0, chaos=0.0, weird=0.0, seed=None, aspect_width=None, aspe...e_weight=None, style_version=2, repeat=None, personalization=False, quality=1.0, negative_prompt=None, extra_params={}) = MidjourneyPrompt(text='a portrait', image_prompts=[], parameters=MidjourneyParameters(version=None, style=None, styliz..., style_version=2, repeat=None, personalization=False, quality=1.0, negative_prompt=None, extra_params={}), weight=1.0).parameters
+
+tests/test_core.py:31: AssertionError
+___________________________ test_invalid_parameters ____________________________
+
+    def test_invalid_parameters():
+        """Test handling of invalid parameters."""
+>       with pytest.raises(ValueError):
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/test_core.py:49: Failed
+_____________________________ test_style_reference _____________________________
+
+    def test_style_reference():
+        """Test handling of style references."""
+        # Test with code
+        prompt = "test --sref p123456"
+        result = parse_midjargon_prompt(prompt)
+>       assert result.style_reference
+E       AssertionError: assert []
+E        +  where [] = MidjourneyPrompt(text='test', image_prompts=[], parameters=MidjourneyParameters(version=None, style=None, stylize=100...., style_version=2, repeat=None, personalization=False, quality=1.0, negative_prompt=None, extra_params={}), weight=1.0).style_reference
+
+tests/test_core.py:109: AssertionError
+___________________________ test_character_reference ___________________________
+
+    def test_character_reference():
+        """Test handling of character references."""
+        prompt = "test --cref https://example.com/char.jpg --cw 50"
+        result = parse_midjargon_prompt(prompt)
+    
+>       assert result.character_reference
+E       AssertionError: assert []
+E        +  where [] = MidjourneyPrompt(text='test', image_prompts=[], parameters=MidjourneyParameters(version=None, style=None, stylize=100...., style_version=2, repeat=None, personalization=False, quality=1.0, negative_prompt=None, extra_params={}), weight=1.0).character_reference
+
+tests/test_core.py:124: AssertionError
+=========================== short test summary info ============================
+FAILED tests/cli/test_main.py::test_basic_prompt - TypeError: MidjargonCLI.js...
+FAILED tests/cli/test_main.py::test_permutations - ValueError: No JSON found ...
+FAILED tests/cli/test_main.py::test_raw_output - TypeError: MidjargonCLI.json...
+FAILED tests/cli/test_main.py::test_json_output_formatting - TypeError: Midja...
+FAILED tests/cli/test_main.py::test_invalid_input - TypeError: MidjargonCLI.j...
+FAILED tests/cli/test_main.py::test_parameter_validation - TypeError: Midjarg...
+FAILED tests/cli/test_main.py::test_image_url_handling - TypeError: Midjargon...
+FAILED tests/cli/test_main.py::test_no_color_output - TypeError: MidjargonCLI...
+FAILED tests/cli/test_main.py::test_complex_prompt - TypeError: MidjargonCLI....
+FAILED tests/cli/test_main.py::test_personalization_parameter - TypeError: Mi...
+FAILED tests/cli/test_main.py::test_numeric_range_permutations - TypeError: M...
+FAILED tests/cli/test_main.py::test_nested_parameter_permutations - TypeError...
+FAILED tests/cli/test_main.py::test_mj_command - ValueError: No JSON found in...
+FAILED tests/cli/test_main.py::test_fal_command - SystemExit: 1
+FAILED tests/cli/test_main.py::test_perm_command - ValueError: No JSON found ...
+FAILED tests/core/test_input.py::test_basic_input - AssertionError: assert Pr...
+FAILED tests/core/test_input.py::test_single_permutation - AssertionError: as...
+FAILED tests/core/test_input.py::test_empty_input - ValueError: Empty prompt
+FAILED tests/core/test_input.py::test_multiple_permutations - AssertionError:...
+FAILED tests/core/test_input.py::test_nested_permutations - ValueError: Faile...
+FAILED tests/core/test_input.py::test_escaped_braces - AssertionError: assert...
+FAILED tests/core/test_input.py::test_escaped_commas - AssertionError: assert...
+FAILED tests/core/test_input.py::test_unmatched_braces - ValueError: Unclosed...
+FAILED tests/core/test_input.py::test_empty_permutation - ValueError: Empty p...
+FAILED tests/core/test_input.py::test_whitespace_handling - AssertionError: a...
+FAILED tests/core/test_input.py::test_expand_midjargon_input - AssertionError...
+FAILED tests/core/test_input.py::test_handling_escaped_characters - Assertion...
+FAILED tests/core/test_parameters.py::test_basic_parameter_parsing - KeyError...
+FAILED tests/core/test_parameters.py::test_flag_parameters - assert True is None
+FAILED tests/core/test_parameters.py::test_parameter_with_multiple_values - A...
+FAILED tests/core/test_parameters.py::test_parameter_with_spaces - ValueError...
+FAILED tests/core/test_parameters.py::test_mixed_parameters - ValueError: Fai...
+FAILED tests/core/test_parameters.py::test_shorthand_parameters - AssertionEr...
+FAILED tests/core/test_parameters.py::test_niji_version_parameter - Assertion...
+FAILED tests/core/test_parameters.py::test_version_parameter - AssertionError...
+FAILED tests/core/test_parameters.py::test_personalization_parameter - assert...
+FAILED tests/core/test_parameters.py::test_reference_parameters - AssertionEr...
+FAILED tests/core/test_parameters.py::test_parameter_order - AssertionError: ...
+FAILED tests/core/test_parameters.py::test_invalid_parameters - Failed: DID N...
+FAILED tests/core/test_parameters.py::test_flag_parameters_handling - assert ...
+FAILED tests/core/test_parameters.py::test_special_seed_values - AssertionErr...
+FAILED tests/core/test_parameters.py::test_reference_url_handling - Assertion...
+FAILED tests/core/test_parameters.py::test_niji_version_handling - AssertionE...
+FAILED tests/core/test_parser.py::test_basic_prompt_parsing - KeyError: 'aspect'
+FAILED tests/core/test_parser.py::test_prompt_with_image_url - KeyError: 'ima...
+FAILED tests/core/test_parser.py::test_prompt_with_multiple_image_urls - KeyE...
+FAILED tests/core/test_parser.py::test_prompt_with_parameters - KeyError: 'as...
+FAILED tests/core/test_parser.py::test_prompt_with_empty_parameters - assert ...
+FAILED tests/engines/midjourney/test_midjourney_parser.py::test_numeric_parameters
+FAILED tests/engines/midjourney/test_midjourney_parser.py::test_style_parameters
+FAILED tests/engines/midjourney/test_midjourney_parser.py::test_aspect_ratio
+FAILED tests/engines/midjourney/test_midjourney_parser.py::test_image_prompts
+FAILED tests/engines/midjourney/test_midjourney_parser.py::test_parameter_conversion
+FAILED tests/engines/midjourney/test_midjourney_parser.py::test_invalid_values
+FAILED tests/engines/midjourney/test_midjourney_parser.py::test_empty_values
+FAILED tests/engines/midjourney/test_midjourney_parser.py::test_version_parameter
+FAILED tests/integration/test_workflow.py::test_basic_workflow - AssertionErr...
+FAILED tests/integration/test_workflow.py::test_image_workflow - assert 0 == 1
+FAILED tests/integration/test_workflow.py::test_parameter_workflow - Assertio...
+FAILED tests/integration/test_workflow.py::test_new_parameters_workflow - ass...
+FAILED tests/integration/test_workflow.py::test_weighted_prompts_workflow - a...
+FAILED tests/integration/test_workflow.py::test_permutations_with_parameters
+FAILED tests/integration/test_workflow.py::test_permutations_with_flag_parameters
+FAILED tests/integration/test_workflow.py::test_permutations_with_complex_parameters
+FAILED tests/integration/test_workflow.py::test_cli_mj_command - AssertionErr...
+FAILED tests/integration/test_workflow.py::test_cli_fal_command - SystemExit: 1
+FAILED tests/integration/test_workflow.py::test_cli_perm_command - AssertionE...
+FAILED tests/test_core.py::test_prompt_with_parameters - AssertionError: asse...
+FAILED tests/test_core.py::test_invalid_parameters - Failed: DID NOT RAISE <c...
+FAILED tests/test_core.py::test_style_reference - AssertionError: assert []
+FAILED tests/test_core.py::test_character_reference - AssertionError: assert []
+======================== 71 failed, 20 passed in 3.43s =========================

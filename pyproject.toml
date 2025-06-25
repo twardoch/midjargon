@@ -7,61 +7,121 @@ email = "adam+github@twardoch.com"
 name = "Adam Twardoch"
 
 [project]
-classifiers = [
-  "Development Status :: 4 - Beta",
-  "Programming Language :: Python",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: Implementation :: CPython",
-  "Programming Language :: Python :: Implementation :: PyPy",
-]
-dependencies = [
-  "pydantic>=2.0.0",
-  "rich>=13.0.0",
-  "fire>=0.5.0",
-  "python-box>=7.3.2",
-  "fal-client>=0.5.8",
-]
-description = ""
-dynamic = ["version"]
-keywords = []
-license = "MIT"
 name = "midjargon"
-readme = "README.md"
+version = "0.1.0"
+description = "A package for parsing and manipulating Midjourney-style prompts"
 requires-python = ">=3.10"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "pydantic>=2.0.0",
+    "rich>=13.0.0",
+    "fire>=0.5.0",
+    "python-box>=7.3.2",
+    "fal-client>=0.5.8",
+]
+
+[[project.authors]]
+name = "Adam Twardoch"
+email = "adam+github@twardoch.com"
 
 [project.optional-dependencies]
-all = [
-  "pre-commit>=3.6.0",
-  "ruff>=0.1.0",
-  "mypy>=1.0.0",
-  "pytest>=7.0.0",
-  "pytest-cov>=4.0.0",
+test = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
 ]
-dev = ["pre-commit>=3.6.0", "ruff>=0.1.0", "mypy>=1.0.0"]
-test = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
-
-[project.scripts]
-midjargon = "midjargon.__main__:main"
 
 [project.urls]
 Documentation = "https://github.com/twardoch/midjargon#readme"
 Issues = "https://github.com/twardoch/midjargon/issues"
 Source = "https://github.com/twardoch/midjargon"
 
-[tool.coverage.paths]
-midjargon = ["src/midjargon", "*/midjargon/src/midjargon"]
-tests = ["tests", "*/midjargon/tests"]
+[project.scripts]
+midjargon = "midjargon.__main__:main"
 
-[tool.coverage.report]
-exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
+[build-system]
+requires = ["hatchling>=1.21.0", "hatch-vcs>=0.3.0"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "pytest>=8.0.0",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.2.0",
+    "mypy>=1.8.0",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+    "UP",  # pyupgrade
+]
+ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["midjargon"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+
+[tool.coverage.paths]
+midjargon = ["src/midjargon", "*/src/midjargon"]
+tests = ["tests", "*/midjargon/tests"]
 
 [tool.coverage.run]
 branch = true
-omit = ["src/midjargon/__about__.py"]
+source = ["midjargon"]
 parallel = true
 source_pkgs = ["midjargon", "tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "no cov",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+version_scheme = "post-release"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "rounds: Number of rounds",
+]
 
 [tool.hatch.build.hooks.vcs]
 version-file = "src/midjargon/__version__.py"
@@ -70,7 +130,7 @@ version-file = "src/midjargon/__version__.py"
 packages = ["src/midjargon"]
 
 [[tool.hatch.envs.all.matrix]]
-python = ["3.10", "3.11", "3.12"]
+python = ["3.11", "3.12"]
 
 [tool.hatch.envs.default]
 dependencies = ["pytest", "pytest-cov", "mypy>=1.0.0", "ruff>=0.1.0"]
@@ -103,89 +163,35 @@ dependencies = [
 test = "pytest --cov=src/midjargon --cov-report=term-missing --cov-branch --no-cov-on-fail {args:tests}"
 test-cov = "pytest --cov=src/midjargon --cov-report=term-missing --cov-branch --no-cov-on-fail {args:tests}"
 
-[tool.hatch.version]
-source = "vcs"
+[tool.pytest-benchmark]
+min_rounds = 100
+min_time = 0.1
+histogram = true
+storage = "file"
+save-data = true
+compare = [
+    "min",    # Minimum time
+    "max",    # Maximum time
+    "mean",   # Mean time
+    "stddev", # Standard deviation
+    "median", # Median time
+    "iqr",    # Inter-quartile range
+    "ops",    # Operations per second
+    "rounds", # Number of rounds
+] 
 
-[tool.hatch.version.raw-options]
-version_scheme = "post-release"
 
-[tool.mypy]
-check_untyped_defs = true
-disallow_incomplete_defs = true
-disallow_untyped_decorators = true
-disallow_untyped_defs = true
-no_implicit_optional = true
-python_version = "3.10"
-warn_no_return = true
-warn_redundant_casts = true
-warn_return_any = true
-warn_unreachable = true
-warn_unused_configs = true
-warn_unused_ignores = true
-
-[tool.pytest.ini_options]
-addopts = "-v --durations=10 -p no:briefcase"
-asyncio_mode = "auto"
-console_output_style = "progress"
-filterwarnings = ["ignore::DeprecationWarning", "ignore::UserWarning"]
-log_cli = true
-log_cli_level = "INFO"
-markers = [
-  "benchmark: marks tests as benchmarks (select with '-m benchmark')",
-  "unit: mark a test as a unit test",
-  "integration: mark a test as an integration test",
-  "permutation: tests for permutation functionality",
-  "parameter: tests for parameter parsing",
-  "prompt: tests for prompt parsing",
+[tool.pyright]
+include = ["src", "tests"]
+exclude = ["**/node_modules",
+    "**/__pycache__",
 ]
-norecursedirs = [
-  ".*",
-  "build",
-  "dist",
-  "venv",
-  "__pycache__",
-  "*.egg-info",
-  "_private",
-]
+ignore = ["_private"]
+defineConstant = { DEBUG = true }
 
-python_classes = ["Test*"]
-python_files = ["test_*.py"]
-python_functions = ["test_*"]
-testpaths = ["tests"]
+reportMissingImports = "error"
+reportMissingTypeStubs = false
 
-[tool.ruff]
-line-length = 88
-target-version = "py310"
+pythonVersion = "3.10"
+pythonPlatform = "Linux"
 
-[tool.ruff.lint]
-extend-select = [
-  "A",
-  "ARG",
-  "B",
-  "C",
-  "DTZ",
-  "E",
-  "EM",
-  "F",
-  "FBT",
-  "I",
-  "ICN",
-  "ISC",
-  "N",
-  "PLC",
-  "PLE",
-  "PLR",
-  "PLW",
-  "Q",
-  "RUF",
-  "S",
-  "T",
-  "TID",
-  "UP",
-  "W",
-  "YTT",
-]
-ignore = ["ARG001", "E501", "I001", "RUF001", "PLR2004", "EXE003", "ISC001"]
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"]

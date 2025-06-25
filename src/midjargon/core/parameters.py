@@ -1,36 +1,31 @@
-"""
-parameters.py
+#!/usr/bin/env python3
+# this_file: src/midjargon/core/parameters.py
+from __future__ import annotations
 
 Handles parsing and validation of Midjourney prompt parameters.
 This module provides a unified interface for parameter handling,
 supporting both raw string parsing and structured parameter handling.
 """
 
-from __future__ import annotations
+from midjargon.core.models import (CharacterReference, MidjourneyVersion,
+                                   StyleMode, StyleReference)
+from pydantic import HttpUrl
 
-import logging
-from typing import TypeAlias
-
-logger = logging.getLogger(__name__)
-
-# Type aliases for clarity
-ParamName: TypeAlias = str
-ParamValue: TypeAlias = str | list[str] | None
-ParamDict: TypeAlias = dict[ParamName, ParamValue]
-
-# Common parameter shortcuts
-PARAM_SHORTCUTS = {
-    # Basic parameters
+# Parameter aliases mapping
+ALIASES = {
+    # Version aliases
+    "v": "version",
+    "ver": "version",
+    "niji": "version",
+    # Style aliases
     "s": "stylize",
     "c": "chaos",
     "w": "weird",
-    "iw": "image_weight",
-    "ar": "aspect",  # Keep ar as is to match test expectations
-    "no": None,  # Flag parameter
-    "tile": None,  # Flag parameter
-    # Quality parameters
-    "q": "quality",
-    # Reference parameters
+    # Seed aliases
+    "sameseed": "seed",
+    # Aspect ratio aliases
+    "ar": "aspect_ratio",
+    # Character reference aliases
     "cref": "character_reference",
     "sref": "style_reference",
     "cw": "character_weight",
@@ -68,12 +63,14 @@ PARAMETER_ALIASES = {
 }
 
 
-def validate_param_name(name: str) -> None:
-    """
-    Basic validation of a parameter name.
+# Parameters that should remain as strings
+STRING_PARAMS = {"aspect_ratio", "negative_prompt"}
 
-    Args:
-        name: Parameter name to validate.
+# Parameters that should be integers
+INT_PARAMS = {"style_version", "repeat"}
+
+# Special seed values
+SPECIAL_SEED_VALUES = {"random", "none"}
 
     Raises:
         ValueError: If name is empty or contains invalid characters.
@@ -97,9 +94,18 @@ def validate_param_value(name: str, value: ParamValue) -> None:
     Basic syntactic validation of a parameter value.
     Semantic validation is handled by the engine layer.
 
-    Args:
-        name: Parameter name.
-        value: Parameter value to validate.
+def convert_parameter_value(param: str, value: str | None) -> Any:
+    """Convert a parameter value to the appropriate type."""
+    # Handle flag parameters
+    if param in FLAG_PARAMS:
+        if value is None:
+            return True
+        val_lower = value.lower()
+        if val_lower in {"true", "1", "yes", "on"}:
+            return True
+        if val_lower in {"false", "0", "no", "off"}:
+            return False
+        return bool(value)
 
     Raises:
         ValueError: If value has invalid syntax.
@@ -107,21 +113,37 @@ def validate_param_value(name: str, value: ParamValue) -> None:
     if value is None:
         return
 
-    # Handle list values
-    if isinstance(value, list):
-        for item in value:
-            if not isinstance(item, str):
-                msg = f"List values must be strings, got: {type(item)}"
-                raise TypeError(msg)
-        return
+    # Handle string parameters
+    if param in STRING_PARAMS:
+        return str(value)
 
-    # Handle special seed values
-    if (
-        name == "seed"
-        and isinstance(value, str)
-        and value.lower() in SPECIAL_SEED_VALUES
-    ):
-        return
+    # Handle version parameter
+    if param == "version":
+        if value.lower() == "niji":
+            return "niji"
+        try:
+            return MidjourneyVersion(value)
+        except ValueError:
+            msg = f"Invalid version value: {value}"
+            raise ValueError(msg)
+
+    # Handle seed parameter
+    if param == "seed":
+        if value.lower() in SPECIAL_SEED_VALUES:
+            return value.lower()
+        try:
+            return int(value)
+        except ValueError:
+            msg = f"Invalid seed value: {value}"
+            raise ValueError(msg)
+
+    # Handle integer parameters
+    if param in INT_PARAMS:
+        try:
+            return int(value)
+        except ValueError:
+            msg = f"Invalid integer value for {param}: {value}"
+            raise ValueError(msg)
 
     # Validate numeric parameters can be converted to float
     if name in {
@@ -143,151 +165,35 @@ def validate_param_value(name: str, value: ParamValue) -> None:
             msg = f"Invalid numeric value for {name}: {value}"
             raise ValueError(msg) from e
 
+    # Handle style parameter
+    if param == "style":
+        try:
+            return StyleMode(value)
+        except ValueError:
+            msg = f"Invalid style value: {value}"
+            raise ValueError(msg)
 
-def expand_shorthand_param(name: str) -> tuple[str, bool]:
-    """
-    Expand a shorthand parameter name to its full form.
+    # Handle character and style references
+    if param in {"character_reference", "style_reference"}:
+        ref_class = (
+            CharacterReference if param == "character_reference" else StyleReference
+        )
+        try:
+            if is_url(value):
+                return ref_class(url=HttpUrl(value), weight=1.0)
+            else:
+                # Handle reference codes (e.g., p123456)
+                return ref_class(code=value, weight=1.0)
+        except Exception as e:
+            msg = f"Invalid reference value for {param}: {value} ({e!s})"
+            raise ValueError(msg)
 
-    Args:
-        name: Parameter name that might be in shorthand form.
-
-    Returns:
-        Tuple of (expanded_name, is_flag_param).
-    """
-    # Handle special case for niji versions
-    if name == "niji":
-        return "niji", False  # Keep niji as its own parameter type
-
-    # Handle special case for version parameter
-    if name == "v":
-        return "version", False
-
-    # Handle special case for personalization
-    if name == "p":
-        return "personalization", True
-
-    # Check for shorthand in mapping
-    if name in PARAM_SHORTCUTS:
-        expanded = PARAM_SHORTCUTS[name]
-        return (expanded if expanded else name, expanded is None)
-
-    return name, False
+    # Default case: return as string
+    return value
 
 
-def process_param_value(values: list[str]) -> str | list[str] | None:
-    """
-    Process parameter values into a single value.
-
-    Args:
-        values: List of parameter value parts.
-
-    Returns:
-        Processed parameter value or None.
-    """
-    if not values:
-        return None
-
-    # Handle personalization codes
-    if values and any(name in values[0].lower() for name in ("p", "personalization")):
-        # Return empty list for flag-only case
-        if len(values) == 1:
-            return []
-        # Return list for codes
-        return values[1:]
-
-    # Handle reference files
-    if values and any(
-        name in values[0].lower() for name in ("cref", "character_reference")
-    ):
-        if len(values) > 1:
-            # Return list for character reference
-            return [values[1]]
-        return []
-    if values and any(
-        name in values[0].lower() for name in ("sref", "style_reference")
-    ):
-        if len(values) > 1:
-            # Return list for style reference
-            return values[1].split(",")
-        return []
-
-    # Handle version parameter
-    if len(values) == 1:
-        value = values[0]
-        if value.startswith("v") and value[1:].replace(".", "").isdigit():
-            return value[1:]  # Strip 'v' prefix for version numbers
-        return value
-
-    # For other parameters, join values with spaces
-    return " ".join(values)
-
-
-def _expand_param_name(name: str) -> str:
-    """
-    Expand parameter shorthand to full name.
-
-    Args:
-        name: Parameter shorthand or full name.
-
-    Returns:
-        Full parameter name.
-    """
-    shorthand_map = {
-        "s": "stylize",
-        "c": "chaos",
-        "w": "weird",
-        "iw": "image_weight",
-        "q": "quality",
-        "cw": "character_weight",
-        "sw": "style_weight",
-        "sv": "style_version",
-        "p": "personalization",
-        "v": "version",
-        "ar": "aspect",  # Keep ar as is
-        "cref": "character_reference",
-        "sref": "style_reference",
-        "no": "no",  # Keep no as is
-    }
-    return shorthand_map.get(name, name)
-
-
-def _process_flag_param(name: str) -> tuple[str, str | None]:
-    """Process a flag parameter (no value)."""
-    if name == "niji":
-        return "version", "niji"
-    if name in {"p", "personalization"}:
-        return "personalization", None
-    if name.startswith("no"):
-        return "no", name[2:]
-    return name, None
-
-
-def _process_value_with_dashes(
-    value: str, params: dict[str, str | list[str] | None]
-) -> str:
-    """Process a value that contains double dashes."""
-    value_parts = value.split("--")
-    result_value = value_parts[0].strip()
-    for part in value_parts[1:]:
-        name_part, value_part = _process_param_chunk(f"--{part.strip()}", params)
-        if name_part:
-            params[name_part] = value_part
-    return result_value
-
-
-def _split_param_chunks(param_str: str) -> list[str]:
-    """
-    Split parameter string into chunks, preserving quoted values.
-
-    Args:
-        param_str: Parameter string to split.
-
-    Returns:
-        List of parameter chunks.
-
-    Raises:
-        ValueError: If parameter string has invalid syntax.
-    """
+def parse_parameters(param_str: str) -> dict[str, Any]:
+    """Parse parameters from a string into a dictionary."""
     if not param_str:
         return []
 

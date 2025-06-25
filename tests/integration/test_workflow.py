@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from __future__ import annotations
+
 import sys
 from io import StringIO
 
 import pytest
-from midjargon import expand_midjargon_input, parse_midjargon_prompt_to_dict
 from midjargon.cli.main import MidjargonCLI
 from midjargon.engines.midjourney import (MidjourneyPrompt,
                                           parse_midjourney_dict)

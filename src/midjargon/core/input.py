@@ -1,9 +1,10 @@
-"""
-input.py
+#!/usr/bin/env python3
+# this_file: src/midjargon/core/input.py
+from __future__ import annotations
 
-Contains functions for handling raw input.
-Specifically, it expands all permutation expressions in a prompt without doing any parameter parsing/validation.
-"""
+from midjargon.core.models import PromptVariant
+from midjargon.core.parser import parse_midjargon_prompt
+from midjargon.core.permutations import expand_permutations
 
 from midjargon.core.permutations import expand_text
 # reuse the existing expansion logic
@@ -12,52 +13,96 @@ from midjargon.core.type_defs import MidjargonInput, MidjargonList
 
 def expand_midjargon_input(prompt: MidjargonInput) -> MidjargonList:
     """
-    Expands a raw midjargon prompt string into a list of fully expanded prompt strings.
+    if not prompt or not prompt.strip():
+        msg = "Empty prompt"
+        raise ValueError(msg)
+
+    # Split on double colon and parse weights
+    result = []
+    current_prompt = []
+    i = 0
+
+    while i < len(prompt):
+        if prompt[i : i + 2] == "::" and (i == 0 or prompt[i - 1] != "\\"):
+            # Found weight separator
+            text = "".join(current_prompt).strip()
+            if not text:
+                msg = "Empty prompt before weight"
+                raise ValueError(msg)
+
+            # Parse weight
+            i += 2
+            weight_start = i
+            while i < len(prompt) and (prompt[i].isdigit() or prompt[i] == "."):
+                i += 1
+
+            if i == weight_start:
+                msg = f"Missing weight after :: at position {i - 2}"
+                raise ValueError(msg)
+
+            try:
+                weight = float(prompt[weight_start:i])
+                if weight <= 0:
+                    msg = f"Weight must be positive at position {weight_start}"
+                    raise ValueError(msg)
+            except ValueError as e:
+                msg = f"Invalid weight at position {weight_start}: {prompt[weight_start:i]}"
+                raise ValueError(msg) from e
+
+            result.append((text, weight))
+            current_prompt = []
+        else:
+            current_prompt.append(prompt[i])
+            i += 1
+
+    # Handle last part
+    if current_prompt:
+        text = "".join(current_prompt).strip()
+        if text:
+            result.append((text, 1.0))  # Default weight
+
+    if not result:
+        msg = "Empty prompt"
+        raise ValueError(msg)
+
+    # Normalize weights to sum to 1.0
+    total_weight = sum(weight for _, weight in result)
+    if total_weight > 0:
+        result = [(text, weight / total_weight) for text, weight in result]
+
+    return result
+
+
+def expand_midjargon_input(prompt: str) -> list[PromptVariant]:
+    """Expand a midjourney prompt by processing permutations and returning a list of prompt variants.
 
     Args:
         prompt: A raw MidjargonInput string that may contain permutation syntax (e.g. {red, blue}).
 
     Returns:
-        A list of MidjargonPrompt strings with all permutation expressions resolved.
-        Returns [""] for empty input.
+        A list of PromptVariant objects, each containing an expanded prompt.
 
     Raises:
-        ValueError: If the prompt is empty or invalid.
+        ValueError: If the prompt is invalid or empty.
     """
-    if not prompt.strip():
-        return [""]
+    # First split into weighted prompts
+    weighted_prompts = parse_weighted_prompt(prompt)
 
-    # Handle escaped characters by temporarily replacing them
-    # Use unique markers that won't appear in normal text
-    replacements = {
-        r"\{": "‹ESCAPED_OPEN›",
-        r"\}": "‹ESCAPED_CLOSE›",
-        r"\,": "‹ESCAPED_COMMA›",
-    }
-    processed = prompt
-    for escaped, marker in replacements.items():
-        processed = processed.replace(escaped, marker)
+    # Process each weighted prompt
+    result = []
+    for text, weight in weighted_prompts:
+        # Expand permutations for this prompt
+        expanded = expand_permutations(text)
+        for expanded_text in expanded:
+            # Parse the expanded text into a MidjourneyPrompt
+            try:
+                prompt_obj = parse_midjargon_prompt(expanded_text)
+                variant = PromptVariant(prompt=prompt_obj, weight=weight)
+                # Ensure the weight is properly set in both places
+                variant.prompt.weight = weight
+                result.append(variant)
+            except ValueError as e:
+                msg = f"Failed to parse expanded prompt '{expanded_text}': {e}"
+                raise ValueError(msg) from e
 
-    # If the processed text, after stripping leading whitespace, starts with the escaped open marker,
-    # remove any preceding characters so that the output starts with the literal brace.
-    stripped = processed.lstrip()
-    if stripped.startswith("‹ESCAPED_OPEN›"):
-        index = processed.find("‹ESCAPED_OPEN›")
-        processed = processed[index:]
-
-    # Expand permutations
-    expanded = expand_text(processed)
-
-    # Restore escaped characters
-    restored = []
-    for input_text in expanded:
-        modified_text = input_text
-        for marker, original in {
-            "‹ESCAPED_OPEN›": "{",
-            "‹ESCAPED_CLOSE›": "}",
-            "‹ESCAPED_COMMA›": ",",
-        }.items():
-            modified_text = modified_text.replace(marker, original)
-        restored.append(modified_text)
-
-    return restored
+    return result

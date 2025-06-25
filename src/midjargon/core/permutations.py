@@ -1,5 +1,6 @@
-"""
-permutations.py
+#!/usr/bin/env python3
+# this_file: src/midjargon/core/permutations.py
+from __future__ import annotations
 
 Handles expansion of permutation expressions in Midjourney prompts.
 Supports nested permutations and proper spacing handling.
