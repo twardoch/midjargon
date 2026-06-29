@@ -1,0 +1,9 @@
+
+/Users/adam/Developer/vcs/github.twardoch/pub/twat-packages/midjargon/docs/midjourney-docs.md
+/Users/adam/Developer/vcs/github.twardoch/pub/twat-packages/midjargon/docs/refactoring-ideas.md
+/Users/adam/Developer/vcs/github.twardoch/pub/twat-packages/midjargon/docs/specification.md
+/Users/adam/Developer/vcs/github.twardoch/pub/twat-packages/midjargon/LOG.md
+/Users/adam/Developer/vcs/github.twardoch/pub/twat-packages/midjargon/README.md
+/Users/adam/Developer/vcs/github.twardoch/pub/twat-packages/midjargon/REFACTOR_SPLITTING.md
+
+/Users/adam/Developer/vcs/github.twardoch/pub/twat-packages/midjargon/TODO2.md

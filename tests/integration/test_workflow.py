@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
-from __future__ import annotations
-
 import sys
 from io import StringIO
 
 import pytest
 from midjargon.cli.main import MidjargonCLI
-from midjargon.engines.midjourney import (MidjourneyPrompt,
-                                          parse_midjourney_dict)
-from tests.cli.test_main import \
-    parse_json_output  # Added import for JSON parsing
+from midjargon.core.input import expand_midjargon_input
+from midjargon.core.parser import parse_midjargon_prompt_to_dict
+from midjargon.engines.midjourney import MidjourneyPrompt, parse_midjourney_dict
+from tests.cli.test_main import parse_json_output
 
 # Test constants
 ASPECT_WIDTH = 16

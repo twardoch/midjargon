@@ -2,13 +2,9 @@
 build-backend = "hatchling.build"
 requires = ["hatchling>=1.21.0", "hatch-vcs>=0.3.0"]
 
-[[project.authors]]
-email = "adam+github@twardoch.com"
-name = "Adam Twardoch"
-
 [project]
 name = "midjargon"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A package for parsing and manipulating Midjourney-style prompts"
 requires-python = ">=3.10"
 readme = "README.md"
@@ -26,6 +22,7 @@ name = "Adam Twardoch"
 email = "adam+github@twardoch.com"
 
 [project.optional-dependencies]
+
 test = [
     "pytest>=8.0.0",
     "pytest-cov>=4.1.0",
@@ -38,10 +35,6 @@ Source = "https://github.com/twardoch/midjargon"
 
 [project.scripts]
 midjargon = "midjargon.__main__:main"
-
-[build-system]
-requires = ["hatchling>=1.21.0", "hatch-vcs>=0.3.0"]
-build-backend = "hatchling.build"
 
 [tool.rye]
 managed = true

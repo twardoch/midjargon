@@ -6,6 +6,14 @@ A Python library for parsing and manipulating Midjourney prompts.
 
 from importlib import metadata
 
+try:
+    from midjargon.__version__ import __version__
+except ImportError:
+    try:
+        __version__ = metadata.version("midjargon")
+    except metadata.PackageNotFoundError:
+        __version__ = "0.0.0"
+
 from midjargon.core.input import expand_midjargon_input
 from midjargon.core.models import (CharacterReference, ImageReference,
                                    MidjourneyParameters, MidjourneyPrompt,

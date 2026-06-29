@@ -2,6 +2,7 @@
 # this_file: src/midjargon/core/models.py
 from __future__ import annotations
 
+import re
 from enum import Enum
 from typing import Any, TypeVar
 
@@ -28,27 +29,17 @@ class MidjourneyVersion(str, Enum):
     def _missing_(cls, value: Any) -> MidjourneyVersion | None:
         """Handle missing values by trying to normalize the input."""
         try:
-            # Try to normalize version string
             value = str(value).lower().strip()
 
-            # Handle numeric versions (e.g., 4, 5, 6)
+            # Handle numeric versions (e.g., 4, 5, 5.2)
             if value.replace(".", "").isdigit():
-                value = f"v{value}" if "." not in value else f"v{value}"
-
-            # Handle niji versions
-            if value == "niji":
-                return cls.NIJI6
-            if value.startswith("niji"):
-                for member in cls:
-                    if member.value == value:
-                        return member
-                return cls.NIJI6
+                value = f"v{value}"
 
             # Handle v prefix
             if not value.startswith("v") and not value.startswith("niji"):
                 value = f"v{value}"
 
-            # Try exact match first
+            # Try exact match
             for member in cls:
                 if member.value == value:
                     return member
@@ -83,12 +74,18 @@ class StyleMode(str, Enum):
 class ImageReference(BaseModel):
     """Reference to an image."""
 
-    url: HttpUrl
+    url: str  # stored as str so comparisons with plain strings work directly
     weight: float = Field(default=1.0, ge=0.0, le=2.0)
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def coerce_url_to_str(cls, v: Any) -> str:
+        """Accept HttpUrl or str; always store as plain string."""
+        return str(v)
 
     def __str__(self) -> str:
         """Convert to string format."""
-        return str(self.url)
+        return self.url
 
 
 class CharacterReference(BaseModel):
@@ -126,14 +123,21 @@ class StyleReference(BaseModel):
 
 
 class MidjourneyParameters(BaseModel):
-    """Parameters for a Midjourney prompt."""
+    """Parameters for a Midjourney prompt.
+
+    Range validation is performed by MidjourneyParser.parse_dict before
+    constructing this model, so ge/le constraints are intentionally omitted
+    here to keep the model a plain data container.
+    """
 
     version: MidjourneyVersion | str | None = None
     style: StyleMode | None = None
-    stylize: float = Field(default=100.0, ge=0.0, le=1000.0)
-    chaos: float = Field(default=0.0, ge=0.0, le=100.0)
-    weird: float = Field(default=0.0, ge=0.0, le=3000.0)
+    stylize: float | None = None
+    chaos: float | None = None
+    weird: float | None = None
+    image_weight: float | None = None
     seed: int | str | None = None
+    stop: int | None = None
     aspect_width: int | None = None
     aspect_height: int | None = None
     aspect_ratio: str | None = None
@@ -141,14 +145,14 @@ class MidjourneyParameters(BaseModel):
     turbo: bool = False
     relax: bool = False
     no: list[str] = Field(default_factory=list)
-    character_reference: list[CharacterReference] = Field(default_factory=list)
-    style_reference: list[StyleReference] = Field(default_factory=list)
-    character_weight: float = Field(default=100.0, ge=0.0, le=200.0)
-    style_weight: float | None = Field(default=None, ge=0.0, le=200.0)
-    style_version: int = Field(default=2, ge=1, le=3)
-    repeat: int | None = Field(default=None, ge=1, le=40)
-    personalization: bool = False
-    quality: float = Field(default=1.0, ge=0.25, le=2.0)
+    character_reference: list[str] = Field(default_factory=list)
+    style_reference: list[str] = Field(default_factory=list)
+    character_weight: float | None = None
+    style_weight: float | None = None
+    style_version: int | None = None
+    repeat: int | None = None
+    personalization: bool | list[str] = False
+    quality: float | None = None
     negative_prompt: str | None = None
     extra_params: dict[str, Any] = Field(default_factory=dict)
 
@@ -180,9 +184,13 @@ class MidjourneyParameters(BaseModel):
         """Validate version value."""
         if v is None:
             return None
-        if isinstance(v, str) and v.lower() == "niji":
-            return "niji"
+        if isinstance(v, MidjourneyVersion):
+            return v
         if isinstance(v, str):
+            v_lower = v.lower().strip()
+            # "niji" or "niji N" — keep as plain string
+            if re.match(r"^niji(\s+\d+)?$", v_lower):
+                return v_lower
             try:
                 return MidjourneyVersion(v)
             except ValueError:
@@ -219,76 +227,52 @@ class MidjourneyParameters(BaseModel):
         """Convert parameters to string format."""
         parts = []
 
-        # Handle version
         if self.version:
             parts.append(f"--v {self.version}")
-
-        # Handle style
         if self.style:
             parts.append(f"--style {self.style.value}")
-
-        # Handle numeric parameters
-        if self.stylize != 100.0:
+        if self.stylize is not None and self.stylize != 100.0:
             parts.append(f"--s {self.stylize}")
-        if self.chaos > 0:
+        if self.chaos is not None and self.chaos > 0:
             parts.append(f"--c {self.chaos}")
-        if self.weird > 0:
+        if self.weird is not None and self.weird > 0:
             parts.append(f"--weird {self.weird}")
         if self.seed is not None:
             parts.append(f"--seed {self.seed}")
-
-        # Handle aspect ratio
+        if self.image_weight is not None:
+            parts.append(f"--iw {self.image_weight}")
+        if self.stop is not None:
+            parts.append(f"--stop {self.stop}")
         if self.aspect:
             parts.append(f"--ar {self.aspect}")
-
-        # Handle boolean flags
         if self.tile:
             parts.append("--tile")
         if self.turbo:
             parts.append("--turbo")
         if self.relax:
             parts.append("--relax")
-
-        # Handle negative prompts
         if self.no:
             parts.append(f"--no {','.join(self.no)}")
-
-        # Handle references
         if self.character_reference:
             for ref in self.character_reference:
-                if ref.url:
-                    parts.append(f"--cref {ref.url}")
-                elif ref.code:
-                    parts.append(f"--cref {ref.code}")
-                if ref.weight != 1.0:
-                    parts.append(f"--cw {ref.weight}")
-
+                parts.append(f"--cref {ref}")
         if self.style_reference:
             for ref in self.style_reference:
-                if ref.url:
-                    parts.append(f"--sref {ref.url}")
-                elif ref.code:
-                    parts.append(f"--sref {ref.code}")
-                if ref.weight != 1.0:
-                    parts.append(f"--sw {ref.weight}")
-
-        # Handle other parameters
-        if self.character_weight != 100.0:
+                parts.append(f"--sref {ref}")
+        if self.character_weight is not None and self.character_weight != 100.0:
             parts.append(f"--cw {self.character_weight}")
         if self.style_weight is not None:
             parts.append(f"--sw {self.style_weight}")
-        if self.style_version != 2:
+        if self.style_version is not None and self.style_version != 2:
             parts.append(f"--sv {self.style_version}")
         if self.repeat is not None:
             parts.append(f"--r {self.repeat}")
         if self.personalization:
             parts.append("--p")
-        if self.quality != 1.0:
+        if self.quality is not None and self.quality != 1.0:
             parts.append(f"--q {self.quality}")
         if self.negative_prompt:
             parts.append(f"--no {self.negative_prompt}")
-
-        # Handle extra parameters
         for key, value in self.extra_params.items():
             if value is True:
                 parts.append(f"--{key}")
@@ -309,16 +293,11 @@ class MidjourneyPrompt(BaseModel):
     def __str__(self) -> str:
         """Convert to string format."""
         parts = [self.text]
-
-        # Add image prompts
         for img in self.image_prompts:
             parts.append(str(img))
-
-        # Add parameters
         param_str = self.parameters.to_string()
         if param_str:
             parts.append(param_str)
-
         return " ".join(parts)
 
     def to_string(self) -> str:
@@ -326,7 +305,7 @@ class MidjourneyPrompt(BaseModel):
         return str(self)
 
     def model_dump(self, **kwargs: Any) -> dict[str, Any]:
-        """Override model_dump to handle nested models correctly."""
+        """Override model_dump to flatten parameters into top-level dict."""
         data = super().model_dump(**kwargs)
         if "parameters" in data:
             params = data["parameters"]
@@ -334,125 +313,112 @@ class MidjourneyPrompt(BaseModel):
             del data["parameters"]
         return data
 
-    # Property methods to expose parameters
+    # ------------------------------------------------------------------
+    # Property accessors that delegate to parameters
+    # ------------------------------------------------------------------
+
     @property
     def version(self) -> MidjourneyVersion | str | None:
-        """Get version parameter."""
         return self.parameters.version
 
     @property
     def style(self) -> StyleMode | None:
-        """Get style parameter."""
         return self.parameters.style
 
     @property
-    def stylize(self) -> float:
-        """Get stylize parameter."""
+    def stylize(self) -> float | None:
         return self.parameters.stylize
 
     @property
-    def chaos(self) -> float:
-        """Get chaos parameter."""
+    def chaos(self) -> float | None:
         return self.parameters.chaos
 
     @property
-    def weird(self) -> float:
-        """Get weird parameter."""
+    def weird(self) -> float | None:
         return self.parameters.weird
 
     @property
+    def image_weight(self) -> float | None:
+        return self.parameters.image_weight
+
+    @property
     def seed(self) -> int | str | None:
-        """Get seed parameter."""
         return self.parameters.seed
 
     @property
+    def stop(self) -> int | None:
+        return self.parameters.stop
+
+    @property
     def aspect_width(self) -> int | None:
-        """Get aspect width parameter."""
         return self.parameters.aspect_width
 
     @property
     def aspect_height(self) -> int | None:
-        """Get aspect height parameter."""
         return self.parameters.aspect_height
 
     @property
     def aspect_ratio(self) -> str | None:
-        """Get aspect ratio parameter."""
         return self.parameters.aspect_ratio
 
     @property
     def aspect(self) -> str | None:
-        """Get aspect ratio string."""
         return self.parameters.aspect
 
     @property
     def tile(self) -> bool:
-        """Get tile parameter."""
         return self.parameters.tile
 
     @property
     def turbo(self) -> bool:
-        """Get turbo parameter."""
         return self.parameters.turbo
 
     @property
     def relax(self) -> bool:
-        """Get relax parameter."""
         return self.parameters.relax
 
     @property
     def no(self) -> list[str]:
-        """Get no parameter."""
         return self.parameters.no
 
     @property
-    def character_reference(self) -> list[CharacterReference]:
-        """Get character reference parameter."""
+    def character_reference(self) -> list[str]:
         return self.parameters.character_reference
 
     @property
-    def style_reference(self) -> list[StyleReference]:
-        """Get style reference parameter."""
+    def style_reference(self) -> list[str]:
         return self.parameters.style_reference
 
     @property
-    def character_weight(self) -> float:
-        """Get character weight parameter."""
+    def character_weight(self) -> float | None:
         return self.parameters.character_weight
 
     @property
     def style_weight(self) -> float | None:
-        """Get style weight parameter."""
         return self.parameters.style_weight
 
     @property
-    def style_version(self) -> int:
-        """Get style version parameter."""
+    def style_version(self) -> int | None:
         return self.parameters.style_version
 
     @property
     def repeat(self) -> int | None:
-        """Get repeat parameter."""
         return self.parameters.repeat
 
     @property
-    def personalization(self) -> bool:
-        """Get personalization parameter."""
+    def personalization(self) -> bool | list[str]:
         return self.parameters.personalization
 
     @property
-    def quality(self) -> float:
-        """Get quality parameter."""
+    def quality(self) -> float | None:
         return self.parameters.quality
 
     @property
     def negative_prompt(self) -> str | None:
-        """Get negative prompt parameter."""
         return self.parameters.negative_prompt
 
     @property
     def extra_params(self) -> dict[str, Any]:
-        """Get extra parameters."""
         return self.parameters.extra_params
 
 

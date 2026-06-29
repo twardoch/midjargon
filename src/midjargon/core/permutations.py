@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # this_file: src/midjargon/core/permutations.py
-from __future__ import annotations
-
+"""
 Handles expansion of permutation expressions in Midjourney prompts.
 Supports nested permutations and proper spacing handling.
 """
@@ -130,15 +129,15 @@ def _format_part(before: str, option: str, after: str) -> str:
     Returns:
         Formatted text with proper spacing.
     """
-    # Handle empty option
+    # Handle empty option: strip one surrounding space on each side so that
+    # "a {} bird" → "a bird" (not "a  bird"), while
+    # "smooth edges {, --p} --s 75" → "smooth edges --s 75" (not "smooth edges--s 75").
     if not option:
-        # If after starts with a parameter (--), return before + after without space
-        if after.lstrip().startswith("--"):
-            return before.rstrip() + after.lstrip()
-        # Otherwise ensure we keep one space between words
-        if before.rstrip() and after.lstrip():
-            return before.rstrip() + " " + after.lstrip()
-        return before.rstrip() + after.lstrip()
+        b = before[:-1] if before.endswith(" ") else before
+        a = after[1:] if after.startswith(" ") else after
+        if b and a:
+            return b + " " + a
+        return b + a
 
     # Add proper spacing
     before_spaced, after_spaced = _add_spacing(before, after)
@@ -329,34 +328,29 @@ def _handle_literal_char(text: str, pos: int, result: list[str]) -> None:
         result[i] += text[pos]
 
 
+def _unescape(text: str) -> str:
+    """Remove escape characters before special chars: \\{ \\} \\,  →  { } ,"""
+    result: list[str] = []
+    i = 0
+    while i < len(text):
+        if text[i] == "\\" and i + 1 < len(text) and text[i + 1] in ("{", "}", ","):
+            result.append(text[i + 1])
+            i += 2
+        else:
+            result.append(text[i])
+            i += 1
+    return "".join(result)
+
+
 def expand_permutations(text: str) -> list[str]:
     """
-    Expand all permutations in a text string.
+    Expand all permutations in a text string and unescape special characters.
 
     Args:
-        text: Text to expand.
+        text: Text to expand (may contain \\{, \\}, \\, escape sequences).
 
     Returns:
-        List of expanded texts.
-
-    Raises:
-        ValueError: If permutation syntax is invalid.
+        List of expanded, unescaped texts.
     """
-    if not text:
-        return [""]
-
-    result = [""]
-    pos = 0
-
-    while pos < len(text):
-        if pos > 0 and text[pos - 1] == "\\":
-            pos = _handle_escaped_char(text, pos, result)
-            continue
-
-        if text[pos] == "{":
-            result, pos = _handle_permutation(text, pos, result)
-        else:
-            _handle_literal_char(text, pos, result)
-            pos += 1
-
-    return result
+    expanded = expand_text(text)
+    return [_unescape(t) for t in expanded]

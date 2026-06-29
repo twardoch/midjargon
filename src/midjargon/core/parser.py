@@ -1,255 +1,153 @@
 #!/usr/bin/env python3
 # this_file: src/midjargon/core/parser.py
+"""
+Parse a single (already-expanded) Midjourney prompt string into either a
+flat ``MidjargonDict`` or a validated ``MidjourneyPrompt`` Pydantic model.
+
+This module is intentionally permissive: unknown parameters are stored in
+``extra_params``; no range validation is performed here (that is the engine's
+responsibility).
+"""
+
 from __future__ import annotations
 
-Provides a simple, permissive parser that converts an expanded prompt (a MidjargonPrompt string)
-into a flat dictionary (MidjargonDict) with the following keys:
-  - "images": list of image URLs (extracted from the beginning of the prompt)
-  - "text": the main text of the prompt
-  - Additional keys for any parameters found (keys without the '--' prefix)
+from typing import TYPE_CHECKING, Any
 
-from midjargon.core.models import (CharacterReference, ImageReference,
-                                   MidjourneyPrompt, MidjourneyVersion,
-                                   StyleMode, StyleReference)
-from pydantic import HttpUrl
+from midjargon.core.parameters import parse_parameters
+from midjargon.core.type_defs import MidjargonDict, MidjargonPrompt
+
+if TYPE_CHECKING:
+    from midjargon.core.models import MidjourneyPrompt as MJPrompt
+
+# ---------------------------------------------------------------------------
+# Numeric parameters that should be converted from string → int/float
+# ---------------------------------------------------------------------------
+_NUMERIC_PARAMS: frozenset[str] = frozenset(
+    {
+        "stylize",
+        "chaos",
+        "weird",
+        "image_weight",
+        "quality",
+        "character_weight",
+        "style_weight",
+        "style_version",
+        "repeat",
+        "stop",
+        # seed is intentionally excluded: converted by MidjourneyParameters validator
+    }
+)
+
+_SEED_SPECIAL = frozenset({"random", "none"})
 
 
-def is_valid_image_url(url: str) -> bool:
-    """Check if a URL is a valid image URL."""
-    try:
-        result = urlparse(url)
-        return bool(
-            result.scheme
-            and result.netloc
-            and any(
-                result.path.lower().endswith(ext)
-                for ext in [".jpg", ".jpeg", ".png", ".gif", ".webp"]
-            )
-        )
-    except Exception:
-        return False
+def _is_url(s: str) -> bool:
+    return s.startswith(("http://", "https://"))
 
 
-def is_url(text: str) -> bool:
-    """Check if text is a URL."""
-    try:
-        result = urlparse(text)
-        return all([result.scheme, result.netloc])
-    except Exception:
-        return False
-
-    Args:
-        text: The text to split.
-
-def extract_image_urls(prompt: str) -> tuple[list[ImageReference], str]:
-    """Extract image URLs from the start of a prompt.
-
-    Args:
-        tokens: List of tokens from prompt text.
-
-    Returns:
-        A tuple of (list of ImageReference objects, remaining text).
-    """
-    parts = prompt.strip().split()
-    refs = []
-    text_start = 0
-
+def _extract_images(prompt: str) -> tuple[list[str], str]:
+    """Pull leading URL tokens out of *prompt*; return (urls, remainder)."""
+    parts = prompt.split()
+    urls: list[str] = []
+    idx = 0
     for i, part in enumerate(parts):
-        if is_url(part):
-            refs.append(ImageReference(url=HttpUrl(part)))
-            text_start = i + 1
+        if _is_url(part):
+            urls.append(part)
+            idx = i + 1
         else:
             break
+    return urls, " ".join(parts[idx:])
 
-    return refs, " ".join(parts[text_start:])
+
+def _convert_numeric(value: str) -> int | float:
+    f = float(value)
+    return int(f) if f.is_integer() else f
 
 
-def parse_midjargon_prompt_to_dict(expanded_prompt: MidjargonPrompt) -> MidjargonDict:
-    """
-    Parse an expanded prompt into a dictionary format.
-    Handles URL extraction and parameter parsing.
+def parse_midjargon_prompt_to_dict(prompt: str) -> MidjargonDict:
+    """Parse an expanded prompt string into a flat dictionary.
+
+    The returned dict always contains:
+    - ``"text"``: normalised text portion (whitespace-collapsed)
+    - ``"images"``: list of image URL strings (may be empty)
+    - One key per parsed parameter (flag params → ``None``,
+      multi-value params → ``list[str]``, others → str/int/float)
+
+    No permutation expansion is performed; the caller is responsible for
+    expanding ``{...}`` groups beforehand.
 
     Args:
-        expanded_prompt: Expanded prompt string.
+        prompt: A single expanded prompt string.
 
     Returns:
-        Dictionary containing parsed prompt components.
+        ``MidjargonDict`` with text, images, and parameter keys.
     """
-    # Extract URLs and text
-    urls = []
-    text_parts = []
+    if not prompt or not prompt.strip():
+        return {"text": "", "images": []}
 
-    # Split into individual parameters
-    parts = param_str.split("--")
-    for part in parts[1:]:  # Skip empty first part
-        if not part.strip():
-            continue
+    # 1. Extract leading image URLs
+    images, remaining = _extract_images(prompt)
 
-        # Split parameter name and value
-        param_parts = part.strip().split(maxsplit=1)
-        param_name = param_parts[0]
-        param_value = param_parts[1] if len(param_parts) > 1 else None
-
-        # Handle special parameters
-        if param_name == "cref":
-            if param_value:
-                if is_url(param_value):
-                    params["character_reference"].append(
-                        CharacterReference(url=HttpUrl(param_value), code=None)
-                    )
-                else:
-                    params["character_reference"].append(
-                        CharacterReference(url=None, code=param_value)
-                    )
-        elif param_name == "sref":
-            if param_value:
-                if is_url(param_value):
-                    params["style_reference"].append(
-                        StyleReference(url=HttpUrl(param_value), code=None)
-                    )
-                else:
-                    params["style_reference"].append(
-                        StyleReference(url=None, code=param_value)
-                    )
-        elif param_name == "ar":
-            if param_value:
-                try:
-                    w, h = map(int, param_value.split(":"))
-                    params["aspect_ratio"] = f"{w}:{h}"
-                    params["aspect_width"] = w
-                    params["aspect_height"] = h
-                except ValueError as e:
-                    msg = f"Invalid aspect ratio format: {e}"
-                    raise ValueError(msg) from e
-        elif param_name in ("v", "version"):
-            if param_value:
-                try:
-                    version = MidjourneyVersion(param_value)
-                    params["version"] = version
-                except ValueError as e:
-                    msg = f"Invalid version value: {param_value}"
-                    raise ValueError(msg) from e
-        elif param_name == "style":
-            if param_value:
-                try:
-                    style = StyleMode(param_value.lower())
-                    params["style"] = style
-                except ValueError as e:
-                    msg = f"Invalid style value: {param_value}"
-                    raise ValueError(msg) from e
-        # Handle flag parameters
-        elif param_value is None:
-            if param_name in {"tile", "turbo", "relax"}:
-                params[param_name] = True
-            else:
-                msg = f"Invalid flag parameter: {param_name}"
-                raise ValueError(msg)
-        # Handle numeric parameters
-        elif param_value.replace(".", "").isdigit():
-            if param_name in {"stylize", "s"}:
-                params["stylize"] = int(param_value)
-            elif param_name in {"chaos", "c"}:
-                params["chaos"] = int(param_value)
-            elif param_name in {"weird", "w"}:
-                params["weird"] = int(param_value)
-            elif param_name == "seed" and param_value != "random":
-                params["seed"] = int(param_value)
-            elif param_name == "cw":
-                params["character_weight"] = float(param_value)
-            elif param_name == "sw":
-                params["style_weight"] = float(param_value)
-            else:
-                params[param_name] = (
-                    float(param_value) if "." in param_value else int(param_value)
-                )
-        # Handle boolean parameters
-        elif param_value.lower() in ("true", "false"):
-            params[param_name] = param_value.lower() == "true"
-        # Handle list parameters
-        elif param_value.startswith("[") and param_value.endswith("]"):
-            try:
-                items = [
-                    item.strip()
-                    for item in param_value[1:-1].split(",")
-                    if item.strip()
-                ]
-                params[param_name] = items
-            except Exception as e:
-                msg = f"Failed to parse list parameter {param_name}: {e!s}"
-                raise ValueError(msg) from e
-        # Handle string parameters
-        else:
-            text_parts.append(part)
-
-    # Join remaining parts as text, preserving original spacing
-    text_part = " ".join(text_parts)
-
-    # Find where parameters start (if any)
-    param_part = ""
-    if "--" in text_part:
-        text_split = text_part.split("--", 1)
-        text_part = text_split[0].strip()
-        param_part = "--" + text_split[1]
-
-    # Parse parameters using the consolidated parameter parsing logic
-    params = parse_parameters(param_part) if param_part.startswith("--") else {}
-
-    # Convert numeric values
-    numeric_params = {
-        "stylize": int,
-        "chaos": int,
-        "weird": int,
-        "image_weight": float,
-        "seed": int,
-        "stop": int,
-        "quality": float,
-        "repeat": int,
-        "character_weight": int,
-        "style_weight": int,
-        "style_version": int,
-    }
-
-    for param, converter in numeric_params.items():
-        if param in params and params[param] is not None:
-            with contextlib.suppress(ValueError, TypeError):
-                params[param] = converter(params[param])
-
-    Raises:
-        ValueError: If the prompt is invalid or missing required components.
-    """
-    # Extract image URLs
-    images, remaining_text = extract_image_urls(prompt)
-
-    # Split into text and parameters
-    if " --" in remaining_text:
-        text_part, param_part = remaining_text.split(" --", 1)
-        text_part = text_part.strip()
-        param_str = "--" + param_part.strip()
-        try:
-            parameters = parse_parameters(param_str)
-        except Exception as e:
-            msg = f"Failed to parse parameters: {e!s}"
-            raise ValueError(msg) from e
+    # 2. Split text from parameters on the first " --"
+    if " --" in remaining:
+        text_raw, param_tail = remaining.split(" --", 1)
+        param_str = "--" + param_tail
     else:
-        text_part = remaining_text.strip()
-        parameters = {}
+        text_raw = remaining
+        param_str = ""
 
-    # Create and validate the prompt object
-    try:
-        return MidjourneyPrompt(
-            text=text_part,
-            image_prompts=images,
-            **parameters,
-        )
-    except Exception as e:
-        msg = f"Failed to create prompt object: {e!s}"
-        raise ValueError(msg) from e
+    # 3. Normalise text whitespace
+    text = " ".join(text_raw.split())
+
+    # 4. Parse raw parameters
+    raw_params: dict[str, Any] = {}
+    if param_str:
+        try:
+            raw_params = parse_parameters(param_str)
+        except ValueError:
+            # Tolerate unparseable param sections; store nothing
+            raw_params = {}
+
+    # 5. Build output dict, converting numeric strings
+    result: MidjargonDict = {"text": text, "images": images}
+
+    for key, value in raw_params.items():
+        if (
+            isinstance(value, str)
+            and key in _NUMERIC_PARAMS
+            and value not in _SEED_SPECIAL
+        ):
+            try:
+                result[key] = _convert_numeric(value)
+            except (ValueError, TypeError):
+                result[key] = value
+        else:
+            result[key] = value
+
+    return result
 
 
-def parse_midjargon_prompt_to_dict(prompt: str) -> dict[str, Any]:
-    """Parse a Midjourney prompt into a dictionary.
+def parse_midjargon_prompt(prompt: str) -> MJPrompt:
+    """Parse an expanded prompt string into a validated ``MidjourneyPrompt``.
+
+    This is a convenience wrapper that calls
+    :func:`parse_midjargon_prompt_to_dict` and then feeds the result through
+    ``MidjourneyParser``.
 
     Args:
-        prompt: The raw prompt string to parse.
+        prompt: A single expanded prompt string.
 
-    return cast(MidjargonDict, result)
+    Returns:
+        A validated :class:`~midjargon.core.models.MidjourneyPrompt`.
+
+    Raises:
+        ValueError: If the prompt is empty or parameters are invalid.
+    """
+    from midjargon.engines.midjourney.midjourney import MidjourneyParser
+
+    d = parse_midjargon_prompt_to_dict(prompt)
+    # Rename "images" → "image_prompts" for the engine parser
+    if "images" in d:
+        d["image_prompts"] = d.pop("images")
+    parser = MidjourneyParser()
+    return parser.parse_dict(d)
