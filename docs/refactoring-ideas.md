@@ -50,6 +50,7 @@ from pydantic import BaseModel, ValidationError
 
 # Assume MidjourneyPrompt model is defined as in the original code
 
+
 class CleanerMidjourneyParser:
     def parse_prompt(self, prompt_string: str) -> "MidjourneyPrompt":
         image_urls, text_and_params = self._split_image_urls_and_text(prompt_string)
@@ -62,13 +63,16 @@ class CleanerMidjourneyParser:
             # Re-raise with more context if needed
             raise ValueError(f"Prompt validation error: {e}") from e
 
-
-    def _split_image_urls_and_text(self, prompt_string: str) -> tuple[List["ImagePrompt"], str]:
+    def _split_image_urls_and_text(
+        self, prompt_string: str
+    ) -> tuple[List["ImagePrompt"], str]:
         """Splits image URLs from the beginning of the prompt."""
         urls: List["ImagePrompt"] = []
         text_part = prompt_string.strip()
-        url_pattern = re.compile(r"^https?://[^\s/$.?#].[^\s]*\.(jpg|jpeg|png|gif|webp)$", re.IGNORECASE)
-        tokens = prompt_string.split() # Simple tokenization by space initially
+        url_pattern = re.compile(
+            r"^https?://[^\s/$.?#].[^\s]*\.(jpg|jpeg|png|gif|webp)$", re.IGNORECASE
+        )
+        tokens = prompt_string.split()  # Simple tokenization by space initially
 
         image_tokens = []
         remaining_tokens = []
@@ -80,19 +84,19 @@ class CleanerMidjourneyParser:
                 remaining_tokens.append(token)
 
         for url_str in image_tokens:
-            urls.append(ImagePrompt(url=url_str)) # Directly create ImagePrompt model
+            urls.append(ImagePrompt(url=url_str))  # Directly create ImagePrompt model
 
         text_part = " ".join(remaining_tokens)
         return urls, text_part
 
-
     def _split_text_and_params(self, text_and_params: str) -> tuple[str, str]:
         """Splits text and parameter string."""
-        parts = re.split(r'\s--(?=[^\s])', text_and_params, maxsplit=1) # Split at '--' preceded by whitespace or start of string, but only once
+        parts = re.split(
+            r"\s--(?=[^\s])", text_and_params, maxsplit=1
+        )  # Split at '--' preceded by whitespace or start of string, but only once
         text = parts[0].strip()
         param_string = parts[1] if len(parts) > 1 else ""
         return text, param_string
-
 
     def _parse_parameters(self, param_string: str) -> Dict[str, Optional[str]]:
         """Parses parameter string into a dictionary, directly for MidjourneyPrompt model."""
@@ -101,16 +105,19 @@ class CleanerMidjourneyParser:
             return params
 
         # More robust regex for parameter parsing - example, needs refinement
-        param_regex = re.compile(r'--(\w+)\s*([^\s--]+)?') # Captures parameter name and optional value
+        param_regex = re.compile(
+            r"--(\w+)\s*([^\s--]+)?"
+        )  # Captures parameter name and optional value
         for match in param_regex.finditer(param_string):
             name = match.group(1)
-            value = match.group(2) # Can be None if flag parameter
+            value = match.group(2)  # Can be None if flag parameter
             # Expand shorthand here if needed, or in model validation
-            normalized_name = self._normalize_parameter_name(name) # Example normalization
+            normalized_name = self._normalize_parameter_name(
+                name
+            )  # Example normalization
             params[normalized_name] = value
 
         return params
-
 
     def _normalize_parameter_name(self, name: str) -> str:
         """Example: Normalize shorthand parameter names."""
@@ -124,7 +131,9 @@ class CleanerMidjourneyParser:
 
 # Example usage
 parser = CleanerMidjourneyParser()
-prompt_input = "https://example.com/image.jpg a serene landscape --ar 16:9 --stylize 100"
+prompt_input = (
+    "https://example.com/image.jpg a serene landscape --ar 16:9 --stylize 100"
+)
 midjourney_prompt = parser.parse_prompt(prompt_input)
 print(midjourney_prompt)
 ```
@@ -183,25 +192,30 @@ Let me analyze the code structure and suggest some improvements. Here's my think
 Let me create a skeleton of an improved architecture:
 
 ```python
-
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Generic, Iterator, Optional, TypeVar, Union
 
+
 # Custom exceptions for better error handling
 class ParserError(Exception):
     """Base class for parser errors."""
+
     pass
+
 
 class TokenizerError(ParserError):
     """Error during tokenization."""
+
     pass
+
 
 class ValidationError(ParserError):
     """Error during validation."""
+
     pass
+
 
 # Token types for lexical analysis
 class TokenType(Enum):
@@ -214,20 +228,23 @@ class TokenType(Enum):
     PERMUTATION_END = auto()
     PERMUTATION_SEPARATOR = auto()
 
+
 @dataclass
 class Token:
     """Represents a token in the prompt string."""
+
     type: TokenType
     value: str
     position: int
 
+
 class Tokenizer:
     """Converts prompt string into tokens."""
-    
+
     def __init__(self, text: str):
         self.text = text
         self.pos = 0
-        
+
     def tokenize(self) -> Iterator[Token]:
         """Generate tokens from input text."""
         while self.pos < len(self.text):
@@ -235,110 +252,127 @@ class Tokenizer:
             if self.text[self.pos].isspace():
                 self.pos += 1
                 continue
-                
+
             # Handle URLs
-            if self.text[self.pos:].startswith(('http://', 'https://')):
+            if self.text[self.pos :].startswith(("http://", "https://")):
                 yield self._tokenize_url()
                 continue
-                
+
             # Handle parameters
-            if self.text[self.pos:].startswith('--'):
+            if self.text[self.pos :].startswith("--"):
                 yield self._tokenize_parameter()
                 continue
-                
+
             # Handle permutations
-            if self.text[self.pos] == '{':
-                yield Token(TokenType.PERMUTATION_START, '{', self.pos)
+            if self.text[self.pos] == "{":
+                yield Token(TokenType.PERMUTATION_START, "{", self.pos)
                 self.pos += 1
                 continue
-                
+
             # Handle weights
-            if self.text[self.pos:].startswith('::'):
+            if self.text[self.pos :].startswith("::"):
                 yield self._tokenize_weight()
                 continue
-                
+
             # Handle regular text
             yield self._tokenize_text()
 
-T = TypeVar('T')
+
+T = TypeVar("T")
+
 
 class Parser(ABC, Generic[T]):
     """Abstract base class for prompt parsers."""
-    
+
     @abstractmethod
     def parse(self, text: str) -> T:
         """Parse prompt text into structured format."""
         pass
-    
+
     @abstractmethod
     def validate(self, result: T) -> bool:
         """Validate parsed result."""
         pass
 
+
 @dataclass
 class Parameter:
     """Represents a parsed parameter."""
+
     name: str
     value: Optional[Union[str, int, float]] = None
+
 
 @dataclass
 class PromptComponent:
     """Base class for prompt components."""
+
     text: str
+
 
 @dataclass
 class ImagePrompt(PromptComponent):
     """Represents an image reference in the prompt."""
+
     url: str
+
 
 @dataclass
 class WeightedPrompt(PromptComponent):
     """Represents a weighted prompt component."""
+
     weight: float
+
 
 @dataclass
 class ParsedPrompt:
     """Represents a fully parsed prompt."""
+
     components: list[PromptComponent]
     parameters: dict[str, Parameter]
 
+
 class PromptParser(Parser[ParsedPrompt]):
     """Main prompt parser implementation."""
-    
+
     def __init__(self):
         self.tokenizer = None
-        
+
     def parse(self, text: str) -> ParsedPrompt:
         """Parse prompt text into structured format."""
         self.tokenizer = Tokenizer(text)
         tokens = list(self.tokenizer.tokenize())
-        
+
         # First pass: group tokens into logical components
         components = self._group_components(tokens)
-        
+
         # Second pass: handle permutations
         expanded = self._expand_permutations(components)
-        
+
         # Third pass: extract and validate parameters
         params = self._extract_parameters(expanded)
-        
+
         result = ParsedPrompt(components=expanded, parameters=params)
         self.validate(result)
         return result
-    
+
     def validate(self, result: ParsedPrompt) -> bool:
         """Validate parsed result."""
         # Implement validation logic
         return True
-    
+
     def _group_components(self, tokens: list[Token]) -> list[PromptComponent]:
         """Group tokens into logical components."""
         components = []
         current_tokens = []
-        
+
         for token in tokens:
-            if token.type in (TokenType.TEXT, TokenType.PERMUTATION_START, 
-                            TokenType.PERMUTATION_END, TokenType.PERMUTATION_SEPARATOR):
+            if token.type in (
+                TokenType.TEXT,
+                TokenType.PERMUTATION_START,
+                TokenType.PERMUTATION_END,
+                TokenType.PERMUTATION_SEPARATOR,
+            ):
                 current_tokens.append(token)
             elif token.type == TokenType.IMAGE_URL:
                 if current_tokens:
@@ -350,25 +384,30 @@ class PromptParser(Parser[ParsedPrompt]):
                     text = self._create_text_component(current_tokens)
                     components.append(WeightedPrompt(text, float(token.value)))
                     current_tokens = []
-        
+
         if current_tokens:
             components.append(self._create_text_component(current_tokens))
-            
+
         return components
-    
-    def _expand_permutations(self, components: list[PromptComponent]) -> list[PromptComponent]:
+
+    def _expand_permutations(
+        self, components: list[PromptComponent]
+    ) -> list[PromptComponent]:
         """Handle permutation expansion."""
         # Implement permutation logic
         return components
-    
-    def _extract_parameters(self, components: list[PromptComponent]) -> dict[str, Parameter]:
+
+    def _extract_parameters(
+        self, components: list[PromptComponent]
+    ) -> dict[str, Parameter]:
         """Extract and validate parameters."""
         # Implement parameter extraction
         return {}
-    
+
     def _create_text_component(self, tokens: list[Token]) -> str:
         """Create text component from tokens."""
-        return ' '.join(t.value for t in tokens)
+        return " ".join(t.value for t in tokens)
+
 
 # Example usage:
 def parse_prompt(text: str) -> ParsedPrompt:
@@ -379,8 +418,6 @@ def parse_prompt(text: str) -> ParsedPrompt:
     except ParserError as e:
         # Handle parsing errors
         raise
-
-
 ```
 
 Key improvements in this design:
@@ -452,9 +489,11 @@ Below is some simplified, *illustrative* Python code that shows how you might un
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict
 
+
 @dataclass
 class MidjargonParameters:
     """Holds parameters from the command line, with defaults and validations."""
+
     aspect_width: int = 1
     aspect_height: int = 1
     stylize: int = 100
@@ -463,15 +502,18 @@ class MidjargonParameters:
     seed: Optional[int] = None
     version: Optional[str] = None
     # etc... more fields here
-    
+
     extra_params: Dict[str, str] = field(default_factory=dict)
+
 
 @dataclass
 class MidjargonPrompt:
     """Represents a fully expanded prompt."""
+
     images: List[str] = field(default_factory=list)
     text: str = ""
     params: MidjargonParameters = field(default_factory=MidjargonParameters)
+
 
 def parse_prompt(raw_prompt: str) -> MidjargonPrompt:
     """
@@ -485,36 +527,39 @@ def parse_prompt(raw_prompt: str) -> MidjargonPrompt:
     while idx < len(tokens) and looks_like_image_url(tokens[idx]):
         images.append(tokens[idx])
         idx += 1
-    
+
     # 2) The remainder might have text and parameters; let's find parameters by scanning for `--`
     text_chunks = []
     param_pairs = []
-    
+
     current_idx = idx
     while current_idx < len(tokens):
-        if tokens[current_idx].startswith('--'):
+        if tokens[current_idx].startswith("--"):
             # Found a parameter
             param_name = tokens[current_idx][2:]  # remove --
             # If next token does NOT start with --, treat it as the value
-            if current_idx + 1 < len(tokens) and not tokens[current_idx + 1].startswith('--'):
+            if current_idx + 1 < len(tokens) and not tokens[current_idx + 1].startswith(
+                "--"
+            ):
                 param_value = tokens[current_idx + 1]
                 current_idx += 2
             else:
                 param_value = None
                 current_idx += 1
-            
+
             param_pairs.append((param_name, param_value))
         else:
             text_chunks.append(tokens[current_idx])
             current_idx += 1
-    
+
     text_str = " ".join(text_chunks)
-    
+
     # 3) Convert param_pairs into a MidjargonParameters object
     params_obj = build_parameters(param_pairs)
-    
+
     # 4) Return a completed MidjargonPrompt
     return MidjargonPrompt(images=images, text=text_str, params=params_obj)
+
 
 def build_parameters(param_pairs: List[tuple]) -> MidjargonParameters:
     """
@@ -522,33 +567,34 @@ def build_parameters(param_pairs: List[tuple]) -> MidjargonParameters:
     If a param doesn’t map to a known field, store it in `extra_params`.
     """
     result = MidjargonParameters()
-    
+
     for name, value in param_pairs:
         name_lower = name.strip().lower()
-        
+
         if name_lower in ("ar", "aspect") and value:
             # parse aspect ratio
             w, h = value.split(":")
             result.aspect_width = int(w)
             result.aspect_height = int(h)
-        
+
         elif name_lower in ("s", "stylize") and value:
             result.stylize = int(value)
-        
+
         elif name_lower in ("c", "chaos") and value:
             result.chaos = int(value)
-        
+
         elif name_lower in ("v", "version") and value:
             result.version = f"v{value}"
-        
+
         else:
             # unrecognized param => put in extra_params
             result.extra_params[name_lower] = str(value) if value else None
-    
+
     # Run any final validations (range checks, etc.)
     _validate_params(result)
-    
+
     return result
+
 
 def _validate_params(params: MidjargonParameters):
     if not (0 <= params.chaos <= 100):
@@ -557,10 +603,13 @@ def _validate_params(params: MidjargonParameters):
         raise ValueError(f"Stylize out of range: {params.stylize}")
     # etc. for each param
 
+
 def looks_like_image_url(token: str) -> bool:
     # Check if token ends with .jpg, .png, etc. or matches a URL pattern
     lower = token.lower()
-    return any(lower.endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".gif", ".webp"))
+    return any(
+        lower.endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".gif", ".webp")
+    )
 ```
 
 #### Explanation
@@ -628,6 +677,7 @@ First, let's refactor the Pydantic models. This is crucial. Instead of a flat `M
 from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import List, Union, Optional, Literal
 
+
 # --- Parameter Models ---
 class AspectRatio(BaseModel):
     width: int
@@ -639,63 +689,91 @@ class AspectRatio(BaseModel):
         if v <= 0:
             raise ValueError("Must be positive")
         return v
+
     def __str__(self):
         return f"{self.width}:{self.height}"
+
 
 class NumericParameter(BaseModel):
     value: int | float
 
+
 class Stylize(NumericParameter):
     value: int = Field(default=100, ge=0, le=1000)
+
 
 class Chaos(NumericParameter):
     value: int = Field(default=0, ge=0, le=100)
 
+
 class Weird(NumericParameter):
     value: int = Field(default=0, ge=0, le=3000)
+
 
 class ImageWeight(NumericParameter):
     value: float = Field(default=1.0, ge=0.0, le=3.0)
 
+
 class Seed(NumericParameter):
     value: int = Field(default=None, ge=0, le=4294967295)
 
+
 class Stop(NumericParameter):
     value: int = Field(default=100, ge=10, le=100)
-  
+
+
 class Quality(NumericParameter):
     value: float = Field(default=1.0, ge=0.1, le=2.0)
+
 
 class StyleWeight(NumericParameter):
     value: int = Field(default=None, ge=0, le=2000)
 
+
 class CharacterWeight(NumericParameter):
-      value: int = Field(default=100, ge=0, le=200)
-    
+    value: int = Field(default=100, ge=0, le=200)
+
+
 class StyleVersion(NumericParameter):
-      value: int = Field(default=2, ge=1, le=10)
-    
+    value: int = Field(default=2, ge=1, le=10)
+
+
 class Repeat(NumericParameter):
-      value: int = Field(default=None, ge=1, le=100)
+    value: int = Field(default=None, ge=1, le=100)
 
 
 class Version(BaseModel):
     version: str
-    @field_validator('version')
+
+    @field_validator("version")
     def validate_version(cls, v):
         if v.startswith("niji"):
-          parts = v.split()
-          if len(parts) == 1:  # Just "niji"
-              return v
-          version = parts[-1]
-          if version not in {"4", "5", "6"}:
-              raise ValueError(f"Invalid niji version. Must be one of: 4, 5, 6")
-          return v
-        else: 
-          version = v.lstrip("v")
-          if version not in {"1","2","3","4","5","5.0", "5.1", "5.2","6", "6.1"}:
-            raise ValueError("Version must be one of: 1, 2, 3, 4, 5, 5.0, 5.1, 5.2, 6, 6.1")
-          return v
+            parts = v.split()
+            if len(parts) == 1:  # Just "niji"
+                return v
+            version = parts[-1]
+            if version not in {"4", "5", "6"}:
+                raise ValueError(f"Invalid niji version. Must be one of: 4, 5, 6")
+            return v
+        else:
+            version = v.lstrip("v")
+            if version not in {
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "5.0",
+                "5.1",
+                "5.2",
+                "6",
+                "6.1",
+            }:
+                raise ValueError(
+                    "Version must be one of: 1, 2, 3, 4, 5, 5.0, 5.1, 5.2, 6, 6.1"
+                )
+            return v
+
 
 class Style(BaseModel):
     style: Literal["raw", "expressive", "cute", "scenic", "original"]
@@ -704,38 +782,47 @@ class Style(BaseModel):
 class FlagParameter(BaseModel):
     flag: bool = Field(default=False)
 
+
 class Tile(FlagParameter):
     pass
+
 
 class Turbo(FlagParameter):
     pass
 
+
 class Relax(FlagParameter):
     pass
+
 
 class ImagePrompt(BaseModel):
     url: str
 
+
 class WeightedPrompt(BaseModel):
-    prompt: 'PromptPart'  # Forward reference
+    prompt: "PromptPart"  # Forward reference
     weight: float = 1.0
 
+
 class Permutation(BaseModel):
-  options: List['PromptPart']
+    options: List["PromptPart"]
+
 
 class TextPrompt(BaseModel):
     text: str
 
+
 PromptPart = Union[TextPrompt, WeightedPrompt, Permutation, ImagePrompt]
+
 
 class Parameter(BaseModel):
     name: str
     value: Optional[Union[str, int, float, bool, AspectRatio, Version, Style]] = None
 
+
 class MidjourneyPrompt(BaseModel):
     prompt_parts: List[PromptPart] = Field(default_factory=list)
     parameters: List[Parameter] = Field(default_factory=list)
-
 ```
 
 Now, the parser skeleton:
@@ -746,18 +833,17 @@ Now, the parser skeleton:
 from typing import List, Optional, Union
 from .models import *  # Import the refactored models
 
-class MidjourneyParser:
 
+class MidjourneyParser:
     def __init__(self, prompt_string: str):
         self.prompt_string = prompt_string
         self.tokens = self.tokenize(prompt_string)
         self.index = 0
 
     def tokenize(self, prompt_string: str) -> List[str]:
-      # Better tokenization
-      #Splits by spaces, but also keeps :: together and -- together
-      return re.findall(r'\S*::\S*|\S*--\S*|\S+', prompt_string)
-
+        # Better tokenization
+        # Splits by spaces, but also keeps :: together and -- together
+        return re.findall(r"\S*::\S*|\S*--\S*|\S+", prompt_string)
 
     def parse(self) -> MidjourneyPrompt:
         prompt_parts = self.parse_prompt_parts()
@@ -766,7 +852,9 @@ class MidjourneyParser:
 
     def parse_prompt_parts(self) -> List[PromptPart]:
         parts = []
-        while self.index < len(self.tokens) and not self.current_token().startswith('--'):
+        while self.index < len(self.tokens) and not self.current_token().startswith(
+            "--"
+        ):
             parts.append(self.parse_prompt_part())
         return parts
 
@@ -775,8 +863,8 @@ class MidjourneyParser:
             return self.parse_image_prompt()
         elif self.current_token().endswith("::"):
             return self.parse_weighted_prompt()
-        elif self.current_token() == '{':
-          return self.parse_permutation()
+        elif self.current_token() == "{":
+            return self.parse_permutation()
         else:
             return self.parse_text_prompt()
 
@@ -785,129 +873,142 @@ class MidjourneyParser:
         return ImagePrompt(url=url)
 
     def parse_weighted_prompt(self) -> WeightedPrompt:
-      prompt_text = self.consume()
-      # Remove the ::
-      prompt_text = prompt_text[:-2]
-      
-      # Check if there is a weight
-      weight = 1.0
-      if self.index < len(self.tokens) and self.is_number(self.current_token()):
-          try:
-              weight = float(self.consume())
-          except ValueError:
-              pass # default
+        prompt_text = self.consume()
+        # Remove the ::
+        prompt_text = prompt_text[:-2]
 
-      prompt_part_model = TextPrompt(text=prompt_text) #Simplifies later recursion.
-      return WeightedPrompt(prompt=prompt_part_model, weight=weight)
+        # Check if there is a weight
+        weight = 1.0
+        if self.index < len(self.tokens) and self.is_number(self.current_token()):
+            try:
+                weight = float(self.consume())
+            except ValueError:
+                pass  # default
 
+        prompt_part_model = TextPrompt(text=prompt_text)  # Simplifies later recursion.
+        return WeightedPrompt(prompt=prompt_part_model, weight=weight)
 
     def parse_permutation(self) -> Permutation:
-      self.consume() # Consume the {
-      options = []
+        self.consume()  # Consume the {
+        options = []
 
-      while self.index < len(self.tokens) and self.current_token() != '}':
-        options.append(self.parse_prompt_part())
-        if self.current_token() == ',':
-            self.consume()  # Consume the comma
+        while self.index < len(self.tokens) and self.current_token() != "}":
+            options.append(self.parse_prompt_part())
+            if self.current_token() == ",":
+                self.consume()  # Consume the comma
 
-      self.consume()  # Consume the }
-      return Permutation(options = options)
-    
+        self.consume()  # Consume the }
+        return Permutation(options=options)
 
     def parse_text_prompt(self) -> TextPrompt:
         text = self.consume()
         return TextPrompt(text=text)
 
-
     def parse_parameters(self) -> List[Parameter]:
         parameters = []
-        while self.index < len(self.tokens) and self.current_token().startswith('--'):
+        while self.index < len(self.tokens) and self.current_token().startswith("--"):
             parameters.append(self.parse_parameter())
         return parameters
 
     def parse_parameter(self) -> Parameter:
-      name = self.consume()[2:]  # Remove --
-      value = None
+        name = self.consume()[2:]  # Remove --
+        value = None
 
-      if self.index < len(self.tokens) and not self.current_token().startswith('--'):
-        if name == "ar":
-          value = self.parse_aspect_ratio()
-        elif name == "v" or name == "version" or name == 'niji':
-          value = self.parse_version()
-        elif name == 'style':
-          value = self.parse_style()
-        elif self.is_numeric_parameter(name):
-            value = self.parse_numeric_parameter(name)
+        if self.index < len(self.tokens) and not self.current_token().startswith("--"):
+            if name == "ar":
+                value = self.parse_aspect_ratio()
+            elif name == "v" or name == "version" or name == "niji":
+                value = self.parse_version()
+            elif name == "style":
+                value = self.parse_style()
+            elif self.is_numeric_parameter(name):
+                value = self.parse_numeric_parameter(name)
+            else:
+                value = self.consume()  # Simple string value
+
+        # Create instances of specialized models for validation
+        if name == "stylize" or name == "s":
+            param_model = Stylize(value=int(value))
+        elif name == "chaos" or name == "c":
+            param_model = Chaos(value=int(value))
+        elif name == "weird" or name == "w":
+            param_model = Weird(value=int(value))
+        elif name == "iw" or name == "image_weight":
+            param_model = ImageWeight(value=float(value))
+        elif name == "seed":
+            param_model = Seed(value=int(value))
+        elif name == "stop":
+            param_model = Stop(value=int(value))
+        elif name == "q" or name == "quality":
+            param_model = Quality(value=float(value))
+        elif name == "cw" or name == "character_weight":
+            param_model = CharacterWeight(value=int(value))
+        elif name == "sw" or name == "style_weight":
+            param_model = StyleWeight(value=int(value))
+        elif name == "sv" or name == "style_version":
+            param_model = StyleVersion(value=int(value))
+        elif name == "r" or name == "repeat":
+            param_model = Repeat(value=int(value))
+        elif name == "tile":
+            param_model = Tile()
+            value = True
+        elif name == "turbo":
+            param_model = Turbo()
+            value = True
+        elif name == "relax":
+            param_model = Relax()
+            value = True
         else:
-          value = self.consume()  # Simple string value
+            param_model = Parameter(
+                name=name, value=value
+            )  # Create a generic parameter
 
-      #Create instances of specialized models for validation
-      if name == "stylize" or name == 's':
-          param_model = Stylize(value=int(value))
-      elif name == "chaos" or name == "c":
-          param_model = Chaos(value=int(value))
-      elif name == "weird" or name == "w":
-          param_model = Weird(value=int(value))
-      elif name == "iw" or name == "image_weight":
-          param_model = ImageWeight(value=float(value))
-      elif name == "seed":
-          param_model = Seed(value=int(value))
-      elif name == "stop":
-          param_model = Stop(value=int(value))
-      elif name == "q" or name == 'quality':
-        param_model = Quality(value=float(value))
-      elif name == 'cw' or name == 'character_weight':
-        param_model = CharacterWeight(value = int(value))
-      elif name == 'sw' or name == 'style_weight':
-        param_model = StyleWeight(value= int(value))
-      elif name == 'sv' or name == 'style_version':
-        param_model = StyleVersion(value = int(value))
-      elif name == 'r' or name == 'repeat':
-        param_model = Repeat(value = int(value))
-      elif name == 'tile':
-        param_model = Tile()
-        value = True
-      elif name == 'turbo':
-        param_model = Turbo()
-        value = True
-      elif name == 'relax':
-        param_model = Relax()
-        value = True
-      else:
-        param_model = Parameter(name=name, value=value) #Create a generic parameter
-
-      return param_model
-
+        return param_model
 
     def parse_aspect_ratio(self) -> AspectRatio:
         value = self.consume()
         try:
-            width, height = map(int, value.split(':'))
+            width, height = map(int, value.split(":"))
             return AspectRatio(width=width, height=height)
         except ValueError:
             raise ValueError(f"Invalid aspect ratio: {value}")
 
     def parse_version(self) -> Version:
-      value = self.consume()
-      return Version(version=value)
-    
-    def parse_style(self)-> Style:
-      value = self.consume()
-      return Style(style=value)
+        value = self.consume()
+        return Version(version=value)
+
+    def parse_style(self) -> Style:
+        value = self.consume()
+        return Style(style=value)
 
     def is_numeric_parameter(self, name: str) -> bool:
         numeric_params = {
-            "stylize", "s", "chaos", "c", "weird", "w",
-            "iw", "image_weight", "seed", "stop",
-            "q", "quality", "cw", "character_weight",
-            "sw", "style_weight", "sv", "style_version",
-            "r", "repeat"
+            "stylize",
+            "s",
+            "chaos",
+            "c",
+            "weird",
+            "w",
+            "iw",
+            "image_weight",
+            "seed",
+            "stop",
+            "q",
+            "quality",
+            "cw",
+            "character_weight",
+            "sw",
+            "style_weight",
+            "sv",
+            "style_version",
+            "r",
+            "repeat",
         }
         return name in numeric_params
-    
-    def parse_numeric_parameter(self, name:str)-> Union[int, float]:
-      value = self.consume()
-      return value
+
+    def parse_numeric_parameter(self, name: str) -> Union[int, float]:
+        value = self.consume()
+        return value
 
     def current_token(self) -> Optional[str]:
         if self.index < len(self.tokens):
@@ -919,15 +1020,16 @@ class MidjourneyParser:
         if token is not None:
             self.index += 1
         else:
-          raise ValueError("Unexpected end of input")
+            raise ValueError("Unexpected end of input")
         return token
-    
+
     def is_number(self, token: str) -> bool:
-      try:
-          float(token)
-          return True
-      except ValueError:
-          return False
+        try:
+            float(token)
+            return True
+        except ValueError:
+            return False
+
 
 # Example Usage (for demonstration)
 parser = MidjourneyParser("a cat on a mat --ar 16:9 --stylize 200")
@@ -1006,17 +1108,15 @@ import parsy as P
 
 # Define parsers
 parameter = (
-    P.string('--') >> 
-    P.regex(r'[a-zA-Z0-9_-]+').map(str.strip)  # parameter name
+    P.string("--")
+    >> P.regex(r"[a-zA-Z0-9_-]+").map(str.strip)  # parameter name
     << P.whitespace.optional()
 )
-value = P.regex(r'[^ ]+')  # simple value, can be extended for quoted values
+value = P.regex(r"[^ ]+")  # simple value, can be extended for quoted values
 
-param_parser = (
-    parameter.bind(lambda name: 
-        (value | P.produce(None)).map(lambda v: (name, v)))
-    .sep_by(P.whitespace)
-)
+param_parser = parameter.bind(
+    lambda name: (value | P.produce(None)).map(lambda v: (name, v))
+).sep_by(P.whitespace)
 ```
 
 2. **Handling Permutations with itertools**:
@@ -1025,19 +1125,21 @@ param_parser = (
 ```python
 from itertools import product
 
+
 def parse_permutation(text):
     # Sample implementation to split options, handling nesting and escapes
     # This would need to handle nested braces and escaped commas
     options = split_options(text)
     return options
 
+
 def expand_permutations(prompt):
     # Split the prompt into parts and expand each permutation group
     # recursively, then generate all combinations
-    parts = re.split(r'({|})', prompt)
+    parts = re.split(r"({|})", prompt)
     # ... process parts and build a list of possible segments
     # then use product to combine them
-    return [''.join(combo) for combo in product(*segments)]
+    return ["".join(combo) for combo in product(*segments)]
 ```
 
 3. **Refactoring Image URL Extraction**:
@@ -1046,7 +1148,8 @@ def expand_permutations(prompt):
 ```python
 import re
 
-url_pattern = re.compile(r'^https?://\S+\.(?:jpg|jpeg|png|gif|webp)\b', re.IGNORECASE)
+url_pattern = re.compile(r"^https?://\S+\.(?:jpg|jpeg|png|gif|webp)\b", re.IGNORECASE)
+
 
 def extract_urls(prompt):
     urls = []
@@ -1056,7 +1159,7 @@ def extract_urls(prompt):
             urls.append(token)
         else:
             break
-    return urls, ' '.join(tokens[len(urls):])
+    return urls, " ".join(tokens[len(urls) :])
 ```
 
 4. **Simplifying the Pydantic Models**:
@@ -1065,13 +1168,14 @@ def extract_urls(prompt):
 ```python
 from pydantic import BaseModel, field_validator
 
+
 class MidjourneyParams(BaseModel):
     ar: Optional[str] = None
     stylize: Optional[int] = None
 
-    @field_validator('ar')
+    @field_validator("ar")
     def validate_ar(cls, v):
-        if v and ':' not in v:
+        if v and ":" not in v:
             raise ValueError("Aspect ratio must be in width:height format")
         return v
 ```
@@ -1100,16 +1204,16 @@ Improved Skeleton Code:
 import parsy as P
 
 # Define parsers
-whitespace = P.regex(r'\s+')
-param_name = P.regex(r'[a-zA-Z0-9_-]+')
+whitespace = P.regex(r"\s+")
+param_name = P.regex(r"[a-zA-Z0-9_-]+")
 param_value = P.regex(r'(?:[^ \n"]|"(?:\\"|[^"])*")+')  # Handle quoted values
 
-parameter = (
-    P.string('--') >> param_name
-    .bind(lambda name: 
+parameter = P.string("--") >> param_name.bind(
+    lambda name: (
         (whitespace >> param_value.map(lambda v: (name, v))) | P.success((name, None))
     )
 )
+
 
 def parse_parameters(param_str):
     return parameter.sep_by(whitespace).parse(param_str.strip()).to_dict()
@@ -1118,15 +1222,15 @@ def parse_parameters(param_str):
 # Handling permutations with recursive splitting
 def expand_permutations(text):
     stack = []
-    current = ['']
+    current = [""]
     i = 0
     while i < len(text):
-        if text[i] == '{':
+        if text[i] == "{":
             # Start new permutation group
             stack.append(current)
-            current = ['']
+            current = [""]
             i += 1
-        elif text[i] == '}' and stack:
+        elif text[i] == "}" and stack:
             # End current group, combine with previous
             group = current
             prev = stack.pop()
@@ -1136,25 +1240,26 @@ def expand_permutations(text):
                 for o in options:
                     current.append(p + o)
             i += 1
-        elif text[i] == '\\' and i +1 < len(text):
+        elif text[i] == "\\" and i + 1 < len(text):
             # Escaped character
-            current = [c + text[i+1] for c in current]
-            i +=2
+            current = [c + text[i + 1] for c in current]
+            i += 2
         else:
             # Add character to all current parts
             current = [c + text[i] for c in current]
-            i +=1
+            i += 1
     return current
 
 
 # Example usage
 print(expand_permutations("a {red, blue} bird"))  # ['a red bird', 'a blue bird']
-print(expand_permutations("a {b{c,d},e}f"))    # ['a bcf', 'a bdf', 'a ef']
+print(expand_permutations("a {b{c,d},e}f"))  # ['a bcf', 'a bdf', 'a ef']
 
 # URL extraction with regex
 import re
 
-url_re = re.compile(r'^(https?://\S+\.(?:jpe?g|png|gif|webp)\b)', re.IGNORECASE)
+url_re = re.compile(r"^(https?://\S+\.(?:jpe?g|png|gif|webp)\b)", re.IGNORECASE)
+
 
 def split_urls_and_text(prompt):
     urls = []
@@ -1164,8 +1269,9 @@ def split_urls_and_text(prompt):
             urls.append(token)
         else:
             rest.append(token)
-    text = ' '.join(rest)
+    text = " ".join(rest)
     return urls, text
+
 
 # Integrating into the parser
 class MidjargonParser:
@@ -1178,8 +1284,9 @@ class MidjargonParser:
             urls, rest = split_urls_and_text(variant)
             text_part, param_str = split_text_and_params(rest)
             params = parse_parameters(param_str)
-            variants.append({'images': urls, 'text': text_part, **params})
+            variants.append({"images": urls, "text": text_part, **params})
         return variants
+
 
 # This approach uses a more structured way to handle each part of parsing.
 ```
@@ -1227,6 +1334,7 @@ import re
 from itertools import product
 from typing import Generator
 
+
 @dataclass
 class ParseState:
     text: str
@@ -1234,18 +1342,22 @@ class ParseState:
 
     def consume(self, length: int) -> "ParseState":
         return ParseState(self.text, self.offset + length)
-    
+
     @property
     def current(self) -> str:
-        return self.text[self.offset:] if self.offset < len(self.text) else ""
+        return self.text[self.offset :] if self.offset < len(self.text) else ""
+
 
 def regex(pattern: str) -> partial:
     comp = re.compile(pattern)
+
     def matcher(state: ParseState) -> tuple[str, ParseState]:
         if match := comp.match(state.current):
             return match.group(), state.consume(match.end())
         raise ValueError(f"No match for {pattern}")
+
     return partial(matcher)
+
 
 def alt(*parsers) -> partial:
     def matcher(state: ParseState):
@@ -1255,12 +1367,15 @@ def alt(*parsers) -> partial:
             except ValueError:
                 continue
         raise ValueError("No alternatives matched")
+
     return partial(matcher)
+
 
 # Example usage
 url_parser = regex(r"https?://\S+\.(?:jpe?g|png|gif|webp)\b")
 brace_open = regex(r"\{")
 brace_close = regex(r"\}")
+
 
 def parse_permutations(state: ParseState) -> Generator[list[str], None, None]:
     # Implementation using generator for memory efficiency
@@ -1272,23 +1387,23 @@ def parse_permutations(state: ParseState) -> Generator[list[str], None, None]:
 ```python
 def expand_permutations(text: str) -> list[str]:
     stack = [[]]
-    current = ['']
+    current = [""]
     escaped = False
-    
+
     for char in text:
         if escaped:
             current = [c + char for c in current]
             escaped = False
-        elif char == '\\':
+        elif char == "\\":
             escaped = True
-        elif char == '{':
+        elif char == "{":
             stack.append(current)
-            current = ['']
-        elif char == '}':
+            current = [""]
+        elif char == "}":
             if len(stack) > 1:
                 options = [c for c in current if c]
                 parent = stack.pop()
-                ...# AND SO ON
+                ...  # AND SO ON
 ```
 
 <think>
@@ -1334,18 +1449,22 @@ from typing import Generator, List, Tuple, Union
 from functools import partial
 from pydantic import BaseModel, ValidationError
 
+
 # --- Core Data Models ---
 class PromptComponent(BaseModel):
     text: str
     weight: float = 1.0
 
+
 class ImageReference(PromptComponent):
     url: str
     weight: float = 1.0
 
+
 class Parameter(BaseModel):
     name: str
     value: Union[str, float, int, None]
+
 
 # --- Parser Infrastructure ---
 @dataclass
@@ -1355,26 +1474,28 @@ class ParserState:
     components: List[Union[PromptComponent, Parameter]] = field(default_factory=list)
     current_weight: float = 1.0
 
+
 def tokenize(text: str) -> Generator[Tuple[str, str], None, None]:
     """Tokenize input into meaningful components"""
     token_spec = [
-        ('URL', r'https?://\S+\.(?:jpe?g|png|gif|webp)\b'),
-        ('BRACE_OPEN', r'\{'),
-        ('BRACE_CLOSE', r'\}'),
-        ('PARAM', r'--[\w-]+'),
-        ('WEIGHT', r'::\-?\d+(?:\.\d+)?'),
-        ('TEXT', r'[^{}]+')  # Match any non-brace characters
+        ("URL", r"https?://\S+\.(?:jpe?g|png|gif|webp)\b"),
+        ("BRACE_OPEN", r"\{"),
+        ("BRACE_CLOSE", r"\}"),
+        ("PARAM", r"--[\w-]+"),
+        ("WEIGHT", r"::\-?\d+(?:\.\d+)?"),
+        ("TEXT", r"[^{}]+"),  # Match any non-brace characters
     ]
-    tok_regex = '|'.join(f'(?P<{pair[0]}>{pair[1]})' for pair in token_spec)
-    
+    tok_regex = "|".join(f"(?P<{pair[0]}>{pair[1]})" for pair in token_spec)
+
     for match in re.finditer(tok_regex, text, re.IGNORECASE):
         kind = match.lastgroup
         value = match.group()
-        if kind == 'TEXT':
+        if kind == "TEXT":
             value = value.strip()
             if not value:
                 continue
         yield kind, value
+
 
 # --- Permutation Handling ---
 def expand_permutations(text: str) -> List[str]:
@@ -1382,56 +1503,58 @@ def expand_permutations(text: str) -> List[str]:
         options = []
         current = []
         escaped = False
-        
+
         while state.pos < len(state.text):
             char = state.text[state.pos]
             if escaped:
                 current.append(char)
                 escaped = False
                 state.pos += 1
-            elif char == '\\':
+            elif char == "\\":
                 escaped = True
                 state.pos += 1
-            elif char == '{':
+            elif char == "{":
                 state.pos += 1
                 nested = parse_segment(state)
                 options.append(nested)
-            elif char == '}':
+            elif char == "}":
                 state.pos += 1
                 break
-            elif char == ',' and not escaped:
-                options.append(''.join(current).strip())
+            elif char == "," and not escaped:
+                options.append("".join(current).strip())
                 current = []
                 state.pos += 1
             else:
                 current.append(char)
                 state.pos += 1
-        
+
         if current:
-            options.append(''.join(current).strip())
-        return options or ['']
+            options.append("".join(current).strip())
+        return options or [""]
 
     root = parse_segment(ParserState(text, 0))
-    return [''.join(comb) for comb in product(*root)]
+    return ["".join(comb) for comb in product(*root)]
+
 
 # --- Parameter Parsing ---
 PARAM_TYPES = {
-    'stylize': int,
-    'chaos': int,
-    'weird': int,
-    'seed': int,
-    'stop': int,
-    'iw': float,
-    'quality': float,
+    "stylize": int,
+    "chaos": int,
+    "weird": int,
+    "seed": int,
+    "stop": int,
+    "iw": float,
+    "quality": float,
 }
 
+
 def parse_parameter(param_str: str) -> Parameter:
-    name, *values = param_str.lstrip('-').split(maxsplit=1)
+    name, *values = param_str.lstrip("-").split(maxsplit=1)
     value = values[0] if values else None
-    
+
     if value is None:
         return Parameter(name=name, value=None)
-    
+
     # Type conversion
     converter = PARAM_TYPES.get(name)
     if converter:
@@ -1439,8 +1562,9 @@ def parse_parameter(param_str: str) -> Parameter:
             value = converter(value)
         except (ValueError, TypeError):
             raise ValueError(f"Invalid value for {name}: {value}")
-    
+
     return Parameter(name=name, value=value)
+
 
 # --- Main Parser ---
 class PromptParser:
@@ -1450,15 +1574,15 @@ class PromptParser:
         self.components = []
         self.params = []
 
-    def parse(self, text: str) -> 'PromptParser':
+    def parse(self, text: str) -> "PromptParser":
         for kind, value in tokenize(text):
-            if kind == 'URL':
+            if kind == "URL":
                 self.image_refs.append(ImageReference(url=value))
-            elif kind == 'PARAM':
+            elif kind == "PARAM":
                 self.params.append(parse_parameter(value))
-            elif kind == 'WEIGHT':
-                self.state.current_weight = float(value.lstrip('::'))
-            elif kind == 'BRACE_OPEN':
+            elif kind == "WEIGHT":
+                self.state.current_weight = float(value.lstrip("::"))
+            elif kind == "BRACE_OPEN":
                 permutations = expand_permutations(value)
                 self.components.extend(permutations)
             else:
@@ -1467,8 +1591,11 @@ class PromptParser:
                 )
         return self
 
+
 # --- Usage Example ---
-prompt = "https://example.com/img.jpg {vintage,modern} portrait --stylize 500 --chaos 50"
+prompt = (
+    "https://example.com/img.jpg {vintage,modern} portrait --stylize 500 --chaos 50"
+)
 parser = PromptParser().parse(prompt)
 
 print("Images:", [img.url for img in parser.image_refs])

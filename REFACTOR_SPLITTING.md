@@ -101,7 +101,11 @@
         ```python
         # ... existing imports ...
         from midjargon.core.models.base import MidjourneyVersion, StyleMode
-        from midjargon.core.models.references import ImageReference, CharacterReference, StyleReference
+        from midjargon.core.models.references import (
+            ImageReference,
+            CharacterReference,
+            StyleReference,
+        )
         from midjargon.core.models.parameters import MidjourneyParameters
         from midjargon.core.models import MidjourneyPrompt, PromptVariant
 
@@ -214,7 +218,10 @@
         ```python
         # ... existing imports ...
         from midjargon.core.parameters.constants import ALIASES, PARAMETER_ALIASES
-        from midjargon.core.parameters.validation import validate_param_name, validate_param_value
+        from midjargon.core.parameters.validation import (
+            validate_param_name,
+            validate_param_value,
+        )
         from midjargon.core.parameters.conversion import convert_parameter_value
         from midjargon.core.parameters import parse_parameters
 

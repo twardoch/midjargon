@@ -6,8 +6,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from midjargon.core.models import ImageReference, MidjourneyParameters, MidjourneyPrompt
 from pydantic import HttpUrl
+
+from midjargon.core.models import ImageReference, MidjourneyParameters, MidjourneyPrompt
 
 # ---------------------------------------------------------------------------
 # Aliases: short / alternative key names → canonical parameter field name
@@ -28,7 +29,7 @@ _KEY_ALIASES: dict[str, str] = {
     "p": "personalization",
     "cref": "character_reference",
     "sref": "style_reference",
-    "image_prompts": "images",   # normalise to "images"
+    "image_prompts": "images",  # normalise to "images"
 }
 
 # ---------------------------------------------------------------------------
@@ -36,16 +37,16 @@ _KEY_ALIASES: dict[str, str] = {
 # These raise ValueError (not Pydantic ValidationError) so pytest.raises works.
 # ---------------------------------------------------------------------------
 _PARAM_RANGES: dict[str, tuple[float, float]] = {
-    "stylize":          (0.0,  1000.0),
-    "chaos":            (0.0,  100.0),
-    "weird":            (0.0,  3000.0),
-    "image_weight":     (0.0,  2.0),
-    "quality":          (0.25, 2.0),
-    "character_weight": (0.0,  200.0),
-    "style_weight":     (0.0,  1000.0),
-    "style_version":    (1,    3),
-    "repeat":           (1,    40),
-    "stop":             (10,   100),
+    "stylize": (0.0, 1000.0),
+    "chaos": (0.0, 100.0),
+    "weird": (0.0, 3000.0),
+    "image_weight": (0.0, 2.0),
+    "quality": (0.25, 2.0),
+    "character_weight": (0.0, 200.0),
+    "style_weight": (0.0, 1000.0),
+    "style_version": (1, 3),
+    "repeat": (1, 40),
+    "stop": (10, 100),
 }
 
 
@@ -175,8 +176,16 @@ class MidjourneyParser:
 
         # --- numeric parameters -------------------------------------------
         _numeric_fields = {
-            "stylize", "chaos", "weird", "image_weight", "quality",
-            "character_weight", "style_weight", "style_version", "repeat", "stop",
+            "stylize",
+            "chaos",
+            "weird",
+            "image_weight",
+            "quality",
+            "character_weight",
+            "style_weight",
+            "style_version",
+            "repeat",
+            "stop",
         }
         for field in _numeric_fields:
             if field not in d:
@@ -207,7 +216,9 @@ class MidjourneyParser:
 
         # --- personalization ----------------------------------------------
         if "personalization" in d:
-            params["personalization"] = _resolve_personalization(d.pop("personalization"))
+            params["personalization"] = _resolve_personalization(
+                d.pop("personalization")
+            )
 
         # --- character_reference ------------------------------------------
         if "character_reference" in d:
@@ -222,8 +233,9 @@ class MidjourneyParser:
             params["style_reference"] = [str(r) for r in refs if r is not None]
 
         # --- everything remaining goes to extra_params --------------------
-        params["extra_params"] = {k: v for k, v in d.items()
-                                  if k not in ("text", "images")}
+        params["extra_params"] = {
+            k: v for k, v in d.items() if k not in ("text", "images")
+        }
 
         mj_params = MidjourneyParameters(**params)
 

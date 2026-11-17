@@ -6,8 +6,7 @@ import re
 from enum import Enum
 from typing import Any, TypeVar
 
-from pydantic import (BaseModel, Field, HttpUrl, field_validator,
-                      model_validator)
+from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
 
 T = TypeVar("T", bound="BaseModel")
 

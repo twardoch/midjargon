@@ -5,9 +5,10 @@
 Example script demonstrating basic usage of the midjargon package.
 """
 
-from midjargon import expand_midjargon_input, parse_midjargon_prompt
 from rich.console import Console
 from rich.panel import Panel
+
+from midjargon import expand_midjargon_input, parse_midjargon_prompt
 
 console = Console()
 

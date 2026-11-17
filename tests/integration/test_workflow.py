@@ -6,6 +6,7 @@ import sys
 from io import StringIO
 
 import pytest
+
 from midjargon.cli.main import MidjargonCLI
 from midjargon.core.input import expand_midjargon_input
 from midjargon.core.parser import parse_midjargon_prompt_to_dict

@@ -15,12 +15,17 @@ except ImportError:
         __version__ = "0.0.0"
 
 from midjargon.core.input import expand_midjargon_input
-from midjargon.core.models import (CharacterReference, ImageReference,
-                                   MidjourneyParameters, MidjourneyPrompt,
-                                   MidjourneyVersion, PromptVariant, StyleMode,
-                                   StyleReference)
-from midjargon.core.parser import (parse_midjargon_prompt,
-                                   parse_midjargon_prompt_to_dict)
+from midjargon.core.models import (
+    CharacterReference,
+    ImageReference,
+    MidjourneyParameters,
+    MidjourneyPrompt,
+    MidjourneyVersion,
+    PromptVariant,
+    StyleMode,
+    StyleReference,
+)
+from midjargon.core.parser import parse_midjargon_prompt, parse_midjargon_prompt_to_dict
 
 __all__ = [
     "MidjargonDict",

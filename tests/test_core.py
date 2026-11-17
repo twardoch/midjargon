@@ -2,6 +2,7 @@
 # this_file: tests/test_core.py
 
 import pytest
+
 from midjargon import expand_midjargon_input
 from midjargon.core.models import MidjourneyParameters, MidjourneyPrompt
 from midjargon.core.parser import parse_midjargon_prompt

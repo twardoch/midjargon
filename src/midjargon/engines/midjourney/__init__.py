@@ -2,9 +2,11 @@
 Midjourney engine for midjargon.
 """
 
-from midjargon.engines.midjourney.midjourney import (MidjourneyParser,
-                                                     MidjourneyPrompt,
-                                                     parse_midjourney_dict)
+from midjargon.engines.midjourney.midjourney import (
+    MidjourneyParser,
+    MidjourneyPrompt,
+    parse_midjourney_dict,
+)
 
 # Create a default parser instance
 _parser = MidjourneyParser()

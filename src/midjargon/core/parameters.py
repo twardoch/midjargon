@@ -49,6 +49,7 @@ MULTI_VALUE_PARAMS: frozenset[str] = frozenset(
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+
 def _tokenize(param_str: str) -> list[str]:
     """Split *param_str* into tokens, honouring single- and double-quoted spans."""
     tokens: list[str] = []
@@ -79,6 +80,7 @@ def _tokenize(param_str: str) -> list[str]:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def parse_parameters(param_str: str) -> ParamDict:
     """Parse a ``--key [value …]`` parameter string into a dict.

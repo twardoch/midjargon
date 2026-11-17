@@ -14,7 +14,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from midjargon.core.parameters import parse_parameters
-from midjargon.core.type_defs import MidjargonDict, MidjargonPrompt
+from midjargon.core.type_defs import MidjargonDict
 
 if TYPE_CHECKING:
     from midjargon.core.models import MidjourneyPrompt as MJPrompt

@@ -17,12 +17,13 @@ import sys
 from typing import TYPE_CHECKING, Any, NoReturn
 
 import fire
+from rich.console import Console
+from rich.panel import Panel
+
 from midjargon.core.input import expand_midjargon_input
 from midjargon.core.parser import parse_midjargon_prompt_to_dict
 from midjargon.engines.fal import to_fal_dict
 from midjargon.engines.midjourney import MidjourneyParser
-from rich.console import Console
-from rich.panel import Panel
 
 if TYPE_CHECKING:
     from midjargon.core.type_defs import MidjargonDict
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def _output_json(data: Any) -> None:
     """Write *data* as indented JSON to stdout (no Rich formatting)."""
@@ -90,6 +92,7 @@ def to_fal_dicts(prompt: str) -> list[dict[str, Any]]:
 # ---------------------------------------------------------------------------
 # CLI class
 # ---------------------------------------------------------------------------
+
 
 class MidjargonCLI:
     """Midjargon CLI — parse and convert Midjourney-style prompts."""
@@ -235,6 +238,7 @@ class MidjargonCLI:
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     """Run the Midjargon CLI."""

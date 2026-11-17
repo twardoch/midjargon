@@ -106,7 +106,7 @@ results = to_midjourney_prompts(prompt_string)
 
 if isinstance(results, list):
     for i, mj_prompt_model in enumerate(results):
-        print(f"--- Variant {i+1} ---")
+        print(f"--- Variant {i + 1} ---")
         print(f"Text: {mj_prompt_model.text}")
         print(f"Aspect Ratio: {mj_prompt_model.aspect_ratio}")
         print(f"Chaos: {mj_prompt_model.chaos}")
